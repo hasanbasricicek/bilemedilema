@@ -15,6 +15,7 @@ class Command(BaseCommand):
         )
 
         if not username or not password:
+            self.stdout.write('ensure_superuser: missing DJANGO_SUPERUSER_USERNAME or DJANGO_SUPERUSER_PASSWORD; skipping')
             return
 
         User = get_user_model()
@@ -34,10 +35,15 @@ class Command(BaseCommand):
             if reset_password:
                 user.set_password(password)
                 user.save()
+                self.stdout.write(f'ensure_superuser: password reset for existing user {username}')
                 return
 
             if changed_fields:
                 user.save(update_fields=changed_fields)
+                self.stdout.write(f'ensure_superuser: updated existing user {username} ({", ".join(changed_fields)})')
+            else:
+                self.stdout.write(f'ensure_superuser: existing user {username} already OK')
             return
 
         User.objects.create_superuser(username=username, email=email or '', password=password)
+        self.stdout.write(f'ensure_superuser: created superuser {username}')
