@@ -1,0 +1,142 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Kullanıcılar - Yönetim{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="flex items-start justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-semibold text-[#591C21] tracking-tight">Kullanıcılar</h1>
+            <p class="text-sm text-[#591C21]/60 mt-1">Ban/unban, pasife alma ve hızlı kontrol.</p>
+        </div>
+        <form method="get" class="bg-white border border-[#8C1F28]/20 rounded-2xl p-3 flex items-center gap-2">
+            <input type="text" name="q" value="{{ query }}" placeholder="Kullanıcı adı veya e-posta" class="w-72 px-3 py-2 border border-[#8C1F28]/30 rounded-xl text-sm focus:ring-2 focus:ring-[#8C1F28] focus:border-[#8C1F28]">
+            <button type="submit" class="bg-[#8C1F28] hover:bg-[#591C21] text-white px-4 py-2 rounded-xl text-sm font-medium transition duration-200">Ara</button>
+        </form>
+    </div>
+
+    <div class="bg-white border border-[#8C1F28]/20 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-[#F2F2F2]">
+                    <tr>
+                        <th class="text-left text-xs font-semibold text-[#591C21]/60 px-4 py-3">Kullanıcı</th>
+                        <th class="text-left text-xs font-semibold text-[#591C21]/60 px-4 py-3">E-posta</th>
+                        <th class="text-left text-xs font-semibold text-[#591C21]/60 px-4 py-3">İçerik</th>
+                        <th class="text-left text-xs font-semibold text-[#591C21]/60 px-4 py-3">Rol</th>
+                        <th class="text-left text-xs font-semibold text-[#591C21]/60 px-4 py-3">Durum</th>
+                        <th class="text-left text-xs font-semibold text-[#591C21]/60 px-4 py-3">Yasak</th>
+                        <th class="text-right text-xs font-semibold text-[#591C21]/60 px-4 py-3">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#8C1F28]/20">
+                    {% for u in users %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <a href="{% url 'user_profile' u.username %}" class="font-medium text-[#591C21] hover:text-[#8C1F28]">{{ u.username }}</a>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-[#591C21]/80">{{ u.email|default:"-" }}</td>
+                            <td class="px-4 py-3 text-sm text-[#591C21]/80">
+                                {{ u.posts_count }} gönderi / {{ u.comments_count }} yorum
+                            </td>
+                            <td class="px-4 py-3 text-sm text-[#591C21]/80">
+                                {% if u.is_superuser %}
+                                    Yönetici
+                                {% elif u.is_staff %}
+                                    Moderatör
+                                {% else %}
+                                    Üye
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-[#591C21]/80">
+                                {% if u.is_active %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#044040]/30 bg-[#044040]/5 text-[#044040]">Aktif</span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#8C1F28]/30 bg-[#F2F2F2] text-[#591C21]/60">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-[#591C21]/80">
+                                <div class="flex flex-wrap gap-1">
+                                    {% if u.profile.is_post_banned %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#D92525]/30 bg-[#D92525]/10 text-[#D92525]">Post</span>
+                                    {% endif %}
+                                    {% if u.profile.is_comment_banned %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#D92525]/30 bg-[#D92525]/10 text-[#D92525]">Yorum</span>
+                                    {% endif %}
+                                    {% if not u.profile.is_comment_banned and not u.profile.is_post_banned %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#8C1F28]/30 bg-white text-[#591C21]/60">Yok</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center justify-end gap-2">
+                                    {% if u.profile.is_comment_banned or u.profile.is_post_banned %}
+                                        <form method="post" action="{% url 'unban_user' u.username %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="ban_type" value="all">
+                                            <input type="hidden" name="next" value="{% url 'moderate_users' %}">
+                                            <button type="submit" class="px-3 py-2 rounded-xl text-sm bg-[#8C1F28] hover:bg-[#591C21] text-white font-medium transition duration-200">Unban</button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if request.user.is_superuser %}
+                                        {% if u.is_active %}
+                                            <form method="post" action="{% url 'moderate_users' %}" onsubmit="return confirm('Kullanıcı pasife alınsın mı?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="deactivate_user">
+                                                <input type="hidden" name="username" value="{{ u.username }}">
+                                                <button type="submit" class="px-3 py-2 rounded-xl text-sm border border-[#8C1F28]/30 hover:border-[#8C1F28]/50 text-[#591C21] bg-white font-medium transition duration-200">Pasife Al</button>
+                                            </form>
+                                        {% else %}
+                                            <form method="post" action="{% url 'moderate_users' %}" onsubmit="return confirm('Kullanıcı tekrar aktif edilsin mi?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="reactivate_user">
+                                                <input type="hidden" name="username" value="{{ u.username }}">
+                                                <button type="submit" class="px-3 py-2 rounded-xl text-sm bg-[#8C1F28] hover:bg-[#591C21] text-white font-medium transition duration-200">Aktifleştir</button>
+                                            </form>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if u.is_active %}
+                                            <form method="post" action="{% url 'moderate_users' %}" onsubmit="return confirm('Kullanıcı pasife alınsın mı?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="deactivate_user">
+                                                <input type="hidden" name="username" value="{{ u.username }}">
+                                                <button type="submit" class="px-3 py-2 rounded-xl text-sm border border-[#8C1F28]/30 hover:border-[#8C1F28]/50 text-[#591C21] bg-white font-medium transition duration-200">Pasife Al</button>
+                                            </form>
+                                        {% else %}
+                                            <form method="post" action="{% url 'moderate_users' %}" onsubmit="return confirm('Kullanıcı tekrar aktif edilsin mi?');">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="reactivate_user">
+                                                <input type="hidden" name="username" value="{{ u.username }}">
+                                                <button type="submit" class="px-3 py-2 rounded-xl text-sm bg-[#8C1F28] hover:bg-[#591C21] text-white font-medium transition duration-200">Aktifleştir</button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-4 py-10 text-center text-sm text-[#591C21]/60">Kullanıcı bulunamadı.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-4 py-3 bg-white border-t border-[#8C1F28]/20 flex items-center justify-between">
+            <div class="text-sm text-[#591C21]/60">
+                Sayfa {{ users.number }} / {{ users.paginator.num_pages }}
+            </div>
+            <div class="flex items-center gap-2">
+                {% if users.has_previous %}
+                    <a class="px-3 py-2 rounded-xl text-sm border border-[#8C1F28]/30 hover:border-[#8C1F28]/50" href="?page={{ users.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">Önceki</a>
+                {% endif %}
+                {% if users.has_next %}
+                    <a class="px-3 py-2 rounded-xl text-sm border border-[#8C1F28]/30 hover:border-[#8C1F28]/50" href="?page={{ users.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">Sonraki</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,347 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% load avatar_extras %}
+
+{% block title %}{{ profile_user.username }} - Profil{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] overflow-hidden mb-8">
+        <div class="bg-gradient-to-br from-[#F8F9F6] to-white border-b border-[#BFBFBF] p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+                <div class="flex items-center space-x-5">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-2xl border border-[#BFBFBF] bg-white">
+                        {% avatar profile_user 80 %}
+                    </div>
+                    
+                    <div>
+                        <div class="flex items-center flex-wrap gap-2 mb-1">
+                            <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight">{{ profile_user.username }}</h1>
+                            {% if profile_user.is_superuser %}
+                                <span class="bg-gradient-to-r from-[#B33F00] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    <i class="fas fa-crown"></i> Yönetici
+                                </span>
+                            {% elif profile_user.is_staff %}
+                                <span class="bg-gradient-to-r from-[#0B5275] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    <i class="fas fa-shield-alt"></i> Moderatör
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-2 flex flex-col gap-1 text-xs text-[#666A73]">
+                            <span><i class="fas fa-calendar-alt mr-1"></i>Katılım: {{ profile_user.date_joined|date:"d.m.Y" }}</span>
+                            {% if user.is_staff or user.is_superuser %}
+                                <span><i class="fas fa-envelope mr-1"></i>{{ profile_user.email }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:items-end gap-2">
+                {% if user.is_authenticated and is_own_profile %}
+                    <a href="{% url 'edit_profile' %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl transition duration-200 text-center text-sm font-medium">
+                        Profili Düzenle
+                    </a>
+                {% elif user.is_authenticated and not is_own_profile %}
+                    <a href="{% url 'create_report' 'user' profile_user.id %}" class="bg-white border border-[#BFBFBF] text-[#000000] px-4 py-2 rounded-xl transition duration-200 text-center hover:border-[#B33F00] hover:text-[#B33F00]">
+                        <i class="fas fa-flag mr-2"></i>Raporla
+                    </a>
+                    
+                    {% if user.is_staff or user.is_superuser %}
+                        <button onclick="document.getElementById('ban-modal').classList.remove('hidden')" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl transition duration-200">
+                            <i class="fas fa-gavel mr-2"></i>Yasakla
+                        </button>
+                        {% if profile_user.profile.is_comment_banned or profile_user.profile.is_post_banned %}
+                            <form method="post" action="{% url 'unban_user' profile_user.username %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="ban_type" value="all">
+                                <input type="hidden" name="next" value="{% url 'user_profile' profile_user.username %}">
+                                <button type="submit" class="bg-white border border-[#BFBFBF] text-[#000000] px-4 py-2 rounded-xl transition duration-200 hover:border-[#666A73]">
+                                    Yasağı Kaldır
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 mt-6">
+                <div class="bg-white rounded-2xl border border-[#BFBFBF] p-4 text-center">
+                    <p class="text-xl font-semibold text-[#000000]">{{ posts.count }}</p>
+                    <p class="text-xs text-[#666A73]">Gönderi</p>
+                </div>
+                <div class="bg-white rounded-2xl border border-[#BFBFBF] p-4 text-center">
+                    <p class="text-xl font-semibold text-[#000000]">{{ profile_user.comments.count }}</p>
+                    <p class="text-xs text-[#666A73]">Yorum</p>
+                </div>
+                <div class="bg-white rounded-2xl border border-[#BFBFBF] p-4 text-center">
+                    {% if user.is_staff or user.is_superuser %}
+                        <p class="text-xl font-semibold text-[#000000]">{{ profile_user.profile.age }}</p>
+                        <p class="text-xs text-[#666A73]">Yaş</p>
+                    {% else %}
+                        <p class="text-xl font-semibold text-[#000000]">-</p>
+                        <p class="text-xs text-[#666A73]">Yaş (Gizli)</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if profile_user.profile.is_comment_banned or profile_user.profile.is_post_banned %}
+                <div class="mt-5 space-y-2">
+                    {% if profile_user.profile.is_comment_banned %}
+                        <div class="bg-[#B33F00]/10 border border-[#B33F00] text-[#000000] p-4 rounded-xl">
+                            <p class="font-semibold"><i class="fas fa-ban mr-1"></i>Yorum Yasağı</p>
+                            <p class="text-xs text-[#666A73]">Bitiş: {{ profile_user.profile.comment_ban_until|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    {% endif %}
+                    {% if profile_user.profile.is_post_banned %}
+                        <div class="bg-[#B33F00]/10 border border-[#B33F00] text-[#000000] p-4 rounded-xl">
+                            <p class="font-semibold"><i class="fas fa-ban mr-1"></i>Gönderi Yasağı</p>
+                            <p class="text-xs text-[#666A73]">Bitiş: {{ profile_user.profile.post_ban_until|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mb-6">
+        <h2 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">
+            {% if is_own_profile %}Gönderilerim{% else %}{{ profile_user.username }} - Gönderileri{% endif %}
+        </h2>
+        <p class="text-sm text-[#666A73]">Kullanıcının paylaştığı gönderiler.</p>
+    </div>
+
+    <div class="space-y-6">
+        {% for post in posts %}
+            <div class="bg-white rounded-2xl border border-[#BFBFBF] overflow-hidden">
+                <div class="p-5 sm:p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            {% if post.post_type == 'comment_only' %}
+                                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Yorum</span>
+                            {% elif post.post_type == 'poll_only' %}
+                                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Anket</span>
+                            {% else %}
+                                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Karma</span>
+                            {% endif %}
+                            
+                            {% if post.status == 'd' %}
+                                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#666A73] bg-white">Taslak</span>
+                            {% elif post.status == 'r' %}
+                                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#B33F00] text-[#B33F00] bg-[#B33F00]/10">Reddedildi</span>
+                            {% endif %}
+                        </div>
+                        
+                        <span class="text-xs text-[#666A73]">{{ post.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+
+                    <a href="{% url 'post_detail' post.pk %}" class="block">
+                        <h3 class="text-lg font-semibold text-[#000000] mb-2 hover:text-[#666A73] transition duration-200">
+                            {{ post.title }}
+                        </h3>
+                        <p class="text-[#000000] mb-4 line-clamp-3">{{ post.content|truncatewords:30 }}</p>
+                    </a>
+
+                    {% if post.images.all %}
+                        {% with total_images=post.images.count %}
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                {% for image in post.images.all|slice:":4" %}
+                                    <button type="button" class="relative w-full overflow-hidden rounded-lg" style="aspect-ratio: 4 / 3;" data-lightbox-group="profile-post-{{ post.pk }}" data-lightbox-src="{{ image.imgur_url }}" aria-label="Görseli büyüt">
+                                        <img src="{{ image.imgur_url }}" alt="Post image" loading="lazy" class="w-full h-full object-cover">
+                                        {% if forloop.last and total_images > 4 %}
+                                            <div class="absolute inset-0 bg-black/55 flex items-center justify-center">
+                                                <span class="text-white font-bold text-lg">+{{ total_images|add:"-4" }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        {% endwith %}
+                    {% endif %}
+
+                    <div class="flex items-center justify-between pt-4 border-t border-[#BFBFBF]">
+                        <div class="flex items-center space-x-4 text-xs text-[#666A73]">
+                            {% if post.post_type != 'comment_only' %}
+                                <span>{{ post.votes.count }} oy</span>
+                            {% endif %}
+                            
+                            {% if post.post_type != 'poll_only' %}
+                                <span>{{ post.comments.count }} yorum</span>
+                            {% endif %}
+                        </div>
+
+                        <a href="{% url 'post_detail' post.pk %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                            Aç
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-2xl border border-[#BFBFBF] p-12 text-center">
+                <h3 class="text-xl font-semibold text-[#000000] mb-2">Henüz gönderi yok</h3>
+                <p class="text-sm text-[#666A73]">
+                    {% if is_own_profile %}
+                        İlk gönderini oluşturmak için "Yeni Gönderi" butonuna tıkla!
+                    {% else %}
+                        Bu kullanıcı henüz gönderi paylaşmamış.
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if user.is_staff or user.is_superuser %}
+<div id="ban-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6 sm:p-8 max-w-md w-full mx-4">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-[#000000] tracking-tight">Kullanıcıya Yasak Ver</h3>
+            <button onclick="document.getElementById('ban-modal').classList.add('hidden')" class="text-[#666A73] hover:text-[#000000]">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+
+        <form method="post" action="{% url 'ban_user' profile_user.username %}" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-[#000000] mb-2">Yasak Türü</label>
+                <select name="ban_type" required class="w-full px-4 py-2 border border-[#BFBFBF] rounded-lg bg-white focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]">
+                    <option value="comment">Yorum Yasağı</option>
+                    <option value="post">Gönderi Yasağı</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-[#000000] mb-2">Yasak Süresi (Gün)</label>
+                <input type="number" name="ban_days" min="1" max="365" value="7" required class="w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-[#000000] mb-2">Sebep (Opsiyonel)</label>
+                <textarea name="reason" rows="3" class="w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]" placeholder="Yasak sebebi..."></textarea>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+                <button type="button" onclick="document.getElementById('ban-modal').classList.add('hidden')" class="px-4 py-2 text-[#666A73] hover:text-[#000000] transition duration-200">
+                    İptal
+                </button>
+                <button type="submit" class="bg-[#B33F00] hover:bg-[#000000] text-white px-6 py-2 rounded-xl transition duration-200">
+                    <i class="fas fa-gavel mr-2"></i>Yasak Ver
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Lightbox for profile page images
+    (function initLightbox() {
+        let isOpen = false;
+        let currentGroup = null;
+        let currentIndex = 0;
+        let groupItems = [];
+
+        function ensureModal() {
+            let modal = document.getElementById('lightbox-modal');
+            if (modal) return modal;
+
+            modal = document.createElement('div');
+            modal.id = 'lightbox-modal';
+            modal.className = 'hidden fixed inset-0 z-[60]';
+            modal.innerHTML = `
+                <div class="absolute inset-0 bg-black/75" data-lightbox-close></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative max-w-5xl w-full">
+                        <button type="button" class="absolute -top-12 right-0 text-white/90 hover:text-white text-sm font-semibold" data-lightbox-close>Kapat</button>
+                        <button type="button" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-10 text-white/90 hover:text-white text-3xl px-2" data-lightbox-prev aria-label="Önceki">‹</button>
+                        <button type="button" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 text-white/90 hover:text-white text-3xl px-2" data-lightbox-next aria-label="Sonraki">›</button>
+                        <img id="lightbox-image" src="" alt="" class="w-full max-h-[80vh] object-contain rounded-xl border border-white/10 bg-black" />
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        function openLightbox(group, index) {
+            const modal = ensureModal();
+            currentGroup = group;
+            groupItems = Array.from(document.querySelectorAll(`[data-lightbox-group="${CSS.escape(group)}"]`));
+            currentIndex = Math.max(0, Math.min(index, groupItems.length - 1));
+            const btn = groupItems[currentIndex];
+            const src = btn ? btn.getAttribute('data-lightbox-src') : null;
+            if (!src) return;
+            const img = document.getElementById('lightbox-image');
+            img.src = src;
+            modal.classList.remove('hidden');
+            isOpen = true;
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('lightbox-modal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            const img = document.getElementById('lightbox-image');
+            if (img) img.src = '';
+            isOpen = false;
+        }
+
+        function navigate(delta) {
+            if (!isOpen || !groupItems.length) return;
+            const next = (currentIndex + delta + groupItems.length) % groupItems.length;
+            openLightbox(currentGroup, next);
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-lightbox-src][data-lightbox-group]');
+            if (btn) {
+                const group = btn.getAttribute('data-lightbox-group');
+                const items = Array.from(document.querySelectorAll(`[data-lightbox-group="${CSS.escape(group)}"]`));
+                const idx = items.indexOf(btn);
+                openLightbox(group, idx);
+                return;
+            }
+
+            const closeBtn = e.target.closest('[data-lightbox-close]');
+            if (closeBtn) {
+                closeLightbox();
+                return;
+            }
+
+            const prevBtn = e.target.closest('[data-lightbox-prev]');
+            if (prevBtn) {
+                navigate(-1);
+                return;
+            }
+
+            const nextBtn = e.target.closest('[data-lightbox-next]');
+            if (nextBtn) {
+                navigate(1);
+                return;
+            }
+
+            const modal = document.getElementById('lightbox-modal');
+            if (isOpen && modal && modal.contains(e.target)) {
+                const img = document.getElementById('lightbox-image');
+                const clickedOnImage = img && img.contains(e.target);
+                const clickedOnControls = !!e.target.closest('[data-lightbox-prev],[data-lightbox-next],[data-lightbox-close]');
+                if (!clickedOnImage && !clickedOnControls) {
+                    closeLightbox();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!isOpen) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigate(-1);
+            if (e.key === 'ArrowRight') navigate(1);
+        });
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% load avatar_extras %}
+
+{% block title %}Gönderi Moderasyonu - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">Gönderi Moderasyonu</h1>
+    <p class="text-sm text-[#666A73]">Onay bekleyen gönderileri inceleyin</p>
+</div>
+
+<div class="mb-6">
+    <div class="inline-flex rounded-xl border border-[#BFBFBF] bg-white overflow-hidden">
+        <a href="{% url 'moderate_posts' %}?tab=pending" class="px-4 py-2 text-sm font-semibold transition duration-200 {% if active_tab == 'pending' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">
+            Bekleyen ({{ counts.pending }})
+        </a>
+        <a href="{% url 'moderate_posts' %}?tab=rejected" class="px-4 py-2 text-sm font-semibold transition duration-200 border-l border-[#BFBFBF] {% if active_tab == 'rejected' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">
+            Reddedilen ({{ counts.rejected }})
+        </a>
+    </div>
+</div>
+
+{% if active_tab == 'pending' %}
+<div class="space-y-6">
+    {% for post in pending_posts %}
+        <div class="bg-white border border-[#BFBFBF] rounded-xl p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 flex items-center justify-center">
+                        {% avatar post.author 40 %}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-[#000000]">{{ post.author.username }}</p>
+                        <p class="text-xs text-[#666A73]">{{ post.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border border-[#BFBFBF] bg-white text-[#666A73]">
+                    Beklemede
+                </span>
+            </div>
+
+            <h3 class="text-xl font-semibold text-[#000000] mb-2">{{ post.title }}</h3>
+            <p class="text-sm text-[#666A73] mb-4">{{ post.content|truncatewords:50 }}</p>
+
+            <div class="flex items-center space-x-2 mb-4">
+                {% if post.post_type == 'comment_only' %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#BFBFBF] bg-white text-[#000000]">
+                        Yorum
+                    </span>
+                {% elif post.post_type == 'poll_only' %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#BFBFBF] bg-white text-[#000000]">
+                        Anket
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-[#BFBFBF] bg-white text-[#000000]">
+                        Karma
+                    </span>
+                {% endif %}
+            </div>
+
+            {% if post.poll_options.all %}
+                <div class="bg-[#BFBFBF]/20 rounded-lg p-4 mb-4">
+                    <p class="font-semibold text-[#000000] text-sm mb-2">Anket Seçenekleri:</p>
+                    <ul class="space-y-1">
+                        {% for option in post.poll_options.all %}
+                            <li class="text-sm text-[#666A73]">• {{ option.option_text }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="flex items-center justify-between pt-4 border-t border-[#BFBFBF]">
+                <a href="{% url 'post_detail' post.pk %}" class="text-sm font-medium text-[#000000] hover:text-[#666A73] transition duration-200">
+                    Detaylı İncele
+                </a>
+                
+                <div class="flex items-center space-x-2">
+                    <form method="post" action="{% url 'reject_post' post.pk %}" class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2">
+                        {% csrf_token %}
+                        <textarea name="moderation_note" rows="2" placeholder="Reddetme notu (opsiyonel)" class="w-full sm:w-64 px-3 py-2 border border-[#BFBFBF] rounded-lg text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]"></textarea>
+                        <button type="submit" class="bg-white border border-[#BFBFBF] text-[#000000] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#BFBFBF]/20 transition duration-200">
+                            Reddet
+                        </button>
+                    </form>
+                    <a href="{% url 'approve_post' post.pk %}" class="bg-[#000000] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#666A73] transition duration-200">
+                        Onayla
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="bg-white border border-[#BFBFBF] rounded-xl p-12 text-center">
+            <h3 class="text-xl font-semibold text-[#000000] mb-2">Tüm gönderiler incelendi!</h3>
+            <p class="text-sm text-[#666A73]">Onay bekleyen gönderi bulunmuyor.</p>
+        </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<div class="space-y-6">
+    {% for post in rejected_posts %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#000000] bg-white">
+                            {{ post.get_post_type_display }}
+                        </span>
+                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#000000] bg-white">
+                            {{ post.get_topic_display }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-[#666A73]">
+                        <span class="font-semibold text-[#000000]">Yazar:</span> {{ post.author.username }}
+                        <span class="mx-1">|</span>
+                        <span class="font-semibold text-[#000000]">Oluşturma:</span> {{ post.created_at|date:"d.m.Y H:i" }}
+                        {% if post.moderated_at %}
+                            <span class="mx-1">|</span>
+                            <span class="font-semibold text-[#000000]">Reddeden:</span> {% if post.moderated_by %}{{ post.moderated_by.username }}{% else %}-{% endif %}
+                            <span class="mx-1">|</span>
+                            <span class="font-semibold text-[#000000]">Reddetme:</span> {{ post.moderated_at|date:"d.m.Y H:i" }}
+                        {% endif %}
+                    </p>
+                </div>
+
+                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#B33F00] text-[#B33F00] bg-[#B33F00]/10">Reddedildi</span>
+            </div>
+
+            <div class="bg-[#BFBFBF]/20 rounded-xl p-4 mb-4">
+                <p class="font-semibold text-[#000000] text-sm mb-2">Gönderi</p>
+                <p class="text-sm text-[#666A73]"><span class="font-semibold text-[#000000]">Başlık:</span> {{ post.title }}</p>
+                <p class="text-sm text-[#666A73] mt-1">{{ post.content|truncatewords:50 }}</p>
+            </div>
+
+            {% if post.moderation_note %}
+                <div class="bg-white rounded-xl border border-[#BFBFBF] p-4 mb-4">
+                    <p class="font-semibold text-[#000000] text-sm mb-2">Moderasyon Notu</p>
+                    <p class="text-sm text-[#666A73] whitespace-pre-line">{{ post.moderation_note }}</p>
+                </div>
+            {% endif %}
+
+            <div class="flex items-center justify-end pt-4 border-t border-[#BFBFBF]">
+                <a href="{% url 'post_detail' post.pk %}" class="mr-2 bg-white border border-[#BFBFBF] text-[#000000] px-5 py-2 rounded-xl transition duration-200 text-sm font-medium hover:bg-[#F8F9F6]">
+                    İncele
+                </a>
+                <a href="{% url 'approve_post' post.pk %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-5 py-2 rounded-xl transition duration-200 text-sm font-medium">
+                    Onayla
+                </a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-12 text-center">
+            <h3 class="text-xl font-semibold text-[#000000] mb-2">Reddedilen gönderi yok</h3>
+            <p class="text-sm text-[#666A73]">Şu an listelenecek reddedilmiş gönderi bulunmuyor.</p>
+        </div>
+    {% endfor %}
+</div>
+
+{% endif %}
+{% endblock %}

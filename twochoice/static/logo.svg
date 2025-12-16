@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="bilemedilema">
+  <!-- Two-cards + BD (abstract mark), rounded + single color -->
+  <rect x="6" y="10" width="24" height="44" rx="10" stroke="#111827" stroke-width="2.5"/>
+  <rect x="34" y="10" width="24" height="44" rx="10" stroke="#111827" stroke-width="2.5"/>
+
+  <!-- Left card: 'B' vibe using two inner pills -->
+  <rect x="12" y="22" width="12" height="8" rx="4" fill="#111827"/>
+  <rect x="12" y="34" width="12" height="8" rx="4" fill="#111827"/>
+
+  <!-- Right card: 'D' vibe using a stem + rounded bowl -->
+  <rect x="40" y="20" width="4" height="24" rx="2" fill="#111827"/>
+  <path d="M44 20 C52 20 52 44 44 44" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,125 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Rapor Detayı - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Rapor İşlemi</h2>
+            <p class="text-gray-600">Raporu inceleyin ve uygun işlemi seçin</p>
+        </div>
+
+        <div class="space-y-6 mb-8">
+            <div class="bg-gray-50 rounded-lg p-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Raporlayan</p>
+                        <p class="font-semibold text-gray-900">{{ report.reporter.username }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Rapor Tarihi</p>
+                        <p class="font-semibold text-gray-900">{{ report.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">İçerik Türü</p>
+                        <p class="font-semibold text-gray-900">{{ report.get_content_type_display }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Rapor Türü</p>
+                        <p class="font-semibold text-gray-900">{{ report.get_report_type_display }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 rounded-lg p-6">
+                <p class="font-semibold text-gray-900 mb-2">Rapor Açıklaması:</p>
+                <p class="text-gray-700">{{ report.description }}</p>
+            </div>
+
+            {% if report.reported_post %}
+                <div class="bg-white border-2 border-gray-200 rounded-lg p-6">
+                    <p class="font-semibold text-gray-900 mb-4">Raporlanan Gönderi:</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">{{ report.reported_post.title }}</h3>
+                    <p class="text-gray-700 mb-2">{{ report.reported_post.content }}</p>
+                    <p class="text-sm text-gray-600">Yazar: {{ report.reported_post.author.username }}</p>
+                </div>
+            {% elif report.reported_comment %}
+                <div class="bg-white border-2 border-gray-200 rounded-lg p-6">
+                    <p class="font-semibold text-gray-900 mb-4">Raporlanan Yorum:</p>
+                    <p class="text-gray-700 mb-2">{{ report.reported_comment.content }}</p>
+                    <p class="text-sm text-gray-600">Yazar: {{ report.reported_comment.author.username }}</p>
+                </div>
+            {% elif report.reported_user %}
+                <div class="bg-white border-2 border-gray-200 rounded-lg p-6">
+                    <p class="font-semibold text-gray-900 mb-4">Raporlanan Kullanıcı:</p>
+                    <p class="text-gray-700">Kullanıcı Adı: <strong>{{ report.reported_user.username }}</strong></p>
+                    <p class="text-gray-700">E-posta: {{ report.reported_user.email }}</p>
+                    <p class="text-gray-700">Kayıt Tarihi: {{ report.reported_user.date_joined|date:"d.m.Y" }}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next_url|default:'' }}">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    İşlem Seçin
+                </label>
+                <select name="action" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Seçiniz...</option>
+                    <option value="dismiss">Raporu Reddet</option>
+                    {% if report.reported_user %}
+                        <option value="ban_comment">Yorum Yasağı Ver</option>
+                        <option value="ban_post">Gönderi Yasağı Ver</option>
+                    {% endif %}
+                    {% if report.reported_post or report.reported_comment %}
+                        <option value="delete_content">İçeriği Sil</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div id="ban-days-container" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Yasak Süresi (Gün)
+                </label>
+                <input type="number" name="ban_days" min="1" max="365" value="7" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Moderatör Notları
+                </label>
+                <textarea name="moderator_notes" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="İşlem hakkında notlarınız..."></textarea>
+            </div>
+
+            <div class="flex items-center justify-between pt-6 border-t">
+                <a href="{% if next_url %}{{ next_url }}{% else %}{% url 'moderate_reports' %}?tab=pending{% endif %}" class="text-gray-600 hover:text-gray-800 transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>Geri
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 flex items-center space-x-2">
+                    <i class="fas fa-gavel"></i>
+                    <span>İşlemi Uygula</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const actionSelect = document.querySelector('select[name="action"]');
+    const banDaysContainer = document.getElementById('ban-days-container');
+
+    actionSelect.addEventListener('change', function() {
+        if (this.value === 'ban_comment' || this.value === 'ban_post') {
+            banDaysContainer.classList.remove('hidden');
+        } else {
+            banDaysContainer.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

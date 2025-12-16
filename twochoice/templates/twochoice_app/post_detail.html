@@ -1,0 +1,600 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% load avatar_extras %}
+
+{% block title %}{{ post.title }} - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] overflow-hidden">
+        <div class="p-6 sm:p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-11 h-11 flex items-center justify-center">
+                        {% avatar post.author 44 %}
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <a href="{% url 'user_profile' post.author.username %}" class="font-semibold text-[#000000] text-base hover:text-[#666A73] transition duration-200">{{ post.author.username }}</a>
+                            {% if post.author.is_superuser %}
+                                <span class="bg-gradient-to-r from-[#B33F00] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    <i class="fas fa-crown"></i> Yönetici
+                                </span>
+                            {% elif post.author.is_staff %}
+                                <span class="bg-gradient-to-r from-[#0B5275] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    <i class="fas fa-shield-alt"></i> Moderatör
+                                </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm text-gray-500">{{ post.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    {% if post.post_type == 'comment_only' %}
+                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Yorum</span>
+                    {% elif post.post_type == 'poll_only' %}
+                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Anket</span>
+                    {% else %}
+                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Karma</span>
+                    {% endif %}
+
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#0B5275] text-[#0B5275] bg-[#0B5275]/10">{{ post.get_topic_display }}</span>
+                </div>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-3">{{ post.title }}</h1>
+            <p class="text-[#000000] text-base mb-6 whitespace-pre-line">{{ post.content }}</p>
+
+            {% if post.status == 'd' %}
+                <div class="bg-[#B33F00]/10 border-l-4 border-[#B33F00] text-[#000000] p-4 mb-6">
+                    <p class="font-bold">Taslak</p>
+                    <p>Bu gönderi moderatör onayı bekliyor.</p>
+                </div>
+            {% elif post.status == 'r' %}
+                <div class="bg-[#B33F00]/10 border-l-4 border-[#B33F00] text-[#000000] p-4 mb-6">
+                    <p class="font-bold">Reddedildi</p>
+                    <p>Bu gönderi moderatör tarafından reddedildi.</p>
+                </div>
+            {% endif %}
+
+
+            {% if post.images.all %}
+                {% with total_images=post.images.count %}
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        {% for image in post.images.all|slice:":4" %}
+                            <button type="button" class="relative w-full overflow-hidden rounded-xl" style="aspect-ratio: 4 / 3;" data-lightbox-group="post-{{ post.pk }}" data-lightbox-src="{{ image.imgur_url }}" aria-label="Görseli büyüt">
+                                <img src="{{ image.imgur_url }}" alt="Post image" loading="lazy" class="w-full h-full object-cover">
+                                {% if forloop.last and total_images > 4 %}
+                                    <div class="absolute inset-0 bg-black/55 flex items-center justify-center">
+                                        <span class="text-white font-bold text-lg">+{{ total_images|add:"-4" }}</span>
+                                    </div>
+                                {% endif %}
+                            </button>
+                        {% endfor %}
+                    </div>
+                {% endwith %}
+            {% endif %}
+
+            {% if post.post_type != 'comment_only' %}
+                <div class="bg-white rounded-xl p-4 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm font-semibold text-[#000000]">Anket</div>
+                        <div class="js-total-votes text-xs text-[#666A73]" data-post-id="{{ post.pk }}">Toplam {{ post.votes.count }} oy</div>
+                    </div>
+
+
+                    {% if user.is_authenticated %}
+                        <form id="poll-form" method="post" action="{% url 'vote_poll' post.pk %}">
+                            {% csrf_token %}
+                            <input id="poll-selected-option" type="hidden" name="options" value="">
+                            <div class="flex items-center gap-2">
+                                {% for result in poll_results %}
+                                    <button
+                                        type="button"
+                                        class="poll-option-card flex-1 text-center relative rounded-lg p-3 border transition duration-150 active:scale-[0.98] {% if result.option.id in user_votes %}bg-[#000000] border-[#000000] text-white{% else %}bg-[#BFBFBF]/30 border-[#BFBFBF] text-[#000000] hover:border-[#666A73]{% endif %}"
+                                        data-post-id="{{ post.pk }}"
+                                        data-option-id="{{ result.option.id }}"
+                                        data-vote-url="{% url 'vote_poll' post.pk %}"
+                                        data-allow-multiple="{{ post.allow_multiple_choices|lower }}"
+                                    >
+                                        <div class="text-xs font-medium mb-1 {% if result.option.id in user_votes %}text-white{% else %}text-[#666A73]{% endif %}">
+                                            {{ result.option.option_text }}
+                                        </div>
+                                        <div class="js-option-percent text-xl font-bold tracking-tight {% if result.option.id in user_votes %}text-white{% else %}text-[#000000]{% endif %}">
+                                            {{ result.percentage|floatformat:0 }}%
+                                        </div>
+                                        <div class="js-option-votes text-[10px] {% if result.option.id in user_votes %}text-white/70{% else %}text-[#666A73]{% endif %}">
+                                            {{ result.vote_count }} oy
+                                        </div>
+                                    </button>
+                                    {% if not forloop.last %}
+                                        <div class="flex-shrink-0 px-1.5 py-0.5 bg-white border border-[#BFBFBF] rounded text-[10px] font-semibold text-[#666A73]">
+                                            vs
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+
+                            {% if post.allow_multiple_choices %}
+                                <button type="button" id="poll-multi-submit" class="mt-4 w-full bg-[#666A73] hover:bg-[#000000] text-white font-semibold py-3 rounded-xl transition duration-200">
+                                    Oy Ver
+                                </button>
+                                <div class="mt-3 text-xs text-[#666A73]">
+                                    Birden fazla seçenek seçebilirsin.
+                                </div>
+                            {% else %}
+                                <div class="mt-3 text-xs text-[#666A73]">
+                                    Seçeneğe tıklayınca oy verilir.
+                                </div>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                        <div class="flex items-center gap-2">
+                            {% for result in poll_results %}
+                                <div class="poll-option-card flex-1 text-center relative rounded-lg p-3 border bg-[#BFBFBF]/30 border-[#BFBFBF] text-[#000000]">
+                                    <div class="text-xs font-medium mb-1 text-[#666A73]">
+                                        {{ result.option.option_text }}
+                                    </div>
+                                    <div class="text-xl font-bold tracking-tight text-[#000000]">
+                                        {{ result.percentage|floatformat:0 }}%
+                                    </div>
+                                    <div class="text-[10px] text-[#666A73]">
+                                        {{ result.vote_count }} oy
+                                    </div>
+                                </div>
+                                {% if not forloop.last %}
+                                    <div class="flex-shrink-0 px-1.5 py-0.5 bg-white border border-[#BFBFBF] rounded text-[10px] font-semibold text-[#666A73]">
+                                        vs
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="mt-4 text-center text-sm text-[#666A73]">Oy vermek için <a href="{% url 'login' %}" class="text-[#666A73] hover:text-[#000000] font-semibold">giriş yapın</a></p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="flex items-center justify-between pt-6 border-t border-[#BFBFBF]">
+                <div class="flex items-center space-x-4">
+                    {% if user == post.author %}
+                        <a href="{% url 'edit_post' post.pk %}" class="text-[#666A73] hover:text-[#000000] font-medium transition duration-200">
+                            <i class="fas fa-edit mr-1"></i>Düzenle
+                        </a>
+                        <a href="{% url 'delete_post' post.pk %}" class="text-[#B33F00] hover:text-[#000000] font-medium transition duration-200">
+                            <i class="fas fa-trash mr-1"></i>Sil
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if user.is_authenticated and user != post.author %}
+                    <a href="{% url 'create_report' 'post' post.pk %}" class="text-[#666A73] hover:text-[#B33F00] font-medium transition duration-200">
+                        <i class="fas fa-flag mr-1"></i>Rapor Et
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if post.post_type != 'poll_only' %}
+            <div class="bg-[#F8F9F6] p-6 sm:p-8 border-t border-[#BFBFBF]">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-[#000000]">Yorumlar <span class="text-sm text-[#666A73]">({{ comments.count }})</span></h3>
+                </div>
+
+                {% if user.is_authenticated %}
+                    <form id="comment-form" class="mb-8">
+                        {% csrf_token %}
+                        <div class="flex space-x-4">
+                            <div class="w-10 h-10 flex items-center justify-center">
+                                {% avatar user 40 %}
+                            </div>
+                            <div class="flex-1">
+                                {{ comment_form.content }}
+                                <button type="submit" class="mt-2 bg-[#666A73] hover:bg-[#000000] text-white px-6 py-2 rounded-xl transition duration-200">
+                                    Yorum Yap
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="bg-white rounded-lg p-6 text-center">
+                        <p class="text-[#666A73]">Yorum yapmak için <a href="{% url 'login' %}" class="text-[#666A73] hover:text-[#000000] font-semibold">giriş yapın</a></p>
+                    </div>
+                {% endif %}
+
+                <div id="comments-list" class="space-y-4">
+                    {% for comment in comments %}
+                        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-[#BFBFBF]">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                                    {% avatar comment.author 40 %}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div>
+                                            <div class="flex items-center space-x-2">
+                                                <a href="{% url 'user_profile' comment.author.username %}" class="font-semibold text-[#000000] hover:text-[#666A73] transition duration-200">{{ comment.author.username }}</a>
+                                                {% if comment.author.is_superuser %}
+                                                    <span class="bg-gradient-to-r from-[#B33F00] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                        <i class="fas fa-crown"></i> Yönetici
+                                                    </span>
+                                                {% elif comment.author.is_staff %}
+                                                    <span class="bg-gradient-to-r from-[#0B5275] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                        <i class="fas fa-shield-alt"></i> Moderatör
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            <p class="text-sm text-gray-500">{{ comment.created_at|date:"d.m.Y H:i" }}</p>
+                                        </div>
+                                        {% if user.is_authenticated and user != comment.author %}
+                                            <a href="{% url 'create_report' 'comment' comment.pk %}" class="text-[#666A73] hover:text-[#B33F00] transition duration-200">
+                                                <i class="fas fa-flag"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-[#000000] whitespace-pre-line">{{ comment.content }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-comment-slash text-4xl text-[#666A73]/50 mb-2"></i>
+                            <p class="text-[#666A73]">Henüz yorum yok. İlk yorumu sen yap!</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'home' %}" class="inline-flex items-center gap-2 text-sm font-medium text-[#000000] hover:text-[#666A73] transition duration-200">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-[#BFBFBF] bg-white">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <span>Ana Sayfaya Dön</span>
+        </a>
+    </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+    <div id="toast-inner" class="bg-[#666A73] text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg border border-[#000000]"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const inner = document.getElementById('toast-inner');
+        if (!toast || !inner) return;
+        inner.textContent = message;
+        toast.classList.remove('hidden');
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 2200);
+    }
+
+    function setDisabledForNode(node, disabled) {
+        if (!node) return;
+        node.disabled = disabled;
+        if (disabled) {
+            node.classList.add('opacity-60', 'cursor-not-allowed');
+        } else {
+            node.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+    }
+
+    function updatePollUI(postId, results) {
+        const cards = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
+        if (!cards.length) return;
+
+        const byOptionId = new Map(results.map(r => [String(r.option_id), r]));
+        let totalVotes = 0;
+
+        cards.forEach(card => {
+            const optionId = card.dataset.optionId;
+            const r = byOptionId.get(String(optionId));
+            if (!r) return;
+
+            totalVotes += Number(r.vote_count || 0);
+
+            const percentEl = card.querySelector('.js-option-percent');
+            const votesEl = card.querySelector('.js-option-votes');
+            if (percentEl) percentEl.textContent = `${Math.round(r.percentage)}%`;
+            if (votesEl) votesEl.textContent = `${r.vote_count} oy`;
+        });
+
+        const maxPct = results.reduce((m, r) => Math.max(m, Number(r.percentage || 0)), 0);
+        cards.forEach(card => {
+            const optionId = card.dataset.optionId;
+            const r = byOptionId.get(String(optionId));
+            if (!r) return;
+
+            const isWinner = results.length > 0 && Number(r.percentage || 0) === maxPct && totalVotes > 0;
+            if (isWinner) {
+                card.classList.add('bg-[#000000]', 'border-[#000000]', 'text-white');
+                card.classList.remove('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
+                card.querySelectorAll('.js-option-percent, .js-option-votes, .text-xs').forEach(el => {
+                    el.classList.add('text-white');
+                    el.classList.remove('text-[#000000]', 'text-[#666A73]');
+                });
+            } else {
+                card.classList.remove('bg-[#000000]', 'border-[#000000]', 'text-white');
+                card.classList.add('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
+                
+                const titleEl = card.querySelector('.text-xs');
+                if (titleEl) {
+                    titleEl.classList.remove('text-white');
+                    titleEl.classList.add('text-[#666A73]');
+                }
+                const percentEl = card.querySelector('.js-option-percent');
+                if (percentEl) {
+                    percentEl.classList.remove('text-white');
+                    percentEl.classList.add('text-[#000000]');
+                }
+                const votesEl = card.querySelector('.js-option-votes');
+                if (votesEl) {
+                    votesEl.classList.remove('text-white/70');
+                    votesEl.classList.add('text-[#666A73]');
+                }
+            }
+        });
+
+        const totalEl = document.querySelector(`.js-total-votes[data-post-id="${postId}"]`);
+        if (totalEl) totalEl.textContent = `Toplam ${totalVotes} oy`;
+    }
+
+    async function sendVote(voteUrl, optionIds, csrfToken) {
+        const formData = new FormData();
+        optionIds.forEach((id) => formData.append('options', id));
+        formData.append('csrfmiddlewaretoken', csrfToken || '');
+
+        const response = await fetch(voteUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            }
+        });
+        const data = await response.json();
+        return { response, data };
+    }
+
+    const pollForm = document.getElementById('poll-form');
+    if (pollForm) {
+        const multiSubmit = document.getElementById('poll-multi-submit');
+        const selected = new Set();
+
+        pollForm.addEventListener('click', async function(e) {
+            const btn = e.target.closest('.poll-option-card');
+            if (!btn) return;
+            e.preventDefault();
+
+            const allowMultiple = (btn.dataset.allowMultiple === 'true');
+            const postId = btn.dataset.postId;
+            const optionId = btn.dataset.optionId;
+            const voteUrl = btn.dataset.voteUrl;
+            const csrfToken = getCookie('csrftoken') || '';
+            if (!postId || !optionId || !voteUrl) return;
+
+            if (allowMultiple) {
+                if (selected.has(optionId)) {
+                    selected.delete(optionId);
+                    btn.classList.remove('ring-2', 'ring-blue-500');
+                } else {
+                    selected.add(optionId);
+                    btn.classList.add('ring-2', 'ring-blue-500');
+                }
+                return;
+            }
+
+            try {
+                const postOptions = pollForm.querySelectorAll('.poll-option-card');
+                postOptions.forEach((b) => setDisabledForNode(b, true));
+                const { response, data } = await sendVote(voteUrl, [optionId], csrfToken);
+                if (response.ok && data.success) {
+                    updatePollUI(postId, data.results);
+                } else {
+                    if (response.status === 429) {
+                        showToast((data && data.error) ? data.error : 'Çok hızlısın.');
+                    } else {
+                        showToast((data && data.error) ? data.error : 'Bir hata oluştu.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error voting:', error);
+                showToast('Bir hata oluştu.');
+            } finally {
+                const postOptions = pollForm.querySelectorAll('.poll-option-card');
+                postOptions.forEach((b) => setDisabledForNode(b, false));
+            }
+        });
+
+        if (multiSubmit) {
+            multiSubmit.addEventListener('click', async function() {
+                const anyBtn = pollForm.querySelector('.poll-option-card[data-vote-url]');
+                if (!anyBtn) return;
+
+                const postId = anyBtn.dataset.postId;
+                const voteUrl = anyBtn.dataset.voteUrl;
+                const csrfToken = getCookie('csrftoken') || '';
+                const optionIds = Array.from(selected);
+
+                if (!optionIds.length) {
+                    showToast('En az bir seçenek seçmelisiniz.');
+                    return;
+                }
+
+                try {
+                    const postOptions = pollForm.querySelectorAll('.poll-option-card');
+                    postOptions.forEach((b) => setDisabledForNode(b, true));
+                    setDisabledForNode(multiSubmit, true);
+                    const { response, data } = await sendVote(voteUrl, optionIds, csrfToken);
+                    if (response.ok && data.success) {
+                        updatePollUI(postId, data.results);
+                        selected.clear();
+                        pollForm.querySelectorAll('.poll-option-card.ring-2').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
+                    } else {
+                        if (response.status === 429) {
+                            showToast((data && data.error) ? data.error : 'Çok hızlısın.');
+                        } else {
+                            showToast((data && data.error) ? data.error : 'Bir hata oluştu.');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error voting:', error);
+                    showToast('Bir hata oluştu.');
+                } finally {
+                    const postOptions = pollForm.querySelectorAll('.poll-option-card');
+                    postOptions.forEach((b) => setDisabledForNode(b, false));
+                    setDisabledForNode(multiSubmit, false);
+                }
+            });
+        }
+    }
+
+    const commentForm = document.getElementById('comment-form');
+    if (commentForm) {
+        commentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('{% url "add_comment" post.pk %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    }
+                });
+                
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Bir hata oluştu.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Bir hata oluştu.');
+            }
+        });
+    }
+
+    // Lightbox for post detail images
+    (function initLightbox() {
+        let isOpen = false;
+        let currentGroup = null;
+        let currentIndex = 0;
+        let groupItems = [];
+
+        function ensureModal() {
+            let modal = document.getElementById('lightbox-modal');
+            if (modal) return modal;
+
+            modal = document.createElement('div');
+            modal.id = 'lightbox-modal';
+            modal.className = 'hidden fixed inset-0 z-[60]';
+            modal.innerHTML = `
+                <div class="absolute inset-0 bg-black/75" data-lightbox-close></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative max-w-5xl w-full">
+                        <button type="button" class="absolute -top-12 right-0 text-white/90 hover:text-white text-sm font-semibold" data-lightbox-close>Kapat</button>
+                        <button type="button" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-10 text-white/90 hover:text-white text-3xl px-2" data-lightbox-prev aria-label="Önceki">‹</button>
+                        <button type="button" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 text-white/90 hover:text-white text-3xl px-2" data-lightbox-next aria-label="Sonraki">›</button>
+                        <img id="lightbox-image" src="" alt="" class="w-full max-h-[80vh] object-contain rounded-xl border border-white/10 bg-black" />
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        function openLightbox(group, index) {
+            const modal = ensureModal();
+            currentGroup = group;
+            groupItems = Array.from(document.querySelectorAll(`[data-lightbox-group="${CSS.escape(group)}"]`));
+            currentIndex = Math.max(0, Math.min(index, groupItems.length - 1));
+            const btn = groupItems[currentIndex];
+            const src = btn ? btn.getAttribute('data-lightbox-src') : null;
+            if (!src) return;
+            const img = document.getElementById('lightbox-image');
+            img.src = src;
+            modal.classList.remove('hidden');
+            isOpen = true;
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('lightbox-modal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            const img = document.getElementById('lightbox-image');
+            if (img) img.src = '';
+            isOpen = false;
+        }
+
+        function navigate(delta) {
+            if (!isOpen || !groupItems.length) return;
+            const next = (currentIndex + delta + groupItems.length) % groupItems.length;
+            openLightbox(currentGroup, next);
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-lightbox-src][data-lightbox-group]');
+            if (btn) {
+                const group = btn.getAttribute('data-lightbox-group');
+                const items = Array.from(document.querySelectorAll(`[data-lightbox-group="${CSS.escape(group)}"]`));
+                const idx = items.indexOf(btn);
+                openLightbox(group, idx);
+                return;
+            }
+
+            const closeBtn = e.target.closest('[data-lightbox-close]');
+            if (closeBtn) {
+                closeLightbox();
+                return;
+            }
+
+            const prevBtn = e.target.closest('[data-lightbox-prev]');
+            if (prevBtn) {
+                navigate(-1);
+                return;
+            }
+
+            const nextBtn = e.target.closest('[data-lightbox-next]');
+            if (nextBtn) {
+                navigate(1);
+                return;
+            }
+
+            const modal = document.getElementById('lightbox-modal');
+            if (isOpen && modal && modal.contains(e.target)) {
+                const img = document.getElementById('lightbox-image');
+                const clickedOnImage = img && img.contains(e.target);
+                const clickedOnControls = !!e.target.closest('[data-lightbox-prev],[data-lightbox-next],[data-lightbox-close]');
+                if (!clickedOnImage && !clickedOnControls) {
+                    closeLightbox();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!isOpen) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigate(-1);
+            if (e.key === 'ArrowRight') navigate(1);
+        });
+    })();
+</script>
+{% endblock %}

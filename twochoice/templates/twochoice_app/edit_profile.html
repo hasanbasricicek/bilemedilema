@@ -1,0 +1,626 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% load avatar_extras %}
+
+{% block title %}Profil Düzenle - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">Avatar Oluştur</h1>
+        <p class="text-sm text-[#666A73]">Duolingo tarzı avatar builder - kategorileri seç ve avatarını özelleştir.</p>
+    </div>
+
+    <form method="post" id="profile-form">
+        {% csrf_token %}
+        {{ form.avatar_mode.as_hidden }}
+        {{ form.avatar_preset.as_hidden }}
+        {{ form.avatar_config }}
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <!-- Sol Panel: Kategoriler ve Seçenekler -->
+            <div class="lg:col-span-3 bg-white border border-[#BFBFBF] rounded-2xl p-6">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-[#000000]">Özelleştir</h2>
+                        <button type="button" id="btn-randomize" class="px-4 py-2 bg-[#666A73] hover:bg-[#000000] text-white rounded-xl text-sm font-medium transition duration-200">
+                            🎲 Rastgele
+                        </button>
+                    </div>
+                    
+                    <!-- Kategori Sekmeleri -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button type="button" class="js-cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 bg-[#000000] text-white" data-cat="character">Karakter</button>
+                        <button type="button" class="js-cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 border border-[#BFBFBF] text-[#000000] hover:border-[#666A73]" data-cat="face">Yüz</button>
+                        <button type="button" class="js-cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 border border-[#BFBFBF] text-[#000000] hover:border-[#666A73]" data-cat="hair">Saç</button>
+                        <button type="button" class="js-cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 border border-[#BFBFBF] text-[#000000] hover:border-[#666A73]" data-cat="eyes">Göz</button>
+                        <button type="button" class="js-cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 border border-[#BFBFBF] text-[#000000] hover:border-[#666A73]" data-cat="mouth">Ağız</button>
+                        <button type="button" class="js-cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 border border-[#BFBFBF] text-[#000000] hover:border-[#666A73]" data-cat="facial">Sakal</button>
+                        <button type="button" class="js-cat-tab px-4 py-2 rounded-xl text-sm font-semibold transition duration-200 border border-[#BFBFBF] text-[#000000] hover:border-[#666A73]" data-cat="acc">Aksesuar</button>
+                    </div>
+                </div>
+
+                <!-- Karakter Kategorisi -->
+                <div class="js-cat-panel" data-cat="character">
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Karakter Tipi</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                        <button type="button" class="js-special-btn p-4 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-sm font-medium" data-special="cat">🐱 Kedi</button>
+                        <button type="button" class="js-special-btn p-4 rounded-xl border-2 border-[#000000] border-4 transition text-sm font-medium" data-special="none">👤 İnsan</button>
+                        <button type="button" class="js-special-btn p-4 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-sm font-medium" data-special="robot">🤖 Robot</button>
+                    </div>
+                    
+                    <div id="cat-type-section" class="hidden">
+                        <h3 class="text-sm font-semibold text-[#000000] mb-3 mt-4">Kedi Türü</h3>
+                        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition flex items-center justify-center bg-white" data-key="cat_type" data-val="orange" title="Turuncu">
+                                <svg viewBox="0 0 64 64" class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M18 28 L22 16 L28 24 Z" fill="#FF9500" stroke="#111827" stroke-width="1.5"/>
+                                    <path d="M46 28 L42 16 L36 24 Z" fill="#FF9500" stroke="#111827" stroke-width="1.5"/>
+                                    <circle cx="32" cy="36" r="18" fill="#FF9500" stroke="#111827" stroke-width="2"/>
+                                    <path d="M20 24 L23 18 L26 24" fill="#FFB84D"/>
+                                    <path d="M44 24 L41 18 L38 24" fill="#FFB84D"/>
+                                    <ellipse cx="32" cy="44" rx="10" ry="7" fill="#FFB84D" opacity="0.9"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition flex items-center justify-center bg-white" data-key="cat_type" data-val="black" title="Siyah">
+                                <svg viewBox="0 0 64 64" class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M18 28 L22 16 L28 24 Z" fill="#111827" stroke="#111827" stroke-width="1.5"/>
+                                    <path d="M46 28 L42 16 L36 24 Z" fill="#111827" stroke="#111827" stroke-width="1.5"/>
+                                    <circle cx="32" cy="36" r="18" fill="#111827" stroke="#111827" stroke-width="2"/>
+                                    <path d="M20 24 L23 18 L26 24" fill="#374151"/>
+                                    <path d="M44 24 L41 18 L38 24" fill="#374151"/>
+                                    <ellipse cx="32" cy="44" rx="10" ry="7" fill="#374151" opacity="0.9"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition flex items-center justify-center bg-white" data-key="cat_type" data-val="white" title="Beyaz">
+                                <svg viewBox="0 0 64 64" class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M18 28 L22 16 L28 24 Z" fill="#F9FAFB" stroke="#111827" stroke-width="1.5"/>
+                                    <path d="M46 28 L42 16 L36 24 Z" fill="#F9FAFB" stroke="#111827" stroke-width="1.5"/>
+                                    <circle cx="32" cy="36" r="18" fill="#F9FAFB" stroke="#111827" stroke-width="2"/>
+                                    <path d="M20 24 L23 18 L26 24" fill="#E5E7EB"/>
+                                    <path d="M44 24 L41 18 L38 24" fill="#E5E7EB"/>
+                                    <ellipse cx="32" cy="44" rx="10" ry="7" fill="#E5E7EB" opacity="0.9"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition flex items-center justify-center bg-white" data-key="cat_type" data-val="gray" title="Gri">
+                                <svg viewBox="0 0 64 64" class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M18 28 L22 16 L28 24 Z" fill="#6B7280" stroke="#111827" stroke-width="1.5"/>
+                                    <path d="M46 28 L42 16 L36 24 Z" fill="#6B7280" stroke="#111827" stroke-width="1.5"/>
+                                    <circle cx="32" cy="36" r="18" fill="#6B7280" stroke="#111827" stroke-width="2"/>
+                                    <path d="M20 24 L23 18 L26 24" fill="#9CA3AF"/>
+                                    <path d="M44 24 L41 18 L38 24" fill="#9CA3AF"/>
+                                    <ellipse cx="32" cy="44" rx="10" ry="7" fill="#9CA3AF" opacity="0.9"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition flex items-center justify-center bg-white" data-key="cat_type" data-val="calico" title="Calico">
+                                <svg viewBox="0 0 64 64" class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M18 28 L22 16 L28 24 Z" fill="#FF9500" stroke="#111827" stroke-width="1.5"/>
+                                    <path d="M46 28 L42 16 L36 24 Z" fill="#F9FAFB" stroke="#111827" stroke-width="1.5"/>
+                                    <circle cx="32" cy="36" r="18" fill="#FF9500" stroke="#111827" stroke-width="2"/>
+                                    <path d="M32 18 A18 18 0 0 1 50 36 A18 18 0 0 1 32 54 Z" fill="#F9FAFB" opacity="0.9"/>
+                                    <circle cx="24" cy="32" r="3" fill="#F9FAFB"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition flex items-center justify-center bg-white" data-key="cat_type" data-val="tuxedo" title="Gri-Beyaz">
+                                <svg viewBox="0 0 64 64" class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M18 28 L22 16 L28 24 Z" fill="#6B7280" stroke="#111827" stroke-width="1.5"/>
+                                    <path d="M46 28 L42 16 L36 24 Z" fill="#6B7280" stroke="#111827" stroke-width="1.5"/>
+                                    <circle cx="32" cy="36" r="18" fill="#6B7280" stroke="#111827" stroke-width="2"/>
+                                    <ellipse cx="32" cy="44" rx="11" ry="7" fill="#F9FAFB" opacity="0.95"/>
+                                    <ellipse cx="32" cy="50" rx="9" ry="6" fill="#F9FAFB" opacity="0.95"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <h3 class="text-sm font-semibold text-[#000000] mb-3">Göz Rengi</h3>
+                        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="cat_eye_color" data-val="green" style="background: #58D68D;" title="Yeşil"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="cat_eye_color" data-val="blue" style="background: #3B82F6;" title="Mavi"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="cat_eye_color" data-val="yellow" style="background: #FCD34D;" title="Sarı"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="cat_eye_color" data-val="orange" style="background: #F97316;" title="Turuncu"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="cat_eye_color" data-val="gray" style="background: #9CA3AF;" title="Gri"></button>
+                        </div>
+                    </div>
+
+                    <div id="robot-type-section" class="hidden">
+                        <h3 class="text-sm font-semibold text-[#000000] mb-3 mt-4">Robot Modeli</h3>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="robot_type" data-val="classic">Classic</button>
+                            <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="robot_type" data-val="round">Round</button>
+                            <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="robot_type" data-val="visor">Visor</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yüz Kategorisi -->
+                <div class="js-cat-panel hidden" data-cat="face">
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Arka Plan</h3>
+                    <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-4">
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="sand" style="background: #F5F5F0;" title="Kırık Beyaz"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="gray" style="background: #BFBFBF;" title="Gri"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="slate" style="background: #666A73;" title="Koyu Gri"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="black" style="background: #000000;" title="Siyah"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="blue" style="background: #0B5275;" title="Mavi"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="rust" style="background: #B33F00;" title="Kiremit"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="mint" style="background: #A7F3D0;" title="Nane"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="lavender" style="background: #DDD6FE;" title="Lavanta"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="bg" data-val="peach" style="background: #FED7AA;" title="Şeftali"></button>
+                    </div>
+                    <div id="human-face-controls">
+                        <h3 class="text-sm font-semibold text-[#000000] mb-3">Ten Rengi</h3>
+                        <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-4">
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="skin" data-val="none" style="background: #FFFFFF;" title="Yok"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="skin" data-val="pale" style="background: #FFE4D6;" title="Çok Açık"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="skin" data-val="light" style="background: #F2D6C1;" title="Açık"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="skin" data-val="tan" style="background: #E6BFA2;" title="Buğday"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="skin" data-val="olive" style="background: #D4B896;" title="Zeytin"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="skin" data-val="brown" style="background: #C98E6A;" title="Kahve"></button>
+                            <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="skin" data-val="dark" style="background: #8E5B3E;" title="Koyu"></button>
+                        </div>
+                        <h3 class="text-sm font-semibold text-[#000000] mb-3">Yüz Şekli</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="face_shape" data-val="default">Varsayılan</button>
+                            <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="face_shape" data-val="oval">Oval</button>
+                            <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="face_shape" data-val="square">Kare</button>
+                            <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="face_shape" data-val="round">Yuvarlak</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saç Kategorisi -->
+                <div class="js-cat-panel hidden" data-cat="hair">
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Saç Modeli</h3>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="none">Yok</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="short">Kısa</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="bob">Bob</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="pixie">Pixie</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="mohawk">Mohawk</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="long">Uzun</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="curly">Kıvırcık</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="wavy">Dalgalı</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="bun">Topuz</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="ponytail">At Kuyruğu</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="braids">Örgü</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="afro">Afro</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="hair" data-val="sidepart">Yan Ayrım</button>
+                    </div>
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Saç Rengi</h3>
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="hair_color" data-val="black" style="background: #111827;" title="Siyah"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="hair_color" data-val="brown" style="background: #78350F;" title="Kahve"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="hair_color" data-val="blonde" style="background: #FCD34D;" title="Sarı"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="hair_color" data-val="red" style="background: #DC2626;" title="Kızıl"></button>
+                        <button type="button" class="js-opt-btn h-12 rounded-lg border-2 border-[#BFBFBF] hover:border-[#000000] transition" data-key="hair_color" data-val="gray" style="background: #9CA3AF;" title="Gri"></button>
+                    </div>
+                </div>
+
+                <!-- Göz Kategorisi -->
+                <div class="js-cat-panel hidden" data-cat="eyes">
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Göz Şekli</h3>
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="eyes" data-val="dot">Nokta</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="eyes" data-val="happy">Mutlu</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="eyes" data-val="wink">Göz Kırp</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="eyes" data-val="closed">Kapalı</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="eyes" data-val="surprised">Şaşkın</button>
+                    </div>
+                </div>
+
+                <!-- Ağız Kategorisi -->
+                <div class="js-cat-panel hidden" data-cat="mouth">
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Ağız Şekli</h3>
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="mouth" data-val="smile">Gülümse</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="mouth" data-val="grin">Sırıt</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="mouth" data-val="open">Açık</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="mouth" data-val="flat">Düz</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="mouth" data-val="sad">Üzgün</button>
+                    </div>
+                </div>
+
+                <!-- Sakal Kategorisi -->
+                <div class="js-cat-panel hidden" data-cat="facial">
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Sakal / Bıyık</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="facial_hair" data-val="none">Yok</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="facial_hair" data-val="beard">Sakal</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="facial_hair" data-val="mustache">Bıyık</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="facial_hair" data-val="goatee">Keçi Sakalı</button>
+                    </div>
+                </div>
+
+                <!-- Aksesuar Kategorisi -->
+                <div class="js-cat-panel hidden" data-cat="acc">
+                    <h3 class="text-sm font-semibold text-[#000000] mb-3">Aksesuarlar</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="acc" data-val="none">Yok</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="acc" data-val="glasses">Gözlük</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="acc" data-val="sunglasses">Güneş Gözlüğü</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="acc" data-val="beanie">Bere</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="acc" data-val="earring">Küpe</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="acc" data-val="brow_piercing">Kaş Piercing</button>
+                        <button type="button" class="js-opt-btn p-3 rounded-xl border-2 border-[#BFBFBF] hover:border-[#000000] transition text-xs font-medium" data-key="acc" data-val="nose_piercing">Burun Piercing</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sağ Panel: Büyük Canlı Önizleme -->
+            <div class="lg:col-span-2">
+                <div class="bg-white border border-[#BFBFBF] rounded-2xl p-3 sticky top-6">
+                    <h2 class="text-base font-semibold text-[#000000] mb-2 text-center">Önizleme</h2>
+                    <div class="flex items-center justify-center mb-3">
+                        <div class="w-full min-h-[420px] flex items-center justify-center" id="custom-preview">
+                            {% avatar user 480 %}
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <button type="submit" class="w-full bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition duration-200">
+                            💾 Kaydet
+                        </button>
+                        <a href="{% url 'user_profile' request.user.username %}" class="block w-full text-center bg-white border border-[#BFBFBF] text-[#000000] px-4 py-2.5 rounded-xl text-sm font-medium hover:border-[#666A73] transition duration-200">
+                            İptal
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ builder_initial_config|json_script:"builder-initial-config" }}
+<script>
+    const modeInput = document.getElementById('id_avatar_mode');
+    const presetInput = document.getElementById('id_avatar_preset');
+    const configInput = document.getElementById('id_avatar_config');
+    const preview = document.getElementById('custom-preview');
+
+    // Builder screen always saves as custom.
+    if (modeInput) modeInput.value = 'custom';
+    if (presetInput) presetInput.value = '';
+
+    // Avatar config state
+    let avatarConfig = {
+        bg: 'sand',
+        skin: 'light',
+        hair: 'short',
+        hair_color: 'black',
+        eyes: 'dot',
+        mouth: 'smile',
+        facial_hair: 'none',
+        acc: 'none',
+        face_shape: 'default',
+        cat_type: 'orange',
+        cat_eye_color: 'green'
+    };
+
+    // Prefer server-provided initial config (always reflects saved avatar)
+    try {
+        const el = document.getElementById('builder-initial-config');
+        if (el && el.textContent) {
+            const serverCfg = JSON.parse(el.textContent);
+            avatarConfig = { ...avatarConfig, ...(serverCfg || {}) };
+        }
+    } catch (e) {}
+
+    // Fallback to hidden input value if present
+    try {
+        const existing = JSON.parse(configInput.value || '{}');
+        avatarConfig = { ...avatarConfig, ...existing };
+    } catch (e) {}
+
+    function saveConfig() {
+        configInput.value = JSON.stringify(avatarConfig);
+    }
+
+    let _previewTimer = null;
+    let _previewAbort = null;
+
+    function requestPreviewRefresh() {
+        if (_previewTimer) window.clearTimeout(_previewTimer);
+        _previewTimer = window.setTimeout(() => {
+            refreshPreview();
+        }, 180);
+    }
+
+    async function refreshPreview() {
+        if (!preview) return;
+        try {
+            const baseUrl = '{% url "avatar_preview" %}';
+            const box = preview;
+            const measured = Math.max(box.clientWidth || 0, (box.parentElement && box.parentElement.clientWidth) || 0);
+            const targetSize = Math.max(320, Math.min(900, Math.floor(measured || 640)));
+
+            if (_previewAbort) {
+                try { _previewAbort.abort(); } catch (e) {}
+            }
+            _previewAbort = new AbortController();
+
+            const res = await fetch(`${baseUrl}?size=${encodeURIComponent(targetSize)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || ''
+                },
+                body: JSON.stringify(avatarConfig),
+                signal: _previewAbort.signal
+            });
+            if (res.ok) {
+                const svg = await res.text();
+                preview.innerHTML = svg;
+                const svgEl = preview.querySelector('svg');
+                if (svgEl) {
+                    svgEl.setAttribute('width', String(targetSize));
+                    svgEl.setAttribute('height', String(targetSize));
+                }
+            }
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            console.error('Preview error:', e);
+        }
+    }
+
+    function _setSelectedForKey(key, val) {
+        const buttons = document.querySelectorAll(`[data-key="${key}"]`);
+        if (!buttons || buttons.length === 0) return;
+
+        buttons.forEach(btn => {
+            btn.classList.remove('border-[#000000]', 'border-4');
+            btn.classList.add('border-[#BFBFBF]', 'border-2');
+        });
+
+        const selected = document.querySelector(`[data-key="${key}"][data-val="${val}"]`);
+        if (selected) {
+            selected.classList.remove('border-[#BFBFBF]', 'border-2');
+            selected.classList.add('border-[#000000]', 'border-4');
+        }
+    }
+
+    function applyConfigToUI() {
+        // Special character buttons
+        const specialVal = avatarConfig.robot === true ? 'robot' : (avatarConfig.cat === true ? 'cat' : 'none');
+        document.querySelectorAll('.js-special-btn').forEach(btn => {
+            btn.classList.remove('border-[#000000]', 'border-4');
+            btn.classList.add('border-[#BFBFBF]', 'border-2');
+        });
+        const selectedSpecial = document.querySelector(`.js-special-btn[data-special="${specialVal}"]`);
+        if (selectedSpecial) {
+            selectedSpecial.classList.remove('border-[#BFBFBF]', 'border-2');
+            selectedSpecial.classList.add('border-[#000000]', 'border-4');
+        }
+
+        // Option buttons
+        _setSelectedForKey('bg', avatarConfig.bg);
+        _setSelectedForKey('skin', avatarConfig.skin);
+        _setSelectedForKey('face_shape', avatarConfig.face_shape);
+        _setSelectedForKey('hair', avatarConfig.hair);
+        _setSelectedForKey('hair_color', avatarConfig.hair_color);
+        _setSelectedForKey('eyes', avatarConfig.eyes);
+        _setSelectedForKey('mouth', avatarConfig.mouth);
+        _setSelectedForKey('facial_hair', avatarConfig.facial_hair);
+        _setSelectedForKey('acc', avatarConfig.acc);
+        _setSelectedForKey('cat_type', avatarConfig.cat_type);
+        _setSelectedForKey('cat_eye_color', avatarConfig.cat_eye_color);
+        _setSelectedForKey('robot_type', avatarConfig.robot_type);
+    }
+
+    // Category tab switching
+    document.querySelectorAll('.js-cat-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const cat = tab.dataset.cat;
+            
+            // Update tab styles
+            document.querySelectorAll('.js-cat-tab').forEach(t => {
+                t.classList.remove('bg-[#000000]', 'text-white');
+                t.classList.add('border', 'border-[#BFBFBF]', 'text-[#000000]');
+            });
+            tab.classList.add('bg-[#000000]', 'text-white');
+            tab.classList.remove('border', 'border-[#BFBFBF]');
+            
+            // Show/hide panels
+            document.querySelectorAll('.js-cat-panel').forEach(panel => {
+                if (panel.dataset.cat === cat) {
+                    panel.classList.remove('hidden');
+                } else {
+                    panel.classList.add('hidden');
+                }
+            });
+        });
+    });
+
+    // Option button clicks
+    document.querySelectorAll('.js-opt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            const val = btn.dataset.val;
+            avatarConfig[key] = val;
+            saveConfig();
+            requestPreviewRefresh();
+            
+            // Visual feedback
+            const siblings = document.querySelectorAll(`[data-key="${key}"]`);
+            siblings.forEach(s => {
+                s.classList.remove('border-[#000000]', 'border-4');
+                s.classList.add('border-[#BFBFBF]', 'border-2');
+            });
+            btn.classList.remove('border-[#BFBFBF]', 'border-2');
+            btn.classList.add('border-[#000000]', 'border-4');
+        });
+    });
+
+    // Function to hide/show options based on character type
+    function updateOptionsAvailability() {
+        const isRobot = avatarConfig.robot === true;
+        const isCat = avatarConfig.cat === true;
+
+        const humanFaceControls = document.getElementById('human-face-controls');
+        if (humanFaceControls) {
+            if (isCat || isRobot) {
+                humanFaceControls.classList.add('hidden');
+            } else {
+                humanFaceControls.classList.remove('hidden');
+            }
+        }
+        
+        // Show/hide cat type selector
+        const catTypeSection = document.getElementById('cat-type-section');
+        if (catTypeSection) {
+            if (isCat) {
+                catTypeSection.classList.remove('hidden');
+            } else {
+                catTypeSection.classList.add('hidden');
+            }
+        }
+
+        const robotTypeSection = document.getElementById('robot-type-section');
+        if (robotTypeSection) {
+            if (isRobot) {
+                robotTypeSection.classList.remove('hidden');
+            } else {
+                robotTypeSection.classList.add('hidden');
+            }
+        }
+        
+        // For robot and cat: hide hair, eyes, mouth, facial tabs completely
+        // For normal: show everything
+        
+        const hideTabs = (isRobot || isCat) ? ['hair', 'eyes', 'mouth', 'facial'] : [];
+        
+        // Hide/show category tabs
+        document.querySelectorAll('.js-cat-tab').forEach(tab => {
+            const cat = tab.dataset.cat;
+            if (hideTabs.includes(cat)) {
+                tab.classList.add('hidden');
+            } else {
+                tab.classList.remove('hidden');
+            }
+        });
+        
+        // If current visible panel is hidden, switch to 'face' or 'character'
+        const visiblePanel = document.querySelector('.js-cat-panel:not(.hidden)');
+        if (!visiblePanel || (visiblePanel.dataset.cat && hideTabs.includes(visiblePanel.dataset.cat))) {
+            // Hide all panels
+            document.querySelectorAll('.js-cat-panel').forEach(p => p.classList.add('hidden'));
+            // Show face panel
+            const facePanel = document.querySelector('.js-cat-panel[data-cat="face"]');
+            if (facePanel) facePanel.classList.remove('hidden');
+            
+            // Update tab styles
+            document.querySelectorAll('.js-cat-tab').forEach(t => {
+                t.classList.remove('bg-[#000000]', 'text-white');
+                t.classList.add('border', 'border-[#BFBFBF]', 'text-[#000000]');
+            });
+            const faceTab = document.querySelector('.js-cat-tab[data-cat="face"]');
+            if (faceTab) {
+                faceTab.classList.add('bg-[#000000]', 'text-white');
+                faceTab.classList.remove('border', 'border-[#BFBFBF]');
+            }
+        }
+    }
+
+    // Special character buttons (robot, cat, normal)
+    document.querySelectorAll('.js-special-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const special = btn.dataset.special;
+            
+            // Clear all special flags
+            delete avatarConfig.robot;
+            delete avatarConfig.cat;
+            delete avatarConfig.robot_type;
+            
+            // Set new special flag
+            if (special === 'robot') {
+                avatarConfig.robot = true;
+                avatarConfig.robot_type = avatarConfig.robot_type || 'classic';
+            } else if (special === 'cat') {
+                avatarConfig.cat = true;
+            }
+            
+            saveConfig();
+            applyConfigToUI();
+            updateOptionsAvailability();
+            requestPreviewRefresh();
+            
+            // Visual feedback
+            document.querySelectorAll('.js-special-btn').forEach(s => {
+                s.classList.remove('border-[#000000]', 'border-4');
+                s.classList.add('border-[#BFBFBF]', 'border-2');
+            });
+            btn.classList.remove('border-[#BFBFBF]', 'border-2');
+            btn.classList.add('border-[#000000]', 'border-4');
+        });
+    });
+
+    // Randomize button
+    document.getElementById('btn-randomize')?.addEventListener('click', () => {
+        const bgs = ['sand', 'gray', 'slate', 'black', 'blue', 'rust', 'mint', 'lavender', 'peach'];
+        const skins = ['none', 'pale', 'light', 'tan', 'olive', 'brown', 'dark'];
+        const hairs = ['none', 'short', 'bob', 'pixie', 'mohawk', 'long', 'curly', 'wavy', 'bun', 'ponytail', 'braids', 'afro', 'sidepart'];
+        const hairColors = ['black', 'brown', 'blonde', 'red', 'gray'];
+        const eyes = ['dot', 'happy', 'wink', 'closed', 'surprised'];
+        const mouths = ['smile', 'grin', 'open', 'flat', 'sad'];
+        const facialHairs = ['none', 'beard', 'mustache', 'goatee'];
+        const accs = ['none', 'glasses', 'sunglasses', 'beanie', 'earring', 'brow_piercing', 'nose_piercing'];
+        const faceShapes = ['default', 'oval', 'square', 'round'];
+        const catTypes = ['orange', 'black', 'white', 'gray', 'calico', 'tuxedo'];
+        const catEyeColors = ['green', 'blue', 'yellow', 'orange', 'gray'];
+        const robotTypes = ['classic', 'round', 'visor'];
+        
+        const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+
+        // Weighted character type: 70% normal, 15% cat, 15% robot
+        const roll = Math.random();
+        const characterType = roll < 0.15 ? 'cat' : (roll < 0.30 ? 'robot' : 'none');
+        
+        avatarConfig = {
+            bg: rand(bgs),
+            skin: rand(skins),
+            hair: rand(hairs),
+            hair_color: rand(hairColors),
+            eyes: rand(eyes),
+            mouth: rand(mouths),
+            facial_hair: rand(facialHairs),
+            acc: rand(accs),
+            face_shape: rand(faceShapes)
+        };
+
+        // Clear special flags then apply
+        delete avatarConfig.robot;
+        delete avatarConfig.cat;
+
+        if (characterType === 'cat') {
+            avatarConfig.cat = true;
+            avatarConfig.cat_type = rand(catTypes);
+            avatarConfig.cat_eye_color = rand(catEyeColors);
+            // Cat doesn't use human skin/face shape visually; keep config stable
+            avatarConfig.skin = 'none';
+            avatarConfig.face_shape = 'default';
+            avatarConfig.hair = 'none';
+            avatarConfig.facial_hair = 'none';
+        } else if (characterType === 'robot') {
+            avatarConfig.robot = true;
+            avatarConfig.robot_type = rand(robotTypes);
+            // Robot ignores most facial features; keep config stable
+            avatarConfig.skin = 'none';
+            avatarConfig.face_shape = 'default';
+            avatarConfig.hair = 'none';
+            avatarConfig.facial_hair = 'none';
+        }
+        
+        saveConfig();
+        applyConfigToUI();
+        updateOptionsAvailability();
+        requestPreviewRefresh();
+    });
+
+    // Initial preview
+    saveConfig();
+    applyConfigToUI();
+    updateOptionsAvailability();
+    requestPreviewRefresh();
+</script>
+{% endblock %}

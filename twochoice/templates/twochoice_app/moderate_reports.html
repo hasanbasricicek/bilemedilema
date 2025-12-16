@@ -1,0 +1,99 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Rapor Moderasyonu - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">Rapor Moderasyonu</h1>
+    <p class="text-sm text-[#666A73]">Raporları durumuna göre görüntüleyin ve işlem yapın.</p>
+</div>
+
+<div class="mb-6">
+    <div class="inline-flex rounded-xl border border-[#BFBFBF] bg-white overflow-hidden">
+        <a href="{% url 'moderate_reports' %}?tab=pending" class="px-4 py-2 text-sm font-semibold transition duration-200 {% if active_tab == 'pending' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">
+            Bekleyen ({{ counts.pending }})
+        </a>
+        <a href="{% url 'moderate_reports' %}?tab=approved" class="px-4 py-2 text-sm font-semibold transition duration-200 border-l border-[#BFBFBF] {% if active_tab == 'approved' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">
+            Onaylanan ({{ counts.approved }})
+        </a>
+        <a href="{% url 'moderate_reports' %}?tab=rejected" class="px-4 py-2 text-sm font-semibold transition duration-200 border-l border-[#BFBFBF] {% if active_tab == 'rejected' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">
+            Reddedilen ({{ counts.rejected }})
+        </a>
+    </div>
+</div>
+
+<div class="space-y-6">
+    {% for report in reports %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#000000] bg-white">
+                            {{ report.get_report_type_display }}
+                        </span>
+                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#000000] bg-white">
+                            {{ report.get_content_type_display }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-[#666A73]">
+                        <span class="font-semibold text-[#000000]">Raporlayan:</span> {{ report.reporter.username }}
+                        <span class="mx-1">|</span>
+                        <span class="font-semibold text-[#000000]">Tarih:</span> {{ report.created_at|date:"d.m.Y H:i" }}
+                    </p>
+                </div>
+
+                {% if report.status == 'pending' %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#666A73] bg-white">Beklemede</span>
+                {% elif report.status == 'dismissed' %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#B33F00] text-[#B33F00] bg-[#B33F00]/10">Reddedildi</span>
+                {% else %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#0B5275] text-[#0B5275] bg-[#0B5275]/10">Onaylandı</span>
+                {% endif %}
+            </div>
+
+            <div class="bg-[#BFBFBF]/20 rounded-xl p-4 mb-4">
+                <p class="font-semibold text-[#000000] text-sm mb-2">Rapor Açıklaması</p>
+                <p class="text-sm text-[#666A73]">{{ report.description }}</p>
+            </div>
+
+            {% if report.reported_post %}
+                <div class="bg-white rounded-xl border border-[#BFBFBF] p-4 mb-4">
+                    <p class="font-semibold text-[#000000] text-sm mb-2">Raporlanan Gönderi</p>
+                    <p class="text-sm text-[#666A73]"><span class="font-semibold text-[#000000]">Başlık:</span> {{ report.reported_post.title }}</p>
+                    <p class="text-sm text-[#666A73]"><span class="font-semibold text-[#000000]">Yazar:</span> {{ report.reported_post.author.username }}</p>
+                </div>
+            {% elif report.reported_comment %}
+                <div class="bg-white rounded-xl border border-[#BFBFBF] p-4 mb-4">
+                    <p class="font-semibold text-[#000000] text-sm mb-2">Raporlanan Yorum</p>
+                    <p class="text-sm text-[#666A73]">{{ report.reported_comment.content|truncatewords:30 }}</p>
+                    <p class="text-sm text-[#666A73]"><span class="font-semibold text-[#000000]">Yazar:</span> {{ report.reported_comment.author.username }}</p>
+                </div>
+            {% elif report.reported_user %}
+                <div class="bg-white rounded-xl border border-[#BFBFBF] p-4 mb-4">
+                    <p class="font-semibold text-[#000000] text-sm mb-2">Raporlanan Kullanıcı</p>
+                    <p class="text-sm text-[#666A73]"><span class="font-semibold text-[#000000]">Kullanıcı Adı:</span> {{ report.reported_user.username }}</p>
+                </div>
+            {% endif %}
+
+            <div class="flex items-center justify-end pt-4 border-t border-[#BFBFBF]">
+                <a href="{% url 'handle_report' report.pk %}?next={{ next_url|urlencode }}" class="bg-[#666A73] hover:bg-[#000000] text-white px-5 py-2 rounded-xl transition duration-200 text-sm font-medium">
+                    İşlem Yap
+                </a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-12 text-center">
+            {% if active_tab == 'pending' %}
+                <h3 class="text-xl font-semibold text-[#000000] mb-2">Bekleyen rapor yok</h3>
+                <p class="text-sm text-[#666A73]">İnceleme bekleyen rapor bulunmuyor.</p>
+            {% elif active_tab == 'approved' %}
+                <h3 class="text-xl font-semibold text-[#000000] mb-2">Onaylanan rapor yok</h3>
+                <p class="text-sm text-[#666A73]">İşlem yapılmış rapor bulunmuyor.</p>
+            {% else %}
+                <h3 class="text-xl font-semibold text-[#000000] mb-2">Reddedilen rapor yok</h3>
+                <p class="text-sm text-[#666A73]">Reddedilmiş rapor bulunmuyor.</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

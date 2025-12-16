@@ -1,0 +1,108 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Bildirimler - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex items-start justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight">Bildirimler</h1>
+            <p class="text-sm text-[#666A73] mt-1">Okunmamış bildirimlerini takip et.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <form method="post" action="{% url 'mark_all_notifications_read' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'notifications' %}">
+                <button type="submit" class="px-3 py-2 rounded-xl text-sm bg-[#666A73] hover:bg-[#000000] text-white font-medium transition duration-200">Hepsini Okundu</button>
+            </form>
+            <form method="post" action="{% url 'clear_read_notifications' %}" onsubmit="return confirm('Okunan bildirimler temizlensin mi?');">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'notifications' %}">
+                <button type="submit" class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73] text-[#000000] bg-white font-medium transition duration-200">Okunanları Temizle</button>
+            </form>
+            <div class="text-sm text-[#666A73]">Sayfa {{ notifications.number }} / {{ notifications.paginator.num_pages }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white border border-[#BFBFBF] rounded-2xl overflow-hidden">
+        <div class="divide-y divide-[#BFBFBF]">
+            {% for item in notifications %}
+                {% if item.type == 'grouped' and item.post %}
+                    <a href="{% url 'post_detail' item.post.pk %}" class="block p-4 sm:p-5 hover:bg-[#F8F9F6] transition duration-200 {% if not item.is_read %}bg-[#F8F9F6]{% endif %}">
+                        <div class="text-sm text-[#000000]">
+                            {% with actors=item.actors %}
+                                {% if actors|length == 1 %}
+                                    <span class="font-semibold">{{ actors.0.username }}</span>
+                                {% elif actors|length == 2 %}
+                                    <span class="font-semibold">{{ actors.0.username }}</span> ve <span class="font-semibold">{{ actors.1.username }}</span>
+                                {% elif actors|length == 3 %}
+                                    <span class="font-semibold">{{ actors.0.username }}</span>, <span class="font-semibold">{{ actors.1.username }}</span> ve <span class="font-semibold">{{ actors.2.username }}</span>
+                                {% else %}
+                                    <span class="font-semibold">{{ actors.0.username }}</span>, <span class="font-semibold">{{ actors.1.username }}</span>, <span class="font-semibold">{{ actors.2.username }}</span> ve diğer {{ actors|length|add:"-3" }} kişi
+                                {% endif %}
+                            {% endwith %}
+                            <span class="text-[#000000]">
+                                {% if item.action == 'vote' %}
+                                    anketinize oy verdi
+                                {% else %}
+                                    gönderinize yorum yaptı
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500">{{ item.created_at|date:"d.m.Y H:i" }}</div>
+                    </a>
+                {% elif item.type == 'single' and item.notification.post %}
+                    <a href="{% url 'post_detail' item.notification.post.pk %}" class="block p-4 sm:p-5 hover:bg-[#F8F9F6] transition duration-200 {% if not item.is_read %}bg-[#F8F9F6]{% endif %}">
+                        <div class="text-sm text-[#000000]">
+                            {% if item.notification.verb|slice:":1" == '"' %}
+                                <span class="text-[#000000]">{{ item.notification.verb }}</span>
+                            {% else %}
+                                {% if item.notification.actor %}
+                                    <span class="font-semibold">{{ item.notification.actor.username }}</span>
+                                {% else %}
+                                    <span class="font-semibold">Sistem</span>
+                                {% endif %}
+                                <span class="text-[#000000]">{{ item.notification.verb }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500">{{ item.created_at|date:"d.m.Y H:i" }}</div>
+                    </a>
+                {% else %}
+                    <div class="p-4 sm:p-5 {% if not item.is_read %}bg-[#F8F9F6]{% endif %}">
+                        <div class="text-sm text-[#000000]">
+                            {% if item.type == 'single' %}
+                                {% if item.notification.verb|slice:":1" == '"' %}
+                                    <span class="text-[#000000]">{{ item.notification.verb }}</span>
+                                {% else %}
+                                    {% if item.notification.actor %}
+                                        <span class="font-semibold">{{ item.notification.actor.username }}</span>
+                                    {% else %}
+                                        <span class="font-semibold">Sistem</span>
+                                    {% endif %}
+                                    <span class="text-[#000000]">{{ item.notification.verb }}</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500">{{ item.created_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="p-10 text-center text-sm text-[#666A73]">Henüz bildirim yok.</div>
+            {% endfor %}
+        </div>
+
+        <div class="px-4 py-3 bg-white border-t border-[#BFBFBF] flex items-center justify-between">
+            <div class="text-sm text-[#666A73]">
+                {% if notifications.has_previous %}
+                    <a class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73]" href="?page={{ notifications.previous_page_number }}">Önceki</a>
+                {% endif %}
+            </div>
+            <div class="text-sm text-[#666A73]">
+                {% if notifications.has_next %}
+                    <a class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73]" href="?page={{ notifications.next_page_number }}">Sonraki</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

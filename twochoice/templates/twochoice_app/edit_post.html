@@ -1,0 +1,91 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Gönderiyi Düzenle - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Gönderiyi Düzenle</h2>
+            <p class="text-gray-600">Düzenleme sonrası gönderin tekrar moderatör onayına gönderilecek.</p>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.title.label }}
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.content.label }}
+                </label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.content.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.post_type.label }}
+                </label>
+                {{ form.post_type }}
+                {% if form.post_type.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.post_type.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div id="poll-options-container" class="{% if post.post_type == 'comment_only' %}hidden{% endif %}">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Anket Seçenekleri
+                </label>
+                {{ form.poll_options }}
+                {% if form.poll_options.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.poll_options.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">{{ form.poll_options.help_text }}</p>
+
+                <div class="mt-4 flex items-center">
+                    {{ form.allow_multiple_choices }}
+                    <label class="ml-2 text-sm text-gray-700">
+                        {{ form.allow_multiple_choices.label }}
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-6 border-t">
+                <a href="{% url 'post_detail' post.pk %}" class="text-gray-600 hover:text-gray-800 transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>İptal
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 flex items-center space-x-2">
+                    <i class="fas fa-save"></i>
+                    <span>Kaydet</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const postTypeSelect = document.getElementById('id_post_type');
+    const pollOptionsContainer = document.getElementById('poll-options-container');
+
+    postTypeSelect.addEventListener('change', function() {
+        if (this.value === 'poll_only' || this.value === 'both') {
+            pollOptionsContainer.classList.remove('hidden');
+        } else {
+            pollOptionsContainer.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

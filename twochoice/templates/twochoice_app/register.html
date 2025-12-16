@@ -1,0 +1,46 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Kayıt Ol - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm p-8">
+        <div class="text-center mb-8">
+            <i class="fas fa-user-plus text-5xl text-[#666A73] mb-4"></i>
+            <h2 class="text-3xl font-bold text-[#000000] mb-2">bilemedilema'ya Hoş Geldin</h2>
+            <p class="text-[#666A73] mt-2">bilemedilema topluluğuna katıl</p>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div>
+                    <label class="block text-sm font-medium text-[#000000] mb-2">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="mt-1 text-sm text-[#B33F00]">{{ field.errors.0 }}</p>
+                    {% endif %}
+                    {% if field.help_text %}
+                        <p class="mt-1 text-sm text-[#666A73]">{{ field.help_text }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="w-full bg-[#666A73] hover:bg-[#000000] text-white font-semibold py-3 rounded-xl transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fas fa-user-plus"></i>
+                <span>Kayıt Ol</span>
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            <p class="text-[#666A73]">
+                Zaten hesabın var mı? 
+                <a href="{% url 'login' %}" class="text-[#666A73] hover:text-[#000000] font-semibold">Giriş Yap</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

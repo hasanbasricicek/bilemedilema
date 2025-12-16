@@ -1,0 +1,495 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Ana Sayfa - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-start justify-between gap-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">Ana Sayfa</h1>
+            <p class="text-sm text-[#666A73]">Anketleri görüntüle, sonuçları gör, yorum için detaya git.</p>
+        </div>
+
+        <div class="hidden sm:block">
+            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-[#BFBFBF] bg-white text-[#000000]">
+                Keşfet
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="mb-6">
+    <div class="bg-white border border-[#BFBFBF] rounded-xl p-4 flex flex-col gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <span class="text-xs font-semibold uppercase tracking-wide text-[#666A73]">Sırala</span>
+            <div class="inline-flex rounded-xl border border-[#BFBFBF] overflow-hidden bg-white">
+                <a href="?sort=new{% if selected_topic %}&topic={{ selected_topic }}{% endif %}" class="px-4 py-2 text-sm font-semibold transition duration-200 {% if selected_sort == 'new' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">Yeni</a>
+                <a href="?sort=popular{% if selected_topic %}&topic={{ selected_topic }}{% endif %}" class="px-4 py-2 text-sm font-semibold transition duration-200 {% if selected_sort == 'popular' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">Popüler</a>
+                <a href="?sort=trend{% if selected_topic %}&topic={{ selected_topic }}{% endif %}" class="px-4 py-2 text-sm font-semibold transition duration-200 border-l border-[#BFBFBF] {% if selected_sort == 'trend' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">Trend</a>
+            </div>
+        </div>
+
+        <form method="get" class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <input type="hidden" name="sort" value="{{ selected_sort }}">
+            <label for="topic" class="text-xs font-semibold uppercase tracking-wide text-[#666A73]">Konu</label>
+            <select id="topic" name="topic" class="w-full sm:w-72 px-3 py-2 border border-[#BFBFBF] rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]" onchange="this.form.submit()">
+                <option value="" {% if not selected_topic %}selected{% endif %}>Tümü</option>
+                {% for key, label in topics %}
+                    <option value="{{ key }}" {% if selected_topic == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            {% if selected_topic %}
+                <a href="?sort={{ selected_sort }}" class="text-sm font-medium text-[#000000] hover:text-[#666A73] transition duration-200">
+                    Filtreyi temizle
+                </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div id="posts-container" class="space-y-6">
+    {% include 'twochoice_app/partials/post_list.html' %}
+</div>
+
+<div id="loading" class="hidden text-center py-8">
+    <div class="space-y-4" aria-label="Yükleniyor">
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-5">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-9 h-9 rounded-full bg-[#BFBFBF]/40 animate-pulse"></div>
+                <div class="flex-1">
+                    <div class="h-3 w-32 bg-[#BFBFBF]/40 rounded animate-pulse"></div>
+                    <div class="h-3 w-24 bg-[#BFBFBF]/30 rounded mt-2 animate-pulse"></div>
+                </div>
+            </div>
+            <div class="h-4 w-2/3 bg-[#BFBFBF]/40 rounded animate-pulse"></div>
+            <div class="h-3 w-full bg-[#BFBFBF]/25 rounded mt-3 animate-pulse"></div>
+            <div class="h-3 w-5/6 bg-[#BFBFBF]/25 rounded mt-2 animate-pulse"></div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <div class="h-16 bg-[#BFBFBF]/25 rounded-xl animate-pulse"></div>
+                <div class="h-16 bg-[#BFBFBF]/25 rounded-xl animate-pulse"></div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-5">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-9 h-9 rounded-full bg-[#BFBFBF]/40 animate-pulse"></div>
+                <div class="flex-1">
+                    <div class="h-3 w-28 bg-[#BFBFBF]/40 rounded animate-pulse"></div>
+                    <div class="h-3 w-20 bg-[#BFBFBF]/30 rounded mt-2 animate-pulse"></div>
+                </div>
+            </div>
+            <div class="h-4 w-1/2 bg-[#BFBFBF]/40 rounded animate-pulse"></div>
+            <div class="h-3 w-full bg-[#BFBFBF]/25 rounded mt-3 animate-pulse"></div>
+            <div class="h-3 w-4/5 bg-[#BFBFBF]/25 rounded mt-2 animate-pulse"></div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <div class="h-16 bg-[#BFBFBF]/25 rounded-xl animate-pulse"></div>
+                <div class="h-16 bg-[#BFBFBF]/25 rounded-xl animate-pulse"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="no-more-posts" class="hidden text-center py-8">
+    <p class="text-[#666A73]">Daha fazla gönderi yok.</p>
+</div>
+
+<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+    <div id="toast-inner" class="bg-[#666A73] text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg border border-[#000000]"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let page = 2;
+    let loading = false;
+    let hasMore = {{ posts.has_next|lower }};
+    const isAuthenticated = {{ user.is_authenticated|lower }};
+    const selectedTopic = "{{ selected_topic|default:'' }}";
+    const selectedSort = "{{ selected_sort|default:'new' }}";
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    // Lightbox for post images
+    (function initLightbox() {
+        let isOpen = false;
+        let currentGroup = null;
+        let currentIndex = 0;
+        let groupItems = [];
+
+        function ensureModal() {
+            let modal = document.getElementById('lightbox-modal');
+            if (modal) return modal;
+
+            modal = document.createElement('div');
+            modal.id = 'lightbox-modal';
+            modal.className = 'hidden fixed inset-0 z-[60]';
+            modal.innerHTML = `
+                <div class="absolute inset-0 bg-black/75" data-lightbox-close></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative max-w-5xl w-full">
+                        <button type="button" class="absolute -top-12 right-0 text-white/90 hover:text-white text-sm font-semibold" data-lightbox-close>Kapat</button>
+                        <button type="button" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-10 text-white/90 hover:text-white text-3xl px-2" data-lightbox-prev aria-label="Önceki">‹</button>
+                        <button type="button" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 text-white/90 hover:text-white text-3xl px-2" data-lightbox-next aria-label="Sonraki">›</button>
+                        <img id="lightbox-image" src="" alt="" class="w-full max-h-[80vh] object-contain rounded-xl border border-white/10 bg-black" />
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            return modal;
+        }
+
+        function openLightbox(group, index) {
+            const modal = ensureModal();
+            currentGroup = group;
+            groupItems = Array.from(document.querySelectorAll(`[data-lightbox-group="${CSS.escape(group)}"]`));
+            currentIndex = Math.max(0, Math.min(index, groupItems.length - 1));
+            const btn = groupItems[currentIndex];
+            const src = btn ? btn.getAttribute('data-lightbox-src') : null;
+            if (!src) return;
+            const img = document.getElementById('lightbox-image');
+            img.src = src;
+            modal.classList.remove('hidden');
+            isOpen = true;
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('lightbox-modal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            const img = document.getElementById('lightbox-image');
+            if (img) img.src = '';
+            isOpen = false;
+        }
+
+        function navigate(delta) {
+            if (!isOpen || !groupItems.length) return;
+            const next = (currentIndex + delta + groupItems.length) % groupItems.length;
+            openLightbox(currentGroup, next);
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-lightbox-src][data-lightbox-group]');
+            if (btn) {
+                const group = btn.getAttribute('data-lightbox-group');
+                const items = Array.from(document.querySelectorAll(`[data-lightbox-group="${CSS.escape(group)}"]`));
+                const idx = items.indexOf(btn);
+                openLightbox(group, idx);
+                return;
+            }
+
+            const closeBtn = e.target.closest('[data-lightbox-close]');
+            if (closeBtn) {
+                closeLightbox();
+                return;
+            }
+
+            const prevBtn = e.target.closest('[data-lightbox-prev]');
+            if (prevBtn) {
+                navigate(-1);
+                return;
+            }
+
+            const nextBtn = e.target.closest('[data-lightbox-next]');
+            if (nextBtn) {
+                navigate(1);
+                return;
+            }
+
+            const modal = document.getElementById('lightbox-modal');
+            if (isOpen && modal && modal.contains(e.target)) {
+                const img = document.getElementById('lightbox-image');
+                const clickedOnImage = img && img.contains(e.target);
+                const clickedOnControls = !!e.target.closest('[data-lightbox-prev],[data-lightbox-next],[data-lightbox-close]');
+                if (!clickedOnImage && !clickedOnControls) {
+                    closeLightbox();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!isOpen) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigate(-1);
+            if (e.key === 'ArrowRight') navigate(1);
+        });
+    })();
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const inner = document.getElementById('toast-inner');
+        if (!toast || !inner) return;
+        inner.textContent = message;
+        toast.classList.remove('hidden');
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 2200);
+    }
+
+    function setDisabledForNode(node, disabled) {
+        if (!node) return;
+        node.disabled = disabled;
+        if (disabled) {
+            node.classList.add('opacity-60', 'cursor-not-allowed');
+        } else {
+            node.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+    }
+
+    function updatePollUI(postId, results) {
+        const cards = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
+        if (!cards.length) return;
+
+        const byOptionId = new Map(results.map(r => [String(r.option_id), r]));
+        let totalVotes = 0;
+
+        cards.forEach(card => {
+            const optionId = card.dataset.optionId;
+            const r = byOptionId.get(String(optionId));
+            if (!r) return;
+
+            totalVotes += Number(r.vote_count || 0);
+
+            const percentEl = card.querySelector('.js-option-percent');
+            const votesEl = card.querySelector('.js-option-votes');
+            const barEl = card.querySelector('.js-option-bar');
+            if (percentEl) percentEl.textContent = `${Math.round(r.percentage)}%`;
+            if (votesEl) votesEl.textContent = `${r.vote_count} oy`;
+            if (barEl) barEl.style.width = `${Math.round(r.percentage)}%`;
+        });
+
+        // winner state (max percentage)
+        const maxPct = results.reduce((m, r) => Math.max(m, Number(r.percentage || 0)), 0);
+        cards.forEach(card => {
+            const optionId = card.dataset.optionId;
+            const r = byOptionId.get(String(optionId));
+            if (!r) return;
+
+            const isWinner = results.length > 0 && Number(r.percentage || 0) === maxPct && totalVotes > 0;
+            if (isWinner) {
+                card.classList.add('bg-[#000000]', 'border-[#000000]', 'text-white');
+                card.classList.remove('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
+                const barEl = card.querySelector('.js-option-bar');
+                if (barEl) {
+                    barEl.classList.add('bg-white/15');
+                    barEl.classList.remove('bg-[#000000]/10');
+                }
+                card.querySelectorAll('.js-option-percent, .js-option-votes, .text-sm').forEach(el => {
+                    el.classList.add('text-white');
+                    el.classList.remove('text-[#000000]', 'text-[#666A73]');
+                });
+            } else {
+                card.classList.remove('bg-[#000000]', 'border-[#000000]', 'text-white');
+                card.classList.add('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
+                const barEl = card.querySelector('.js-option-bar');
+                if (barEl) {
+                    barEl.classList.remove('bg-white/15');
+                    barEl.classList.add('bg-[#000000]/10');
+                }
+                // restore common text colors
+                const titleEl = card.querySelector('.text-sm');
+                if (titleEl) {
+                    titleEl.classList.remove('text-white');
+                    titleEl.classList.add('text-[#000000]');
+                }
+                const percentEl = card.querySelector('.js-option-percent');
+                if (percentEl) {
+                    percentEl.classList.remove('text-white');
+                    percentEl.classList.add('text-[#000000]');
+                }
+                const votesEl = card.querySelector('.js-option-votes');
+                if (votesEl) {
+                    votesEl.classList.remove('text-white/80');
+                    votesEl.classList.add('text-[#666A73]');
+                }
+            }
+        });
+
+        const totalEl = document.querySelector(`.js-total-votes[data-post-id="${postId}"]`);
+        if (totalEl) totalEl.textContent = `Toplam ${totalVotes} oy`;
+    }
+
+    async function sendVote(voteUrl, optionIds) {
+        const formData = new FormData();
+        optionIds.forEach((id) => formData.append('options', id));
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken') || '');
+
+        const response = await fetch(voteUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken') || ''
+            }
+        });
+        const data = await response.json();
+        return { response, data };
+    }
+
+    const selectedByPost = new Map();
+
+    async function voteOnHome(optionButton) {
+        if (!isAuthenticated) {
+            window.location.href = '{% url "login" %}';
+            return;
+        }
+
+        const postId = optionButton.dataset.postId;
+        const optionId = optionButton.dataset.optionId;
+        const voteUrl = optionButton.dataset.voteUrl;
+        const allowMultiple = (optionButton.dataset.allowMultiple === 'true');
+        if (!postId || !optionId || !voteUrl) return;
+
+        if (allowMultiple) {
+            let selected = selectedByPost.get(postId);
+            if (!selected) {
+                selected = new Set();
+                selectedByPost.set(postId, selected);
+            }
+
+            if (selected.has(optionId)) {
+                selected.delete(optionId);
+                optionButton.classList.remove('ring-2', 'ring-[#666A73]');
+            } else {
+                selected.add(optionId);
+                optionButton.classList.add('ring-2', 'ring-[#666A73]');
+            }
+            return;
+        }
+
+        // disable all options for this post while voting
+        const postOptions = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
+        postOptions.forEach(b => setDisabledForNode(b, true));
+
+        try {
+            const { response, data } = await sendVote(voteUrl, [optionId]);
+            if (response.ok && data.success) {
+                updatePollUI(postId, data.results);
+            } else {
+                if (response.status === 429) {
+                    showToast((data && data.error) ? data.error : 'Çok hızlısın.');
+                } else {
+                    showToast((data && data.error) ? data.error : 'Bir hata oluştu.');
+                }
+            }
+        } catch (error) {
+            console.error('Error voting:', error);
+            showToast('Bir hata oluştu.');
+        } finally {
+            postOptions.forEach(b => setDisabledForNode(b, false));
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        const submitBtn = e.target.closest('.js-home-multi-submit');
+        if (submitBtn) {
+            e.preventDefault();
+            if (!isAuthenticated) {
+                window.location.href = '{% url "login" %}';
+                return;
+            }
+
+            const postId = submitBtn.dataset.postId;
+            const voteUrl = submitBtn.dataset.voteUrl;
+            const selected = selectedByPost.get(String(postId));
+            const optionIds = selected ? Array.from(selected) : [];
+
+            if (!postId || !voteUrl) return;
+            if (!optionIds.length) {
+                alert('En az bir seçenek seçmelisiniz.');
+                return;
+            }
+
+            const postOptions = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
+            postOptions.forEach(b => setDisabledForNode(b, true));
+            setDisabledForNode(submitBtn, true);
+
+            sendVote(voteUrl, optionIds)
+                .then(({ response, data }) => {
+                    if (response.ok && data.success) {
+                        updatePollUI(postId, data.results);
+                        selectedByPost.delete(String(postId));
+                        postOptions.forEach(b => b.classList.remove('ring-2', 'ring-[#666A73]'));
+                    } else {
+                        if (response.status === 429) {
+                            showToast((data && data.error) ? data.error : 'Çok hızlısın.');
+                        } else {
+                            showToast((data && data.error) ? data.error : 'Bir hata oluştu.');
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error voting:', error);
+                    showToast('Bir hata oluştu.');
+                })
+                .finally(() => {
+                    postOptions.forEach(b => setDisabledForNode(b, false));
+                    setDisabledForNode(submitBtn, false);
+                });
+
+            return;
+        }
+
+        const btn = e.target.closest('.poll-option-card');
+        if (!btn) return;
+        e.preventDefault();
+        voteOnHome(btn);
+    });
+
+    window.addEventListener('scroll', function() {
+        if (loading || !hasMore) return;
+
+        const scrollPosition = window.innerHeight + window.scrollY;
+        const threshold = document.documentElement.scrollHeight - 500;
+
+        if (scrollPosition >= threshold) {
+            loadMorePosts();
+        }
+    });
+
+    async function loadMorePosts() {
+        loading = true;
+        document.getElementById('loading').classList.remove('hidden');
+
+        try {
+            const topicParam = selectedTopic ? `&topic=${encodeURIComponent(selectedTopic)}` : '';
+            const sortParam = selectedSort ? `&sort=${encodeURIComponent(selectedSort)}` : '';
+            const response = await fetch(`?page=${page}${topicParam}${sortParam}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                const html = await response.text();
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                const newPosts = tempDiv.querySelectorAll('.post-card');
+                const container = document.getElementById('posts-container');
+                
+                newPosts.forEach(post => {
+                    container.appendChild(post);
+                });
+
+                page++;
+                
+                if (newPosts.length < 20) {
+                    hasMore = false;
+                    document.getElementById('no-more-posts').classList.remove('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading posts:', error);
+        } finally {
+            loading = false;
+            document.getElementById('loading').classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

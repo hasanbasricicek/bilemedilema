@@ -1,0 +1,155 @@
+{% load avatar_extras %}
+{% for post in posts %}
+<div class="post-card bg-white rounded-2xl border border-[#BFBFBF] hover:border-[#666A73] hover:shadow-sm transition duration-200">
+    <div class="p-5 sm:p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 flex items-center justify-center">
+                    {% avatar post.author 36 %}
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <a href="{% url 'user_profile' post.author.username %}" class="font-semibold text-[#000000] hover:text-[#666A73] transition duration-200">{{ post.author.username }}</a>
+                        {% if post.author.is_superuser %}
+                            <span class="bg-gradient-to-r from-[#B33F00] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                <i class="fas fa-crown"></i> Yönetici
+                            </span>
+                        {% elif post.author.is_staff %}
+                            <span class="bg-gradient-to-r from-[#0B5275] to-[#666A73] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                <i class="fas fa-shield-alt"></i> Moderatör
+                            </span>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-gray-500">{{ post.created_at|date:"d.m.Y H:i" }}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                {% if post.post_type == 'comment_only' %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">
+                        Yorum
+                    </span>
+                {% elif post.post_type == 'poll_only' %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">
+                        Anket
+                    </span>
+                {% else %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">
+                        Karma
+                    </span>
+                {% endif %}
+
+                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#0B5275] text-[#0B5275] bg-[#0B5275]/10">
+                    {{ post.get_topic_display }}
+                </span>
+            </div>
+        </div>
+
+        <a href="{% url 'post_detail' post.pk %}" class="block">
+            <h2 class="text-lg font-semibold text-[#000000] mb-2 hover:text-[#666A73] transition duration-200">
+                {{ post.title }}
+            </h2>
+            <p class="text-[#000000] mb-4 line-clamp-3">{{ post.content|truncatewords:30 }}</p>
+        </a>
+
+        {% if post.post_type != 'comment_only' and post.home_poll_options %}
+            <div class="mb-4 bg-white rounded-xl p-3 -mx-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {% for item in post.home_poll_options %}
+                        <button type="button" data-post-id="{{ post.pk }}" data-option-id="{{ item.option.id }}" data-vote-url="{% url 'vote_poll' post.pk %}" data-allow-multiple="{{ post.allow_multiple_choices|lower }}" class="poll-option-card text-center relative rounded-lg p-3 border transition duration-150 active:scale-[0.98] {% if item.is_selected %}bg-[#000000] border-[#000000] text-white{% else %}bg-[#BFBFBF]/30 border-[#BFBFBF] text-[#000000] hover:border-[#666A73]{% endif %}">
+                            <div class="js-option-bar absolute left-0 top-0 bottom-0 rounded-lg pointer-events-none transition-[width] duration-200 {% if item.is_selected %}bg-white/15{% else %}bg-[#000000]/10{% endif %}" style="width: {{ item.percent }}%;"></div>
+                            <div class="relative z-10">
+                            <div class="text-xs font-medium mb-1 {% if item.is_selected %}text-white{% else %}text-[#666A73]{% endif %}">
+                                {{ item.option.option_text }}
+                            </div>
+                            <div class="js-option-percent text-xl font-bold tracking-tight {% if item.is_selected %}text-white{% else %}text-[#000000]{% endif %}">
+                                {{ item.percent }}%
+                            </div>
+                            <div class="js-option-votes text-[10px] {% if item.is_selected %}text-white/70{% else %}text-[#666A73]{% endif %}">
+                                {{ item.vote_count }} oy
+                            </div>
+                            </div>
+                        </button>
+                    {% endfor %}
+                </div>
+
+                {% if post.allow_multiple_choices %}
+                    <button type="button" class="js-home-multi-submit mt-3 w-full bg-[#666A73] hover:bg-[#000000] text-white font-semibold py-2.5 rounded-xl text-sm transition duration-200" data-post-id="{{ post.pk }}" data-vote-url="{% url 'vote_poll' post.pk %}">
+                        Oy Ver
+                    </button>
+                {% endif %}
+
+                <div class="js-total-votes mt-3 text-xs text-[#666A73]" data-post-id="{{ post.pk }}">
+                    Toplam {{ post.home_poll_total_votes }} oy
+                </div>
+            </div>
+        {% endif %}
+
+        {% if post.images.all %}
+            {% with total_images=post.images.count %}
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    {% for image in post.images.all|slice:":4" %}
+                        <button type="button" class="relative w-full overflow-hidden rounded-lg" style="aspect-ratio: 4 / 3;" data-lightbox-group="post-{{ post.pk }}" data-lightbox-src="{{ image.imgur_url }}" aria-label="Görseli büyüt">
+                            <img src="{{ image.imgur_url }}" alt="Post image" loading="lazy" class="w-full h-full object-cover">
+                            {% if forloop.last and total_images > 4 %}
+                                <div class="absolute inset-0 bg-black/55 flex items-center justify-center">
+                                    <span class="text-white font-bold text-lg">+{{ total_images|add:"-4" }}</span>
+                                </div>
+                            {% endif %}
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endwith %}
+        {% endif %}
+
+        <div class="flex items-center justify-between pt-4 border-t border-[#666A73]/30">
+            <div class="flex items-center space-x-4 text-xs text-[#666A73]">
+                {% if selected_sort == 'popular' %}
+                    {% if post.post_type != 'comment_only' %}
+                        <span>{% if post.vote_count is not None %}{{ post.vote_count }}{% else %}{{ post.votes.count }}{% endif %} oy</span>
+                    {% endif %}
+                    {% if post.post_type != 'poll_only' %}
+                        <span>{% if post.comment_count is not None %}{{ post.comment_count }}{% else %}{{ post.comments.count }}{% endif %} yorum</span>
+                    {% endif %}
+                {% elif selected_sort == 'trend' %}
+                    {% if post.post_type != 'comment_only' %}
+                        <span>{% if post.trend_vote_count is not None %}{{ post.trend_vote_count }}{% else %}{{ post.votes.count }}{% endif %} oy (24s)</span>
+                    {% endif %}
+                    {% if post.post_type != 'poll_only' %}
+                        <span>{% if post.trend_comment_count is not None %}{{ post.trend_comment_count }}{% else %}{{ post.comments.count }}{% endif %} yorum (24s)</span>
+                    {% endif %}
+                {% else %}
+                    {% if post.post_type != 'comment_only' %}
+                        <span>{{ post.votes.count }} oy</span>
+                    {% endif %}
+                    
+                    {% if post.post_type != 'poll_only' %}
+                        <span>{{ post.comments.count }} yorum (detayda)</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div class="flex items-center space-x-2">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create_report' 'post' post.pk %}" class="text-[#666A73] hover:text-[#B33F00] transition duration-200" title="Rapor Et">
+                        <i class="fas fa-flag"></i>
+                    </a>
+                {% endif %}
+                
+                <a href="{% url 'post_detail' post.pk %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                    Aç
+                </a>
+            </div>
+        </div>    </div>
+</div>
+{% empty %}
+<div class="text-center py-12">
+    <i class="fas fa-inbox text-6xl text-[#666A73]/50 mb-4"></i>
+    <p class="text-[#666A73] text-lg">Henüz gönderi yok.</p>
+    {% if user.is_authenticated %}
+        <a href="{% url 'create_post' %}" class="inline-block mt-4 bg-[#666A73] hover:bg-[#000000] text-white px-6 py-3 rounded-lg transition duration-200">
+            İlk Gönderiyi Oluştur
+        </a>
+    {% endif %}
+</div>
+{% endfor %}

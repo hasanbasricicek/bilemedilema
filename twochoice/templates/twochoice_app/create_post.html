@@ -1,0 +1,164 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Yeni Gönderi - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Yeni Gönderi Oluştur</h2>
+            <p class="text-gray-600">Kararsızlığını paylaş, topluluktan yardım al!</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="post-form" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.title.label }}
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.content.label }}
+                </label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.content.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.topic.label }}
+                </label>
+                {{ form.topic }}
+                {% if form.topic.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.topic.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.post_type.label }}
+                </label>
+                {{ form.post_type }}
+                {% if form.post_type.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.post_type.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div id="poll-options-container" class="hidden space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-[#000000] mb-2">
+                        {{ form.poll_option_1.label }}
+                    </label>
+                    {{ form.poll_option_1 }}
+                    {% if form.poll_option_1.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_1.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#000000] mb-2">
+                        {{ form.poll_option_2.label }}
+                    </label>
+                    {{ form.poll_option_2 }}
+                    {% if form.poll_option_2.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_2.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#666A73] mb-2">
+                        {{ form.poll_option_3.label }}
+                    </label>
+                    {{ form.poll_option_3 }}
+                    {% if form.poll_option_3.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_3.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#666A73] mb-2">
+                        {{ form.poll_option_4.label }}
+                    </label>
+                    {{ form.poll_option_4 }}
+                    {% if form.poll_option_4.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_4.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#666A73] mb-2">
+                        {{ form.poll_option_5.label }}
+                    </label>
+                    {{ form.poll_option_5 }}
+                    {% if form.poll_option_5.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_5.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#666A73] mb-2">
+                        {{ form.poll_option_6.label }}
+                    </label>
+                    {{ form.poll_option_6 }}
+                    {% if form.poll_option_6.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_6.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center pt-2">
+                    {{ form.allow_multiple_choices }}
+                    <label class="ml-2 text-sm text-[#000000]">
+                        {{ form.allow_multiple_choices.label }}
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Görseller (Opsiyonel)
+                </label>
+                <input type="file" name="images" multiple accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <p class="mt-1 text-sm text-gray-500">Birden fazla görsel yükleyebilirsiniz.</p>
+            </div>
+
+            <div class="flex items-center justify-between pt-6 border-t">
+                <a href="{% url 'home' %}" class="text-gray-600 hover:text-gray-800 transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>İptal
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 flex items-center space-x-2">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Gönder</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const postTypeSelect = document.getElementById('id_post_type');
+    const pollOptionsContainer = document.getElementById('poll-options-container');
+
+    postTypeSelect.addEventListener('change', function() {
+        if (this.value === 'poll_only' || this.value === 'both') {
+            pollOptionsContainer.classList.remove('hidden');
+        } else {
+            pollOptionsContainer.classList.add('hidden');
+        }
+    });
+
+    if (postTypeSelect.value === 'poll_only' || postTypeSelect.value === 'both') {
+        pollOptionsContainer.classList.remove('hidden');
+    }
+</script>
+{% endblock %}
