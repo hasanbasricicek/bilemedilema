@@ -1,0 +1,79 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Geri Bildirimler - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">Geri Bildirimler</h1>
+    <p class="text-sm text-[#666A73]">Kullanıcılardan gelen geri bildirimleri görüntüleyin ve yönetin.</p>
+</div>
+
+<div class="mb-6">
+    <div class="inline-flex rounded-xl border border-[#BFBFBF] bg-white overflow-hidden">
+        <a href="{% url 'moderate_feedback' %}?tab=open" class="px-4 py-2 text-sm font-semibold transition duration-200 {% if active_tab == 'open' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">
+            Açık ({{ counts.open }})
+        </a>
+        <a href="{% url 'moderate_feedback' %}?tab=resolved" class="px-4 py-2 text-sm font-semibold transition duration-200 border-l border-[#BFBFBF] {% if active_tab == 'resolved' %}bg-[#000000] text-white{% else %}text-[#000000] hover:bg-[#F8F9F6]{% endif %}">
+            Çözüldü ({{ counts.resolved }})
+        </a>
+    </div>
+</div>
+
+<div class="space-y-6">
+    {% for item in feedbacks %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <p class="text-xs text-[#666A73]">
+                        <span class="font-semibold text-[#000000]">Gönderen:</span> {{ item.user.username }}
+                        <span class="mx-1">|</span>
+                        <span class="font-semibold text-[#000000]">Tarih:</span> {{ item.created_at|date:"d.m.Y H:i" }}
+                    </p>
+                    <h3 class="text-lg font-semibold text-[#000000] mt-1">{{ item.subject }}</h3>
+                </div>
+
+                {% if item.status == 'open' %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#666A73] bg-white">Açık</span>
+                {% else %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#0B5275] text-[#0B5275] bg-[#0B5275]/10">Çözüldü</span>
+                {% endif %}
+            </div>
+
+            <div class="bg-[#BFBFBF]/20 rounded-xl p-4 mb-4">
+                <p class="text-sm text-[#666A73] whitespace-pre-wrap">{{ item.message }}</p>
+            </div>
+
+            {% if item.page_url %}
+                <div class="mb-4">
+                    <a href="{{ item.page_url }}" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-[#666A73] hover:text-[#000000]">
+                        Sayfa linki
+                    </a>
+                </div>
+            {% endif %}
+
+            <div class="flex items-center justify-end pt-4 border-t border-[#BFBFBF]">
+                {% if item.status == 'open' %}
+                    <form method="post" action="{% url 'resolve_feedback' item.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-[#666A73] hover:bg-[#000000] text-white px-5 py-2 rounded-xl transition duration-200 text-sm font-medium">
+                            Çözüldü işaretle
+                        </button>
+                    </form>
+                {% else %}
+                    <span class="text-xs text-[#666A73]">Çözen: {{ item.resolved_by.username }}{% if item.resolved_at %} ({{ item.resolved_at|date:"d.m.Y H:i" }}){% endif %}</span>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-12 text-center">
+            {% if active_tab == 'open' %}
+                <h3 class="text-xl font-semibold text-[#000000] mb-2">Açık geri bildirim yok</h3>
+                <p class="text-sm text-[#666A73]">İnceleme bekleyen geri bildirim bulunmuyor.</p>
+            {% else %}
+                <h3 class="text-xl font-semibold text-[#000000] mb-2">Çözülen geri bildirim yok</h3>
+                <p class="text-sm text-[#666A73]">Çözüldü olarak işaretlenmiş geri bildirim bulunmuyor.</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

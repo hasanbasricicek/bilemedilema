@@ -14,6 +14,21 @@ from pathlib import Path
 import os
 import dj_database_url
 
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0') or '0'),
+        profiles_sample_rate=float(os.environ.get('SENTRY_PROFILES_SAMPLE_RATE', '0') or '0'),
+        environment=os.environ.get('SENTRY_ENVIRONMENT', 'production'),
+        send_default_pii=os.environ.get('SENTRY_SEND_DEFAULT_PII', 'False').lower() in ('1', 'true', 'yes', 'y', 'on'),
+    )
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

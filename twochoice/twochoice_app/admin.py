@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import UserProfile, Post, PostImage, PollOption, PollVote, Comment, Report, Notification
+from .models import UserProfile, Post, PostImage, PollOption, PollVote, Comment, Report, Notification, Feedback
 
 
 class UserProfileInline(admin.StackedInline):
@@ -55,6 +55,14 @@ class PostAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at')
         }),
     )
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ['subject', 'user', 'status', 'created_at', 'resolved_by', 'resolved_at']
+    list_filter = ['status', 'created_at', 'resolved_at']
+    search_fields = ['subject', 'message', 'user__username', 'user__email']
+    readonly_fields = ['created_at', 'resolved_at']
 
 
 @admin.register(PostImage)

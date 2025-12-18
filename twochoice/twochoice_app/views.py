@@ -17,8 +17,8 @@ import requests
 import json
 import hashlib
 import base64
-from .models import Post, Comment, Report, PollOption, PollVote, UserProfile, PostImage, Notification
-from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, ProfileAvatarForm
+from .models import Post, Comment, Report, PollOption, PollVote, UserProfile, PostImage, Notification, Feedback
+from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, FeedbackForm, ProfileAvatarForm
 from .avatar import render_avatar_svg_from_config, resolve_profile_avatar_config, sanitize_avatar_config
 
 logger = logging.getLogger(__name__)
@@ -160,6 +160,26 @@ def setup_admin(request):
         form = SetupAdminForm()
 
     return render(request, 'twochoice_app/setup_admin.html', {'form': form, 'token': token_received})
+
+
+@login_required
+def create_feedback(request):
+    if request.method == 'POST':
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.user = request.user
+            feedback.save()
+            messages.success(request, 'Geri bildiriminiz alındı. Teşekkürler!')
+            return redirect('home')
+    else:
+        initial = {}
+        ref = (request.GET.get('from') or '').strip()
+        if ref:
+            initial['page_url'] = ref
+        form = FeedbackForm(initial=initial)
+
+    return render(request, 'twochoice_app/feedback.html', {'form': form})
 
 
 def user_login(request):
@@ -476,6 +496,40 @@ def create_report(request, content_type, content_id):
 
 def is_moderator(user):
     return user.is_staff or user.is_superuser
+
+
+@login_required
+@user_passes_test(is_moderator)
+def moderate_feedback(request):
+    tab = request.GET.get('tab', 'open')
+    if tab not in {'open', 'resolved'}:
+        tab = 'open'
+
+    base_qs = Feedback.objects.select_related('user', 'resolved_by').order_by('-created_at')
+    feedbacks = base_qs.filter(status=tab)
+
+    context = {
+        'feedbacks': feedbacks,
+        'active_tab': tab,
+        'counts': {
+            'open': base_qs.filter(status='open').count(),
+            'resolved': base_qs.filter(status='resolved').count(),
+        },
+    }
+    return render(request, 'twochoice_app/moderate_feedback.html', context)
+
+
+@login_required
+@user_passes_test(is_moderator)
+@require_POST
+def resolve_feedback(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk)
+    feedback.status = 'resolved'
+    feedback.resolved_by = request.user
+    feedback.resolved_at = timezone.now()
+    feedback.save(update_fields=['status', 'resolved_by', 'resolved_at'])
+    messages.success(request, 'Geri bildirim çözüldü olarak işaretlendi.')
+    return redirect('moderate_feedback')
 
 
 @login_required

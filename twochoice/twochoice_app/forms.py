@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 import json
-from .models import UserProfile, Post, Comment, Report, PollOption
+from .models import UserProfile, Post, Comment, Report, PollOption, Feedback
 from .avatar import AVATAR_MODE_CHOICES, get_preset_choices, get_preset_config, parse_avatar_config_json
 
 
@@ -235,6 +235,32 @@ class ReportForm(forms.ModelForm):
                 'placeholder': 'Rapor detaylarını açıklayın...',
                 'rows': 4
             })
+        }
+
+
+class FeedbackForm(forms.ModelForm):
+    class Meta:
+        model = Feedback
+        fields = ['subject', 'message', 'page_url']
+        labels = {
+            'subject': 'Konu',
+            'message': 'Mesaj',
+            'page_url': 'Sayfa Linki (opsiyonel)',
+        }
+        widgets = {
+            'subject': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'placeholder': 'Kısaca ne hakkında?'
+            }),
+            'message': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'placeholder': 'Detayları yazın... (hata, öneri, eksik özellik vb.)',
+                'rows': 5
+            }),
+            'page_url': forms.URLInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'placeholder': 'https://...'
+            }),
         }
 
 

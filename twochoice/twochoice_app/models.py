@@ -226,3 +226,27 @@ class Report(models.Model):
         verbose_name = 'Rapor'
         verbose_name_plural = 'Raporlar'
         ordering = ['-created_at']
+
+
+class Feedback(models.Model):
+    STATUS_CHOICES = [
+        ('open', 'Açık'),
+        ('resolved', 'Çözüldü'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedbacks')
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    page_url = models.URLField(max_length=500, blank=True, default='')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='feedbacks_resolved')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.subject}"
+
+    class Meta:
+        verbose_name = 'Geri Bildirim'
+        verbose_name_plural = 'Geri Bildirimler'
+        ordering = ['-created_at']
