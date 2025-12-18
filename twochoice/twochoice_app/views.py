@@ -12,12 +12,13 @@ from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from datetime import timedelta
 import logging
+import os
 import requests
 import json
 import hashlib
 import base64
 from .models import Post, Comment, Report, PollOption, PollVote, UserProfile, PostImage, Notification
-from .forms import UserRegistrationForm, PostForm, CommentForm, ReportForm, ProfileAvatarForm
+from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, ProfileAvatarForm
 from .avatar import render_avatar_svg_from_config, resolve_profile_avatar_config, sanitize_avatar_config
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,38 @@ def register(request):
         form = UserRegistrationForm()
     
     return render(request, 'twochoice_app/register.html', {'form': form})
+
+
+def setup_admin(request):
+    token_expected = os.environ.get('SETUP_ADMIN_TOKEN', '')
+    token_received = (request.GET.get('token') or request.POST.get('token') or '').strip()
+
+    if not token_expected or token_received != token_expected:
+        return HttpResponse(status=404)
+
+    if User.objects.filter(is_superuser=True).exists():
+        return HttpResponse(status=404)
+
+    if request.method == 'POST':
+        form = SetupAdminForm(request.POST)
+        if form.is_valid():
+            user = User.objects.create_user(
+                username=form.cleaned_data['username'],
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['password1'],
+            )
+            user.is_staff = True
+            user.is_superuser = True
+            user.is_active = True
+            user.save(update_fields=['is_staff', 'is_superuser', 'is_active'])
+
+            login(request, user)
+            messages.success(request, 'Admin hesabı oluşturuldu. Django admin paneline yönlendiriliyorsunuz.')
+            return redirect('/admin/')
+    else:
+        form = SetupAdminForm()
+
+    return render(request, 'twochoice_app/setup_admin.html', {'form': form, 'token': token_received})
 
 
 def user_login(request):

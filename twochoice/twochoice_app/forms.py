@@ -51,6 +51,61 @@ class UserRegistrationForm(UserCreationForm):
         return user
 
 
+class SetupAdminForm(forms.Form):
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'Kullanıcı adı'
+        })
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'E-posta adresi'
+        })
+    )
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'Şifre'
+        })
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'placeholder': 'Şifre (tekrar)'
+        })
+    )
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if not username:
+            raise forms.ValidationError('Kullanıcı adı gerekli.')
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError('Bu kullanıcı adı zaten kullanılıyor.')
+        return username
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip()
+        if not email:
+            raise forms.ValidationError('E-posta gerekli.')
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('Bu e-posta zaten kullanılıyor.')
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get('password1') or ''
+        p2 = cleaned_data.get('password2') or ''
+        if p1 != p2:
+            raise forms.ValidationError('Şifreler eşleşmiyor.')
+        if len(p1) < 8:
+            raise forms.ValidationError('Şifre en az 8 karakter olmalı.')
+        return cleaned_data
+
+
 class PostForm(forms.ModelForm):
     poll_option_1 = forms.CharField(
         required=False,
