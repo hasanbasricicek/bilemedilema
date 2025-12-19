@@ -8,11 +8,11 @@ from .avatar import AVATAR_MODE_CHOICES, get_preset_choices, get_preset_config, 
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={
-        'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+        'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
         'placeholder': 'E-posta adresiniz'
     }))
     age = forms.IntegerField(required=True, min_value=13, max_value=120, widget=forms.NumberInput(attrs={
-        'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+        'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
         'placeholder': 'Yaşınız'
     }))
 
@@ -23,15 +23,15 @@ class UserRegistrationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].widget.attrs.update({
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Kullanıcı adı'
         })
         self.fields['password1'].widget.attrs.update({
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Şifre'
         })
         self.fields['password2'].widget.attrs.update({
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Şifre (tekrar)'
         })
 
@@ -55,26 +55,26 @@ class SetupAdminForm(forms.Form):
     username = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Kullanıcı adı'
         })
     )
     email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'E-posta adresi'
         })
     )
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Şifre'
         })
     )
     password2 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Şifre (tekrar)'
         })
     )
@@ -111,7 +111,7 @@ class PostForm(forms.ModelForm):
         required=False,
         label='1. Seçenek',
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Birinci seçenek'
         })
     )
@@ -119,7 +119,7 @@ class PostForm(forms.ModelForm):
         required=False,
         label='2. Seçenek',
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'İkinci seçenek'
         })
     )
@@ -127,7 +127,7 @@ class PostForm(forms.ModelForm):
         required=False,
         label='3. Seçenek (Opsiyonel)',
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Üçüncü seçenek (opsiyonel)'
         })
     )
@@ -135,30 +135,32 @@ class PostForm(forms.ModelForm):
         required=False,
         label='4. Seçenek (Opsiyonel)',
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
             'placeholder': 'Dördüncü seçenek (opsiyonel)'
         })
     )
-    poll_option_5 = forms.CharField(
+
+    poll_close_mode = forms.ChoiceField(
         required=False,
-        label='5. Seçenek (Opsiyonel)',
-        widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
-            'placeholder': 'Beşinci seçenek (opsiyonel)'
+        choices=Post.POLL_CLOSE_CHOICES,
+        label='Anket Kapanışı',
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
         })
     )
-    poll_option_6 = forms.CharField(
+
+    poll_closes_at = forms.DateTimeField(
         required=False,
-        label='6. Seçenek (Opsiyonel)',
-        widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
-            'placeholder': 'Altıncı seçenek (opsiyonel)'
+        label='Kapanış Tarihi',
+        widget=forms.DateTimeInput(attrs={
+            'type': 'datetime-local',
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
         })
     )
 
     class Meta:
         model = Post
-        fields = ['title', 'content', 'topic', 'post_type', 'allow_multiple_choices']
+        fields = ['title', 'content', 'topic', 'post_type', 'allow_multiple_choices', 'poll_close_mode', 'poll_closes_at']
         labels = {
             'title': 'Başlık',
             'content': 'İçerik',
@@ -168,19 +170,19 @@ class PostForm(forms.ModelForm):
         }
         widgets = {
             'title': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
                 'placeholder': 'Başlık'
             }),
             'content': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
                 'placeholder': 'İçerik',
                 'rows': 5
             }),
             'topic': forms.Select(attrs={
-                'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
             }),
             'post_type': forms.Select(attrs={
-                'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
             }),
             'allow_multiple_choices': forms.CheckboxInput(attrs={
                 'class': 'w-4 h-4 text-[#666A73] border-[#BFBFBF] rounded focus:ring-[#666A73]'
@@ -190,19 +192,46 @@ class PostForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         post_type = cleaned_data.get('post_type')
+        close_mode = (cleaned_data.get('poll_close_mode') or 'none').strip()
+        closes_at = cleaned_data.get('poll_closes_at')
+
+        instance_has_votes = False
+        try:
+            instance_has_votes = bool(getattr(self.instance, 'pk', None)) and self.instance.votes.exists()
+        except Exception:
+            instance_has_votes = False
         
-        if post_type in ['poll_only', 'both']:
+        if post_type in ['poll_only', 'both'] and not instance_has_votes:
             option_1 = cleaned_data.get('poll_option_1', '').strip()
             option_2 = cleaned_data.get('poll_option_2', '').strip()
             
             if not option_1 or not option_2:
                 raise forms.ValidationError('En az 2 anket seçeneği girmelisiniz.')
-        
+            
+            if close_mode == 'manual' and not closes_at:
+                raise forms.ValidationError('Manuel kapanış için tarih seçmelisiniz.')
+        else:
+            cleaned_data['poll_close_mode'] = 'none'
+            cleaned_data['poll_closes_at'] = None
+
         return cleaned_data
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['post_type'].choices = [
+            (value, label)
+            for value, label in self.fields['post_type'].choices
+            if value != 'comment_only'
+        ]
+
+        instance_post_type = getattr(getattr(self, 'instance', None), 'post_type', None)
+        if instance_post_type == 'comment_only':
+            self.initial.setdefault('post_type', 'both')
     
     def get_poll_options(self):
         options = []
-        for i in range(1, 7):
+        for i in range(1, 5):
             option = self.cleaned_data.get(f'poll_option_{i}', '').strip()
             if option:
                 options.append(option)
@@ -215,7 +244,7 @@ class CommentForm(forms.ModelForm):
         fields = ['content']
         widgets = {
             'content': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
                 'placeholder': 'Yorumunuzu yazın...',
                 'rows': 3
             })
@@ -228,10 +257,10 @@ class ReportForm(forms.ModelForm):
         fields = ['report_type', 'description']
         widgets = {
             'report_type': forms.Select(attrs={
-                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
             }),
             'description': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
                 'placeholder': 'Rapor detaylarını açıklayın...',
                 'rows': 4
             })
@@ -249,16 +278,16 @@ class FeedbackForm(forms.ModelForm):
         }
         widgets = {
             'subject': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
                 'placeholder': 'Kısaca ne hakkında?'
             }),
             'message': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
                 'placeholder': 'Detayları yazın... (hata, öneri, eksik özellik vb.)',
                 'rows': 5
             }),
             'page_url': forms.URLInput(attrs={
-                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
                 'placeholder': 'https://...'
             }),
         }
@@ -268,7 +297,7 @@ class ProfileAvatarForm(forms.ModelForm):
     avatar_mode = forms.ChoiceField(
         choices=AVATAR_MODE_CHOICES,
         widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
         })
     )
 
@@ -276,7 +305,7 @@ class ProfileAvatarForm(forms.ModelForm):
         required=False,
         choices=[('', 'Seçiniz...')] + get_preset_choices(),
         widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-2 border border-[#BFBFBF] rounded-lg bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]'
         })
     )
 
@@ -287,7 +316,15 @@ class ProfileAvatarForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['avatar_mode', 'avatar_preset', 'avatar_config']
+        fields = [
+            'avatar_mode',
+            'avatar_preset',
+            'avatar_config',
+            'notify_votes',
+            'notify_comments',
+            'notify_feedback',
+            'notify_moderation',
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

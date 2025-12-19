@@ -6,11 +6,11 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
-    <div class="bg-white rounded-2xl border border-[#BFBFBF] overflow-hidden mb-8">
-        <div class="bg-gradient-to-br from-[#F8F9F6] to-white border-b border-[#BFBFBF] p-6 sm:p-8">
+    <div class="profile-card overflow-hidden mb-8">
+        <div class="profile-hero p-6 sm:p-8">
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
                 <div class="flex items-center space-x-5">
-                    <div class="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-2xl border border-[#BFBFBF] bg-white">
+                    <div class="profile-avatar-shell w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-2xl">
                         {% avatar profile_user 80 %}
                     </div>
                     
@@ -39,16 +39,19 @@
 
                 <div class="flex flex-col sm:items-end gap-2">
                 {% if user.is_authenticated and is_own_profile %}
-                    <a href="{% url 'edit_profile' %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl transition duration-200 text-center text-sm font-medium">
+                    <a href="{% url 'edit_profile' %}" class="poll-action-button bg-[#000000] hover:bg-[#1f2933] text-white text-center text-sm font-medium">
                         Profili Düzenle
                     </a>
+                    <a href="{% url 'notification_settings' %}" class="btn-outline rounded-xl px-4 py-2 text-center text-sm font-medium">
+                        <i class="fas fa-bell mr-2"></i>Bildirim Ayarları
+                    </a>
                 {% elif user.is_authenticated and not is_own_profile %}
-                    <a href="{% url 'create_report' 'user' profile_user.id %}" class="bg-white border border-[#BFBFBF] text-[#000000] px-4 py-2 rounded-xl transition duration-200 text-center hover:border-[#B33F00] hover:text-[#B33F00]">
+                    <a href="{% url 'create_report' 'user' profile_user.id %}" class="btn-outline rounded-xl px-4 py-2 text-center hover:border-[#B33F00] hover:text-[#B33F00]">
                         <i class="fas fa-flag mr-2"></i>Raporla
                     </a>
                     
                     {% if user.is_staff or user.is_superuser %}
-                        <button onclick="document.getElementById('ban-modal').classList.remove('hidden')" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl transition duration-200">
+                        <button onclick="document.getElementById('ban-modal').classList.remove('hidden')" class="poll-action-button bg-[#000000] text-white">
                             <i class="fas fa-gavel mr-2"></i>Yasakla
                         </button>
                         {% if profile_user.profile.is_comment_banned or profile_user.profile.is_post_banned %}
@@ -56,7 +59,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="ban_type" value="all">
                                 <input type="hidden" name="next" value="{% url 'user_profile' profile_user.username %}">
-                                <button type="submit" class="bg-white border border-[#BFBFBF] text-[#000000] px-4 py-2 rounded-xl transition duration-200 hover:border-[#666A73]">
+                                <button type="submit" class="btn-outline rounded-xl px-4 py-2">
                                     Yasağı Kaldır
                                 </button>
                             </form>
@@ -67,21 +70,21 @@
             </div>
 
             <div class="grid grid-cols-3 gap-3 sm:gap-4 mt-6">
-                <div class="bg-white rounded-2xl border border-[#BFBFBF] p-4 text-center">
-                    <p class="text-xl font-semibold text-[#000000]">{{ posts.count }}</p>
-                    <p class="text-xs text-[#666A73]">Gönderi</p>
+                <div class="profile-stat">
+                    <p class="profile-stat-value">{{ posts.count }}</p>
+                    <p class="profile-stat-label">Gönderi</p>
                 </div>
-                <div class="bg-white rounded-2xl border border-[#BFBFBF] p-4 text-center">
-                    <p class="text-xl font-semibold text-[#000000]">{{ profile_user.comments.count }}</p>
-                    <p class="text-xs text-[#666A73]">Yorum</p>
+                <div class="profile-stat">
+                    <p class="profile-stat-value">{{ profile_user.comments.count }}</p>
+                    <p class="profile-stat-label">Yorum</p>
                 </div>
-                <div class="bg-white rounded-2xl border border-[#BFBFBF] p-4 text-center">
+                <div class="profile-stat">
                     {% if user.is_staff or user.is_superuser %}
-                        <p class="text-xl font-semibold text-[#000000]">{{ profile_user.profile.age }}</p>
-                        <p class="text-xs text-[#666A73]">Yaş</p>
+                        <p class="profile-stat-value">{{ profile_user.profile.age }}</p>
+                        <p class="profile-stat-label">Yaş</p>
                     {% else %}
-                        <p class="text-xl font-semibold text-[#000000]">-</p>
-                        <p class="text-xs text-[#666A73]">Yaş (Gizli)</p>
+                        <p class="profile-stat-value">-</p>
+                        <p class="profile-stat-label">Yaş (Gizli)</p>
                     {% endif %}
                 </div>
             </div>
@@ -114,10 +117,10 @@
 
     <div class="space-y-6">
         {% for post in posts %}
-            <div class="bg-white rounded-2xl border border-[#BFBFBF] overflow-hidden">
+            <div class="profile-card overflow-hidden">
                 <div class="p-5 sm:p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center space-x-2">
+                    <div class="flex flex-wrap items-center gap-2 mb-4">
+                        <div class="flex flex-wrap items-center gap-2">
                             {% if post.post_type == 'comment_only' %}
                                 <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Yorum</span>
                             {% elif post.post_type == 'poll_only' %}
@@ -131,6 +134,18 @@
                             {% elif post.status == 'r' %}
                                 <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#B33F00] text-[#B33F00] bg-[#B33F00]/10">Reddedildi</span>
                             {% endif %}
+
+                            {% if post.post_type != 'comment_only' and post.poll_close_mode != 'none' and post.poll_closes_at %}
+                                <span class="poll-countdown inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-[#BFBFBF] bg-white/75 backdrop-blur shadow-sm text-[#666A73]" data-state="open" data-closes-at="{{ post.poll_closes_at|date:'c' }}" data-close-mode="{{ post.poll_close_mode }}" {% if post.poll_close_mode == '24h' %}data-duration-sec="86400"{% elif post.poll_close_mode == '3d' %}data-duration-sec="259200"{% endif %}>
+                                    <div class="text-xs font-medium mb-1 text-[#666A73]">
+                                        <i class="fas fa-clock mr-1"></i>
+                                    </div>
+                                    <span class="poll-countdown-text text-[11px] font-semibold">Kapanış: --:--</span>
+                                    <span class="poll-countdown-bar relative w-16 h-1.5 rounded-full bg-[#BFBFBF]/30 overflow-hidden">
+                                        <span class="poll-countdown-bar-inner absolute left-0 top-0 bottom-0 w-0 bg-gradient-to-r from-[#0B5275]/65 to-[#666A73]/65 transition-[width] duration-300"></span>
+                                    </span>
+                                </span>
+                            {% endif %}
                         </div>
                         
                         <span class="text-xs text-[#666A73]">{{ post.created_at|date:"d.m.Y H:i" }}</span>
@@ -142,6 +157,39 @@
                         </h3>
                         <p class="text-[#000000] mb-4 line-clamp-3">{{ post.content|truncatewords:30 }}</p>
                     </a>
+
+                    {% if post.post_type != 'comment_only' and post.home_poll_options %}
+                        <div class="mb-4 bg-white rounded-xl p-3 -mx-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {% for item in post.home_poll_options %}
+                                    <button type="button" data-post-id="{{ post.pk }}" data-option-id="{{ item.option.id }}" data-vote-url="{% url 'vote_poll' post.pk %}" data-allow-multiple="{{ post.allow_multiple_choices|lower }}" class="poll-option-card text-center relative rounded-lg p-3 border transition duration-150 active:scale-[0.98] {% if item.is_selected %}bg-[#000000] border-[#000000] text-white{% else %}bg-[#BFBFBF]/30 border-[#BFBFBF] text-[#000000] hover:border-[#666A73]{% endif %}">
+                                        <div class="js-option-bar absolute left-0 top-0 bottom-0 rounded-lg pointer-events-none transition-[width] duration-200 {% if item.is_selected %}bg-white/15{% else %}bg-[#000000]/10{% endif %}" style="width: {{ item.percent }}%;"></div>
+                                        <div class="relative z-10">
+                                            <div class="text-xs font-medium mb-1 {% if item.is_selected %}text-white{% else %}text-[#666A73]{% endif %}">
+                                                {{ item.option.option_text }}
+                                            </div>
+                                            <div class="js-option-percent text-xl font-bold tracking-tight {% if item.is_selected %}text-white{% else %}text-[#000000]{% endif %}">
+                                                {{ item.percent }}%
+                                            </div>
+                                            <div class="js-option-votes text-[10px] {% if item.is_selected %}text-white/70{% else %}text-[#666A73]{% endif %}">
+                                                {{ item.vote_count }} oy
+                                            </div>
+                                        </div>
+                                    </button>
+                                {% endfor %}
+                            </div>
+
+                            {% if post.allow_multiple_choices %}
+                                <button type="button" class="js-home-multi-submit mt-3 w-full bg-[#000000] hover:bg-[#666A73] text-white font-semibold py-2.5 rounded-xl text-sm transition duration-200" data-post-id="{{ post.pk }}" data-vote-url="{% url 'vote_poll' post.pk %}">
+                                    Oy Ver
+                                </button>
+                            {% endif %}
+
+                            <div class="js-total-votes mt-3 text-xs text-[#666A73]" data-post-id="{{ post.pk }}">
+                                Toplam {{ post.home_poll_total_votes }} oy
+                            </div>
+                        </div>
+                    {% endif %}
 
                     {% if post.images.all %}
                         {% with total_images=post.images.count %}
@@ -171,7 +219,7 @@
                             {% endif %}
                         </div>
 
-                        <a href="{% url 'post_detail' post.pk %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                        <a href="{% url 'post_detail' post.pk %}" class="bg-[#000000] hover:bg-[#666A73] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition duration-200">
                             Aç
                         </a>
                     </div>
@@ -343,5 +391,250 @@
             if (e.key === 'ArrowRight') navigate(1);
         });
     })();
+
+    const isAuthenticated = {{ user.is_authenticated|lower }};
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById('toast')
+        const inner = document.getElementById('toast-inner')
+        if (!toast || !inner) return
+        inner.textContent = message
+        toast.classList.remove('hidden')
+        clearTimeout(window.__toastTimer)
+        window.__toastTimer = setTimeout(() => {
+            toast.classList.add('hidden')
+        }, 2200)
+    }
+
+    function animateNumber(el, start, end, options = {}) {
+        if (!el) return
+        const {
+            duration = 350,
+            formatter = (value) => `${Math.round(value)}`,
+        } = options
+        const startTime = performance.now()
+        function frame(now) {
+            const progress = Math.min((now - startTime) / duration, 1)
+            const current = start + (end - start) * progress
+            el.textContent = formatter(current)
+            if (progress < 1) requestAnimationFrame(frame)
+        }
+        requestAnimationFrame(frame)
+    }
+
+    function setDisabledForNode(node, disabled) {
+        if (!node) return
+        node.disabled = disabled
+        if (disabled) {
+            node.classList.add('opacity-60', 'cursor-not-allowed')
+        } else {
+            node.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+    }
+
+    function updatePollUI(postId, results) {
+        const cards = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
+        if (!cards.length) return;
+
+        const byOptionId = new Map(results.map(r => [String(r.option_id), r]));
+        let totalVotes = 0;
+
+        cards.forEach(card => {
+            const optionId = card.dataset.optionId
+            const r = byOptionId.get(String(optionId))
+            if (!r) return
+
+            totalVotes += Number(r.vote_count || 0)
+
+            const percentEl = card.querySelector('.js-option-percent')
+            const votesEl = card.querySelector('.js-option-votes')
+            const barEl = card.querySelector('.js-option-bar')
+            if (percentEl) {
+                const prevPct = Number(card.dataset.prevPercent || percentEl.textContent.replace('%', '') || 0)
+                animateNumber(percentEl, prevPct, Number(r.percentage || 0), {
+                    formatter: (value) => `${Math.round(value)}%`,
+                })
+                card.dataset.prevPercent = String(r.percentage || 0)
+            }
+            if (votesEl) {
+                const prevVotes = Number(card.dataset.prevVotes || votesEl.textContent.replace(/\D/g, '') || 0)
+                animateNumber(votesEl, prevVotes, Number(r.vote_count || 0), {
+                    formatter: (value) => `${Math.round(value)} oy`,
+                })
+                card.dataset.prevVotes = String(r.vote_count || 0)
+            }
+            if (barEl) barEl.style.width = `${Math.round(r.percentage)}%`
+        })
+
+        const maxPct = results.reduce((m, r) => Math.max(m, Number(r.percentage || 0)), 0);
+        cards.forEach(card => {
+            const optionId = card.dataset.optionId;
+            const r = byOptionId.get(String(optionId));
+
+            const isWinner = results.length > 0 && Number(r.percentage || 0) === maxPct && totalVotes > 0;
+            const winnerBadge = card.querySelector('.js-winner-badge');
+            if (winnerBadge) {
+                if (isWinner) winnerBadge.classList.remove('hidden');
+                else winnerBadge.classList.add('hidden');
+            }
+            if (isWinner) {
+                card.classList.add('bg-[#000000]', 'border-[#000000]', 'text-white');
+                card.classList.remove('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
+                const barEl = card.querySelector('.js-option-bar');
+                if (barEl) {
+                    barEl.classList.add('bg-white/15');
+                    barEl.classList.remove('bg-[#000000]/10');
+                }
+                card.querySelectorAll('.js-option-percent, .js-option-votes, .text-xs').forEach(el => {
+                    el.classList.add('text-white');
+                    el.classList.remove('text-[#000000]', 'text-[#666A73]');
+                });
+            } else {
+                card.classList.remove('bg-[#000000]', 'border-[#000000]', 'text-white');
+                card.classList.add('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
+                const barEl = card.querySelector('.js-option-bar');
+                if (barEl) {
+                    barEl.classList.remove('bg-white/15');
+                    barEl.classList.add('bg-[#000000]/10');
+                }
+                const titleEl = card.querySelector('.text-xs');
+                if (titleEl) {
+                    titleEl.classList.remove('text-white');
+                    titleEl.classList.add('text-[#666A73]');
+                }
+                const percentEl = card.querySelector('.js-option-percent');
+                if (percentEl) {
+                    percentEl.classList.remove('text-white');
+                    percentEl.classList.add('text-[#000000]');
+                }
+                const votesEl = card.querySelector('.js-option-votes');
+                if (votesEl) {
+                    votesEl.classList.remove('text-white/70', 'text-white/80');
+                    votesEl.classList.add('text-[#666A73]');
+                }
+            }
+        });
+
+        const totalEl = document.querySelector(`.js-total-votes[data-post-id="${postId}"]`);
+        if (totalEl) totalEl.textContent = `Toplam ${totalVotes} oy`;
+    }
+
+    async function sendVote(voteUrl, optionIds) {
+        const formData = new FormData();
+        optionIds.forEach((id) => formData.append('options', id));
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken') || '');
+
+        const response = await fetch(voteUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken') || ''
+            }
+        });
+        const data = await response.json();
+        return { response, data };
+    }
+
+    const selectedByPost = new Map();
+
+    async function voteOnProfile(optionButton) {
+        if (!isAuthenticated) {
+            window.location.href = '{% url "login" %}';
+            return;
+        }
+
+        const postId = optionButton.dataset.postId;
+        const optionId = optionButton.dataset.optionId;
+        const voteUrl = optionButton.dataset.voteUrl;
+        const allowMultiple = (optionButton.dataset.allowMultiple === 'true');
+        if (!postId || !optionId || !voteUrl) return;
+
+        if (allowMultiple) {
+            let selected = selectedByPost.get(postId);
+            if (!selected) {
+                selected = new Set();
+                selectedByPost.set(postId, selected);
+            }
+
+            if (selected.has(optionId)) {
+                selected.delete(optionId);
+                optionButton.classList.remove('ring-2', 'ring-[#666A73]');
+            } else {
+                selected.add(optionId);
+                optionButton.classList.add('ring-2', 'ring-[#666A73]');
+            }
+            return;
+        }
+
+        const postOptions = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
+        postOptions.forEach(b => setDisabledForNode(b, true));
+        try {
+            const { response, data } = await sendVote(voteUrl, [optionId]);
+            if (response.ok && data.success) {
+                updatePollUI(postId, data.results);
+            } else {
+                showToast((data && data.error) ? data.error : 'Bir hata oluştu.');
+            }
+        } catch (e) {
+            showToast('Bir hata oluştu.');
+        } finally {
+            postOptions.forEach(b => setDisabledForNode(b, false));
+        }
+    }
+
+    document.addEventListener('click', async (e) => {
+        const submitBtn = e.target.closest('.js-home-multi-submit');
+        if (submitBtn) {
+            e.preventDefault();
+            if (!isAuthenticated) {
+                window.location.href = '{% url "login" %}';
+                return;
+            }
+
+            const postId = submitBtn.dataset.postId;
+            const voteUrl = submitBtn.dataset.voteUrl;
+            if (!postId || !voteUrl) return;
+
+            const selected = selectedByPost.get(postId);
+            const optionIds = selected ? Array.from(selected) : [];
+            if (!optionIds.length) {
+                showToast('En az bir seçenek seçmelisiniz.');
+                return;
+            }
+
+            const postOptions = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
+            postOptions.forEach(b => setDisabledForNode(b, true));
+            setDisabledForNode(submitBtn, true);
+            try {
+                const { response, data } = await sendVote(voteUrl, optionIds);
+                if (response.ok && data.success) {
+                    updatePollUI(postId, data.results);
+                    selected.clear();
+                    postOptions.forEach(b => b.classList.remove('ring-2', 'ring-[#666A73]'));
+                } else {
+                    showToast((data && data.error) ? data.error : 'Bir hata oluştu.');
+                }
+            } catch (e2) {
+                showToast('Bir hata oluştu.');
+            } finally {
+                postOptions.forEach(b => setDisabledForNode(b, false));
+                setDisabledForNode(submitBtn, false);
+            }
+            return;
+        }
+
+        const card = e.target.closest('.poll-option-card');
+        if (!card) return;
+        e.preventDefault();
+        await voteOnProfile(card);
+    });
 </script>
 {% endblock %}

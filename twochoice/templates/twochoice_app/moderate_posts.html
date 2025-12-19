@@ -84,9 +84,12 @@
                             Reddet
                         </button>
                     </form>
-                    <a href="{% url 'approve_post' post.pk %}" class="bg-[#000000] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#666A73] transition duration-200">
-                        Onayla
-                    </a>
+                    <form method="post" action="{% url 'approve_post' post.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-[#000000] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#666A73] transition duration-200">
+                            Onayla
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -146,9 +149,12 @@
                 <a href="{% url 'post_detail' post.pk %}" class="mr-2 bg-white border border-[#BFBFBF] text-[#000000] px-5 py-2 rounded-xl transition duration-200 text-sm font-medium hover:bg-[#F8F9F6]">
                     İncele
                 </a>
-                <a href="{% url 'approve_post' post.pk %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-5 py-2 rounded-xl transition duration-200 text-sm font-medium">
-                    Onayla
-                </a>
+                <form method="post" action="{% url 'approve_post' post.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-[#666A73] hover:bg-[#000000] text-white px-5 py-2 rounded-xl transition duration-200 text-sm font-medium">
+                        Onayla
+                    </button>
+                </form>
             </div>
         </div>
     {% empty %}

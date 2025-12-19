@@ -1,0 +1,110 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Moderasyon Logları - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <div class="flex items-start justify-between gap-4">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight">Moderasyon Logları</h1>
+            <p class="text-sm text-[#666A73] mt-1">Moderatör aksiyonlarını buradan takip edebilirsin.</p>
+        </div>
+    </div>
+
+    <div class="bg-white border border-[#BFBFBF] rounded-2xl p-5">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-semibold text-[#666A73] mb-1">Arama</label>
+                <input type="text" name="q" value="{{ filters.q }}" placeholder="Özet / moderator" class="w-full px-3 py-2 border border-[#BFBFBF] rounded-xl text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-[#666A73] mb-1">Aksiyon</label>
+                <select name="action" class="w-full px-3 py-2 border border-[#BFBFBF] rounded-xl text-sm bg-white">
+                    <option value="">Hepsi</option>
+                    {% for key, label in action_choices %}
+                        <option value="{{ key }}" {% if filters.action == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-[#666A73] mb-1">Hedef</label>
+                <select name="target_type" class="w-full px-3 py-2 border border-[#BFBFBF] rounded-xl text-sm bg-white">
+                    <option value="">Hepsi</option>
+                    {% for key, label in target_choices %}
+                        <option value="{{ key }}" {% if filters.target_type == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-[#666A73] mb-1">Moderatör</label>
+                <input type="text" name="actor" value="{{ filters.actor }}" placeholder="kullanıcı adı" class="w-full px-3 py-2 border border-[#BFBFBF] rounded-xl text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]">
+            </div>
+
+            <div class="lg:col-span-5 flex items-center justify-end gap-2">
+                <a href="{% url 'moderation_logs' %}" class="px-4 py-2 rounded-xl text-sm border border-[#BFBFBF] bg-white text-[#000000] hover:bg-[#F8F9F6] transition duration-200">Sıfırla</a>
+                <button type="submit" class="px-4 py-2 rounded-xl text-sm bg-[#000000] text-white font-semibold hover:bg-[#666A73] transition duration-200">Filtrele</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white border border-[#BFBFBF] rounded-2xl overflow-hidden">
+        <div class="divide-y divide-[#BFBFBF]">
+            {% for log in logs %}
+                <div class="p-4 sm:p-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm text-[#000000]">
+                                <span class="font-semibold">{{ log.actor.username|default:"Sistem" }}</span>
+                                <span class="text-[#666A73]">—</span>
+                                <span class="font-semibold">{{ log.get_action_display }}</span>
+                            </p>
+                            <p class="text-xs text-[#666A73] mt-1">{{ log.created_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+
+                        <div class="text-right">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border border-[#BFBFBF] bg-white text-[#000000]">
+                                {{ log.get_target_type_display }} #{{ log.target_id }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if log.summary %}
+                        <p class="mt-3 text-sm text-[#666A73]">{{ log.summary }}</p>
+                    {% endif %}
+
+                    {% if log.target_type == 'post' %}
+                        <a href="{% url 'post_detail' log.target_id %}" class="inline-block mt-3 text-sm font-semibold text-[#0B5275] hover:text-[#000000] transition duration-200">Gönderiye git</a>
+                    {% elif log.target_type == 'feedback' %}
+                        <a href="{% url 'feedback_detail' log.target_id %}" class="inline-block mt-3 text-sm font-semibold text-[#0B5275] hover:text-[#000000] transition duration-200">Geri bildirime git</a>
+                    {% elif log.target_type == 'report' %}
+                        <a href="{% url 'handle_report' log.target_id %}" class="inline-block mt-3 text-sm font-semibold text-[#0B5275] hover:text-[#000000] transition duration-200">Rapora git</a>
+                    {% elif log.target_type == 'user' %}
+                        {% if log.details.username %}
+                            <a href="{% url 'user_profile' log.details.username %}" class="inline-block mt-3 text-sm font-semibold text-[#0B5275] hover:text-[#000000] transition duration-200">Kullanıcıya git</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="p-10 text-center text-sm text-[#666A73]">Henüz moderasyon logu yok.</div>
+            {% endfor %}
+        </div>
+
+        <div class="px-4 py-3 bg-white border-t border-[#BFBFBF] flex items-center justify-between">
+            <div class="text-sm text-[#666A73]">
+                {% if logs.has_previous %}
+                    <a class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73]" href="?page={{ logs.previous_page_number }}&q={{ filters.q }}&action={{ filters.action }}&target_type={{ filters.target_type }}&actor={{ filters.actor }}">Önceki</a>
+                {% endif %}
+            </div>
+            <div class="text-sm text-[#666A73]">Sayfa {{ logs.number }} / {{ logs.paginator.num_pages }}</div>
+            <div class="text-sm text-[#666A73]">
+                {% if logs.has_next %}
+                    <a class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73]" href="?page={{ logs.next_page_number }}&q={{ filters.q }}&action={{ filters.action }}&target_type={{ filters.target_type }}&actor={{ filters.actor }}">Sonraki</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

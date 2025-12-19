@@ -1,0 +1,9 @@
+{% if feature_poll_status_badge and post.poll_status_meta %}
+    {% with meta=post.poll_status_meta %}
+        <span class="poll-status-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-semibold tracking-wide uppercase {{ meta.style.badge_classes }}"
+              {% if meta.title %}title="{{ meta.title }}"{% endif %}>
+            <i class="fas {{ meta.style.icon }} text-[9px]"></i>
+            <span>{{ meta.label }}</span>
+        </span>
+    {% endwith %}
+{% endif %}

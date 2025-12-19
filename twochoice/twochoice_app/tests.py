@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.utils import timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
 from unittest.mock import patch, Mock
 import json
@@ -56,6 +57,16 @@ class PollVoteTests(TestCase):
         url = reverse('vote_poll', args=[self.post.pk])
         resp = self.client.post(url, {'options': [self.o1.id, self.o2.id]}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(resp.status_code, 400)
+
+    def test_vote_blocked_when_poll_closed(self):
+        self.post.poll_close_mode = 'manual'
+        self.post.poll_closes_at = timezone.now() - timezone.timedelta(hours=1)
+        self.post.save(update_fields=['poll_close_mode', 'poll_closes_at'])
+
+        self.client.login(username='voter', password='pass12345')
+        url = reverse('vote_poll', args=[self.post.pk])
+        resp = self.client.post(url, {'options': [self.o1.id]}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(resp.status_code, 403)
 
 
 class ModerateUsersDeactivateTests(TestCase):
@@ -364,7 +375,7 @@ class ModerationStatusNotificationTests(TestCase):
     def test_approve_sends_notification_to_author(self):
         self.client.login(username='mod2', password='pass12345')
         url = reverse('approve_post', args=[self.post.pk])
-        resp = self.client.get(url)
+        resp = self.client.post(url)
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(Notification.objects.filter(user=self.author, actor=self.moderator, post=self.post, verb='"Pending" isimli anketiniz onaylandı ve yayınlandı').exists())
 
@@ -408,7 +419,9 @@ class CreatePostImageUploadTests(TestCase):
                 'title': 'Img',
                 'content': 'Content',
                 'topic': 'general',
-                'post_type': 'comment_only',
+                'post_type': 'both',
+                'poll_option_1': 'A',
+                'poll_option_2': 'B',
                 'allow_multiple_choices': False,
                 'images': [image],
             },

@@ -1,0 +1,55 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Geri Bildirimlerim - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">Geri Bildirimlerim</h1>
+    <p class="text-sm text-[#666A73]">Gönderdiğiniz geri bildirimleri ve yanıtları buradan takip edebilirsiniz.</p>
+</div>
+
+<div class="space-y-6">
+    {% for item in feedbacks %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <p class="text-xs text-[#666A73]">
+                        <span class="font-semibold text-[#000000]">Tarih:</span> {{ item.created_at|date:"d.m.Y H:i" }}
+                    </p>
+                    <h3 class="text-lg font-semibold text-[#000000] mt-1">{{ item.subject }}</h3>
+                </div>
+
+                {% if item.status == 'open' %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#666A73] bg-white">İnceleniyor</span>
+                {% else %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#0B5275] text-[#0B5275] bg-[#0B5275]/10">Yanıtlandı / Çözüldü</span>
+                {% endif %}
+            </div>
+
+            <div class="bg-[#BFBFBF]/20 rounded-xl p-4 mb-4">
+                <p class="text-sm text-[#666A73] whitespace-pre-wrap">{{ item.message }}</p>
+            </div>
+
+            {% if item.moderator_reply %}
+                <div class="bg-[#0B5275]/10 border border-[#0B5275]/30 rounded-xl p-4">
+                    <p class="text-xs font-semibold text-[#0B5275] mb-2">Yanıt</p>
+                    <p class="text-sm text-[#000000] whitespace-pre-wrap">{{ item.moderator_reply }}</p>
+                    <p class="mt-2 text-[11px] text-[#666A73]">Yanıtlayan: {{ item.replied_by.username }}{% if item.replied_at %} ({{ item.replied_at|date:"d.m.Y H:i" }}){% endif %}</p>
+                </div>
+            {% else %}
+                <div class="bg-white border border-[#BFBFBF] rounded-xl p-4">
+                    <p class="text-sm text-[#666A73]">Geri bildiriminiz inceleniyor, geri bildiriminiz için teşekkür ederiz.</p>
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-12 text-center">
+            <h3 class="text-xl font-semibold text-[#000000] mb-2">Henüz geri bildirim yok</h3>
+            <p class="text-sm text-[#666A73] mb-6">İstersen yeni bir geri bildirim gönderebilirsin.</p>
+            <a href="{% url 'create_feedback' %}" class="inline-flex items-center bg-[#666A73] hover:bg-[#000000] text-white px-5 py-2 rounded-xl transition duration-200 text-sm font-semibold">
+                <i class="fas fa-comment-dots mr-2"></i>Geri Bildirim Gönder
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -10,6 +10,11 @@ class UserProfile(models.Model):
     avatar_mode = models.CharField(max_length=20, default='initial')
     avatar_preset = models.CharField(max_length=50, blank=True, default='')
     avatar_config = models.JSONField(default=dict, blank=True)
+    has_seen_welcome_popup = models.BooleanField(default=False)
+    notify_votes = models.BooleanField(default=True)
+    notify_comments = models.BooleanField(default=True)
+    notify_feedback = models.BooleanField(default=True)
+    notify_moderation = models.BooleanField(default=True)
     is_comment_banned = models.BooleanField(default=False)
     comment_ban_until = models.DateTimeField(null=True, blank=True)
     is_post_banned = models.BooleanField(default=False)
@@ -67,6 +72,13 @@ class Post(models.Model):
         ('lifestyle', 'Yaşam'),
     ]
 
+    POLL_CLOSE_CHOICES = [
+        ('none', 'Kapanış yok'),
+        ('24h', '24 saat sonra'),
+        ('3d', '3 gün sonra'),
+        ('manual', 'Manuel (tarih seç)'),
+    ]
+
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
     title = models.CharField(max_length=200)
     content = models.TextField()
@@ -74,6 +86,8 @@ class Post(models.Model):
     post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default='comment_only')
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='d')
     allow_multiple_choices = models.BooleanField(default=False)
+    poll_close_mode = models.CharField(max_length=10, choices=POLL_CLOSE_CHOICES, default='none')
+    poll_closes_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     moderated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='moderated_posts')
@@ -90,6 +104,15 @@ class Post(models.Model):
             if user == self.author or user.is_staff:
                 return True
         return False
+
+    def is_poll_closed(self):
+        if self.post_type == 'comment_only':
+            return True
+        if self.poll_close_mode == 'none':
+            return False
+        if self.poll_closes_at is None:
+            return False
+        return timezone.now() >= self.poll_closes_at
 
     class Meta:
         verbose_name = 'Gönderi'
@@ -142,11 +165,14 @@ class PollVote(models.Model):
         unique_together = ['user', 'option']
 
 
+
+
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications_sent')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
     comment = models.ForeignKey('Comment', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    feedback = models.ForeignKey('Feedback', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
     verb = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -239,6 +265,9 @@ class Feedback(models.Model):
     message = models.TextField()
     page_url = models.URLField(max_length=500, blank=True, default='')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    moderator_reply = models.TextField(blank=True, default='')
+    replied_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='feedbacks_replied')
+    replied_at = models.DateTimeField(null=True, blank=True)
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='feedbacks_resolved')
     resolved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -249,4 +278,59 @@ class Feedback(models.Model):
     class Meta:
         verbose_name = 'Geri Bildirim'
         verbose_name_plural = 'Geri Bildirimler'
+        ordering = ['-created_at']
+
+
+class FeedbackMessage(models.Model):
+    feedback = models.ForeignKey(Feedback, on_delete=models.CASCADE, related_name='messages')
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='feedback_messages')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        who = self.author.username if self.author else 'Sistem'
+        return f"{who} - Feedback #{self.feedback_id}"
+
+    class Meta:
+        verbose_name = 'Geri Bildirim Mesajı'
+        verbose_name_plural = 'Geri Bildirim Mesajları'
+        ordering = ['created_at']
+
+
+class ModerationLog(models.Model):
+    ACTION_CHOICES = [
+        ('approve_post', 'Gönderi Onayla'),
+        ('reject_post', 'Gönderi Reddet'),
+        ('reply_feedback', 'Geri Bildirim Yanıtla'),
+        ('resolve_feedback', 'Geri Bildirim Çözüldü'),
+        ('handle_report', 'Rapor İşlemi'),
+        ('ban_user', 'Kullanıcı Ban'),
+        ('unban_user', 'Kullanıcı Unban'),
+        ('unban_all', 'Tüm Yasakları Kaldır'),
+        ('deactivate_user', 'Kullanıcı Pasif'),
+        ('reactivate_user', 'Kullanıcı Aktif'),
+    ]
+
+    TARGET_CHOICES = [
+        ('post', 'Gönderi'),
+        ('feedback', 'Geri Bildirim'),
+        ('report', 'Rapor'),
+        ('user', 'Kullanıcı'),
+    ]
+
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='moderation_logs')
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES)
+    target_type = models.CharField(max_length=20, choices=TARGET_CHOICES)
+    target_id = models.PositiveIntegerField()
+    summary = models.CharField(max_length=255, blank=True, default='')
+    details = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        actor = self.actor.username if self.actor else 'Sistem'
+        return f"{actor} - {self.action} - {self.target_type}:{self.target_id}"
+
+    class Meta:
+        verbose_name = 'Moderasyon Logu'
+        verbose_name_plural = 'Moderasyon Logları'
         ordering = ['-created_at']

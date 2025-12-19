@@ -163,3 +163,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
+
+FEATURE_POLL_STATUS_BADGE = os.environ.get('FEATURE_POLL_STATUS_BADGE', 'True').lower() in ('1', 'true', 'yes', 'y', 'on')

@@ -1,0 +1,57 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Bildirim Ayarları - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div>
+        <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight">Bildirim Ayarları</h1>
+        <p class="text-sm text-[#666A73] mt-1">Hangi durumlarda bildirim almak istediğini buradan seçebilirsin.</p>
+    </div>
+
+    <div class="bg-white border border-[#BFBFBF] rounded-2xl p-6">
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            <div class="space-y-3">
+                <label class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-[#000000]">Oy bildirimleri</p>
+                        <p class="text-xs text-[#666A73] mt-0.5">Birisi anketine oy verdiğinde bildirim al.</p>
+                    </div>
+                    {{ form.notify_votes }}
+                </label>
+
+                <label class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-[#000000]">Yorum bildirimleri</p>
+                        <p class="text-xs text-[#666A73] mt-0.5">Birisi gönderine yorum yaptığında bildirim al.</p>
+                    </div>
+                    {{ form.notify_comments }}
+                </label>
+
+                <label class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-[#000000]">Geri bildirim bildirimleri</p>
+                        <p class="text-xs text-[#666A73] mt-0.5">Geri bildirimlerine yanıt/çözüm geldiğinde bildirim al.</p>
+                    </div>
+                    {{ form.notify_feedback }}
+                </label>
+
+                <label class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-[#000000]">Moderasyon bildirimleri</p>
+                        <p class="text-xs text-[#666A73] mt-0.5">Gönderin onaylandığında/redi edildiğinde bildirim al.</p>
+                    </div>
+                    {{ form.notify_moderation }}
+                </label>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-2">
+                <a href="{% url 'user_profile' request.user.username %}" class="px-4 py-2 rounded-xl text-sm border border-[#BFBFBF] bg-white text-[#000000] hover:bg-[#F8F9F6] transition duration-200">Geri dön</a>
+                <button type="submit" class="px-5 py-2 rounded-xl text-sm bg-[#000000] text-white font-semibold hover:bg-[#666A73] transition duration-200">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

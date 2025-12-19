@@ -1,0 +1,148 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Geri Bildirim Detayı - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm p-8">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight">Geri Bildirim</h1>
+                <p class="text-sm text-[#666A73] mt-1">
+                    <span class="font-semibold text-[#000000]">Konu:</span> {{ feedback.subject }}
+                </p>
+                <p class="text-xs text-[#666A73] mt-2">
+                    <span class="font-semibold text-[#000000]">Gönderen:</span> {{ feedback.user.username }}
+                    <span class="mx-1">|</span>
+                    <span class="font-semibold text-[#000000]">Tarih:</span> {{ feedback.created_at|date:"d.m.Y H:i" }}
+                </p>
+            </div>
+
+            <div class="shrink-0">
+                {% if feedback.status == 'open' %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#666A73] bg-white">İnceleniyor</span>
+                {% else %}
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#0B5275] text-[#0B5275] bg-[#0B5275]/10">Yanıtlandı / Çözüldü</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if feedback.page_url %}
+            <div class="mt-4">
+                <a href="{{ feedback.page_url }}" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-[#666A73] hover:text-[#000000] transition duration-200">
+                    Sayfa linki
+                </a>
+            </div>
+        {% endif %}
+
+        <div class="bg-[#BFBFBF]/20 rounded-xl p-4 mt-5">
+            <p class="text-sm text-[#666A73] whitespace-pre-wrap">{{ feedback.message }}</p>
+        </div>
+
+        <div class="mt-6">
+            <h2 class="text-base font-semibold text-[#000000]">Mesajlaşma</h2>
+
+            <div class="mt-3 space-y-3">
+                {% for m in thread %}
+                    {% if m.author and m.author.id == feedback.user.id %}
+                        <div class="flex justify-end">
+                            <div class="max-w-[85%] bg-[#BFBFBF]/20 border border-[#BFBFBF] rounded-2xl px-4 py-3">
+                                <p class="text-xs font-semibold text-[#000000]">{{ m.author.username }}</p>
+                                <p class="mt-1 text-sm text-[#666A73] whitespace-pre-wrap">{{ m.message }}</p>
+                                <p class="mt-2 text-[11px] text-[#666A73]">{{ m.created_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="flex justify-start">
+                            <div class="max-w-[85%] bg-[#0B5275]/10 border border-[#0B5275]/30 rounded-2xl px-4 py-3">
+                                <p class="text-xs font-semibold text-[#0B5275]">{% if m.author %}{{ m.author.username }}{% else %}Sistem{% endif %}</p>
+                                <p class="mt-1 text-sm text-[#000000] whitespace-pre-wrap">{{ m.message }}</p>
+                                <p class="mt-2 text-[11px] text-[#666A73]">{{ m.created_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if not is_moderator and feedback.status == 'open' %}
+                <form method="post" action="{% url 'add_feedback_message' feedback.id %}" class="mt-4">
+                    {% csrf_token %}
+                    <label class="block text-sm font-medium text-[#000000] mb-2">Ek bilgi (opsiyonel)</label>
+                    <textarea name="message" rows="3" class="w-full px-3 py-2 border border-[#BFBFBF] rounded-xl text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]" placeholder="Ek detayları yaz..."></textarea>
+                    <div class="mt-2 flex justify-end">
+                        <button type="submit" class="bg-[#000000] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#666A73] transition duration-200">Gönder</button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if feedback.moderator_reply %}
+            {% if not reply_in_thread %}
+                <div class="bg-[#0B5275]/10 border border-[#0B5275]/30 rounded-xl p-4 mt-5">
+                    <p class="text-xs font-semibold text-[#0B5275] mb-2">Yanıt</p>
+                    <p class="text-sm text-[#000000] whitespace-pre-wrap">{{ feedback.moderator_reply }}</p>
+                    <p class="mt-2 text-[11px] text-[#666A73]">Yanıtlayan: {{ feedback.replied_by.username }}{% if feedback.replied_at %} ({{ feedback.replied_at|date:"d.m.Y H:i" }}){% endif %}</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-white border border-[#BFBFBF] rounded-xl p-4 mt-5">
+                <p class="text-sm text-[#666A73]">Geri bildiriminiz inceleniyor, geri bildiriminiz için teşekkür ederiz.</p>
+            </div>
+        {% endif %}
+
+        {% if feedback.status == 'resolved' %}
+            <div class="bg-white border border-[#BFBFBF] rounded-xl p-4 mt-5">
+                <div class="text-sm text-[#666A73] space-y-1">
+                    <p>Merhaba,</p>
+                    <p>Paylaştığınız geri bildirim doğrultusunda ilgili konu çözüme kavuşturulmuştur.</p>
+                    <p>İlginiz ve sabrınız için teşekkür ederiz.</p>
+                    <p>Uygulamamızı birlikte daha iyi hale getirdiğimiz için mutluyuz.</p>
+                    <p>Görüş ve önerilerinizi her zaman bizimle paylaşabilirsiniz. 🌟</p>
+                </div>
+                <p class="mt-3 text-[11px] text-[#666A73]">
+                    <span class="font-semibold text-[#000000]">Çözen:</span> {{ feedback.resolved_by.username }}{% if feedback.resolved_at %} ({{ feedback.resolved_at|date:"d.m.Y H:i" }}){% endif %}
+                </p>
+            </div>
+        {% endif %}
+
+        <div class="mt-6 flex items-center justify-between gap-3">
+            <a href="{% if is_moderator %}{% url 'moderate_feedback' %}{% else %}{% url 'create_feedback' %}{% endif %}" class="inline-flex items-center gap-2 text-sm font-semibold text-[#666A73] hover:text-[#000000] transition duration-200">
+                <i class="fas fa-arrow-left"></i>
+                Geri dön
+            </a>
+
+            {% if is_moderator %}
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'moderate_feedback' %}?focus={{ feedback.id }}" class="text-sm font-semibold px-3 py-2 rounded-xl border border-[#BFBFBF] bg-white text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
+                        Panele dön
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if is_moderator %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm p-8">
+            <h2 class="text-lg font-semibold text-[#000000] mb-4">Moderatör İşlemleri</h2>
+
+            <form method="post" action="{% url 'reply_feedback' feedback.pk %}" class="space-y-3">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-sm font-medium text-[#000000] mb-2">Yanıt</label>
+                    <textarea name="moderator_reply" rows="4" class="w-full px-3 py-2 border border-[#BFBFBF] rounded-xl text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]" placeholder="Kullanıcıya yanıt yaz...">{{ feedback.moderator_reply }}</textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                    <button type="submit" class="bg-white hover:bg-[#F8F9F6] text-[#000000] border border-[#BFBFBF] px-4 py-2 rounded-xl transition duration-200 text-sm font-semibold">
+                        Yanıtla
+                    </button>
+                    {% if feedback.status == 'open' %}
+                        <button type="submit" formmethod="post" formaction="{% url 'resolve_feedback' feedback.pk %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-5 py-2 rounded-xl transition duration-200 text-sm font-medium">
+                            Çözüldü işaretle
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

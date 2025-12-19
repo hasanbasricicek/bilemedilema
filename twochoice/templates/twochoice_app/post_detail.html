@@ -13,6 +13,7 @@
                     <div class="w-11 h-11 flex items-center justify-center">
                         {% avatar post.author 44 %}
                     </div>
+
                     <div>
                         <div class="flex items-center space-x-2">
                             <a href="{% url 'user_profile' post.author.username %}" class="font-semibold text-[#000000] text-base hover:text-[#666A73] transition duration-200">{{ post.author.username }}</a>
@@ -35,6 +36,7 @@
                         <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Yorum</span>
                     {% elif post.post_type == 'poll_only' %}
                         <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Anket</span>
+                    {# Giriş yapmamış veya anket kapanmışsa salt okunur sonuç kartları #}
                     {% else %}
                         <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#666A73] text-[#000000] bg-white">Karma</span>
                     {% endif %}
@@ -76,81 +78,103 @@
                 {% endwith %}
             {% endif %}
 
+            {# Post içeriği anket içeriyorsa kullanıcıya sonuç/vote kartı gösterilir #}
             {% if post.post_type != 'comment_only' %}
-                <div class="bg-white rounded-xl p-4 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="text-sm font-semibold text-[#000000]">Anket</div>
-                        <div class="js-total-votes text-xs text-[#666A73]" data-post-id="{{ post.pk }}">Toplam {{ post.votes.count }} oy</div>
+                <div class="poll-card mb-8" data-poll-card>
+                    <div class="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-[#BFBFBF]/60">
+                        <div>
+                            <p class="text-xs font-semibold tracking-[0.24em] uppercase text-[#666A73]">Anket</p>
+                            <div class="flex items-center gap-2 mt-2 flex-wrap">
+                                {% if poll_closed %}
+                                    <span class="poll-status-badge poll-status-closed">
+                                        <i class="fas fa-lock text-[10px]"></i>
+                                        Kapalı
+                                    </span>
+                                    <div class="poll-progress-bar poll-progress-bar-compact w-20" aria-hidden="true">
+                                        <div class="poll-progress-fill secondary w-full"></div>
+                                    </div>
+                                {% else %}
+                                    <span class="poll-status-badge poll-status-open">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
+                                        Açık
+                                    </span>
+                                {% endif %}
+
+                                {% if post.poll_close_mode != 'none' and post.poll_closes_at and not poll_closed %}
+                                    <span class="poll-countdown inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#BFBFBF] bg-white text-[#666A73] text-xs font-semibold" data-state="open" data-closes-at="{{ post.poll_closes_at|date:'c' }}" data-close-mode="{{ post.poll_close_mode }}" {% if post.poll_close_mode == '24h' %}data-duration-sec="86400"{% elif post.poll_close_mode == '3d' %}data-duration-sec="259200"{% endif %}>
+                                        <i class="fas fa-clock text-[10px]"></i>
+                                        <span class="poll-countdown-text">Kapanış: --:--</span>
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-sm font-medium text-[#666A73] js-total-votes" data-post-id="{{ post.pk }}" aria-live="polite">
+                            Toplam {{ post.votes.count }} oy
+                        </div>
                     </div>
 
-
-                    {% if user.is_authenticated %}
-                        <form id="poll-form" method="post" action="{% url 'vote_poll' post.pk %}">
+                    {# Oy verebilecek oturumlar için etkileşimli butonlar #}
+                    {% if user.is_authenticated and not poll_closed %}
+                        <form id="poll-form" method="post" action="{% url 'vote_poll' post.pk %}" class="flex flex-col gap-4 mt-5">
                             {% csrf_token %}
                             <input id="poll-selected-option" type="hidden" name="options" value="">
-                            <div class="flex items-center gap-2">
-                                {% for result in poll_results %}
-                                    <button
-                                        type="button"
-                                        class="poll-option-card flex-1 text-center relative rounded-lg p-3 border transition duration-150 active:scale-[0.98] {% if result.option.id in user_votes %}bg-[#000000] border-[#000000] text-white{% else %}bg-[#BFBFBF]/30 border-[#BFBFBF] text-[#000000] hover:border-[#666A73]{% endif %}"
-                                        data-post-id="{{ post.pk }}"
-                                        data-option-id="{{ result.option.id }}"
-                                        data-vote-url="{% url 'vote_poll' post.pk %}"
-                                        data-allow-multiple="{{ post.allow_multiple_choices|lower }}"
-                                    >
-                                        <div class="text-xs font-medium mb-1 {% if result.option.id in user_votes %}text-white{% else %}text-[#666A73]{% endif %}">
-                                            {{ result.option.option_text }}
+                            {% for result in poll_results %}
+                                <button
+                                    type="button"
+                                    class="poll-option poll-option-card text-left {% if result.option.id in user_votes %}poll-option-selected{% endif %}"
+                                    data-post-id="{{ post.pk }}"
+                                    data-option-id="{{ result.option.id }}"
+                                    data-vote-url="{% url 'vote_poll' post.pk %}"
+                                    data-allow-multiple="{{ post.allow_multiple_choices|lower }}"
+                                    aria-pressed="{% if result.option.id in user_votes %}true{% else %}false{% endif %}"
+                                >
+                                    <div class="flex flex-wrap items-center justify-between gap-4">
+                                        <div class="flex flex-col">
+                                            <span class="text-sm font-medium text-[#1f2933]">{{ result.option.option_text }}</span>
+                                            <span class="poll-vote-count js-option-votes" data-poll-tooltip="{{ result.vote_count }} oy">{{ result.vote_count }} oy</span>
                                         </div>
-                                        <div class="js-option-percent text-xl font-bold tracking-tight {% if result.option.id in user_votes %}text-white{% else %}text-[#000000]{% endif %}">
-                                            {{ result.percentage|floatformat:0 }}%
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="poll-percentage js-option-percent text-3xl">{{ result.percentage|floatformat:0 }}%</span>
+                                            <span class="text-xs uppercase tracking-wide text-[#6b7280]">pay</span>
                                         </div>
-                                        <div class="js-option-votes text-[10px] {% if result.option.id in user_votes %}text-white/70{% else %}text-[#666A73]{% endif %}">
-                                            {{ result.vote_count }} oy
-                                        </div>
-                                    </button>
-                                    {% if not forloop.last %}
-                                        <div class="flex-shrink-0 px-1.5 py-0.5 bg-white border border-[#BFBFBF] rounded text-[10px] font-semibold text-[#666A73]">
-                                            vs
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
+                                    </div>
+                                    <div class="poll-progress-bar mt-3 js-option-bar-wrapper" role="img" aria-label="{{ result.percentage|floatformat:0 }}%, {{ result.vote_count }} oy">
+                                        <div class="poll-progress-fill js-option-bar" style="width: {{ result.percentage|floatformat:0 }}%"></div>
+                                    </div>
+                                </button>
+                            {% endfor %}
 
                             {% if post.allow_multiple_choices %}
-                                <button type="button" id="poll-multi-submit" class="mt-4 w-full bg-[#666A73] hover:bg-[#000000] text-white font-semibold py-3 rounded-xl transition duration-200">
-                                    Oy Ver
-                                </button>
-                                <div class="mt-3 text-xs text-[#666A73]">
-                                    Birden fazla seçenek seçebilirsin.
+                                <div class="flex flex-col gap-2 pt-2">
+                                    <button type="button" id="poll-multi-submit" class="poll-action-button bg-[#000000] text-white hover:bg-[#1f2933]" data-loading-text="Gönderiliyor...">
+                                        Oy Ver
+                                    </button>
+                                    <p class="text-xs text-[#666A73]">Birden fazla seçenek seçebilirsin.</p>
                                 </div>
                             {% else %}
-                                <div class="mt-3 text-xs text-[#666A73]">
-                                    Seçeneğe tıklayınca oy verilir.
-                                </div>
+                                <p class="text-xs text-[#666A73] pt-1">Seçeneğe tıklayınca oy verilir.</p>
                             {% endif %}
                         </form>
                     {% else %}
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-col gap-4 mt-5">
                             {% for result in poll_results %}
-                                <div class="poll-option-card flex-1 text-center relative rounded-lg p-3 border bg-[#BFBFBF]/30 border-[#BFBFBF] text-[#000000]">
-                                    <div class="text-xs font-medium mb-1 text-[#666A73]">
-                                        {{ result.option.option_text }}
+                                <div class="poll-option poll-option-card opacity-75 cursor-default" role="img" aria-label="{{ result.option.option_text }} için {{ result.percentage|floatformat:0 }}%, {{ result.vote_count }} oy">
+                                    <div class="flex flex-wrap items-center justify-between gap-4">
+                                        <div>
+                                            <span class="text-sm font-medium text-[#1f2933]">{{ result.option.option_text }}</span>
+                                            <span class="poll-vote-count">{{ result.vote_count }} oy</span>
+                                        </div>
+                                        <div class="poll-percentage text-3xl">{{ result.percentage|floatformat:0 }}%</div>
                                     </div>
-                                    <div class="text-xl font-bold tracking-tight text-[#000000]">
-                                        {{ result.percentage|floatformat:0 }}%
-                                    </div>
-                                    <div class="text-[10px] text-[#666A73]">
-                                        {{ result.vote_count }} oy
+                                    <div class="poll-progress-bar poll-progress-bar-compact mt-3">
+                                        <div class="poll-progress-fill secondary" style="width: {{ result.percentage|floatformat:0 }}%"></div>
                                     </div>
                                 </div>
-                                {% if not forloop.last %}
-                                    <div class="flex-shrink-0 px-1.5 py-0.5 bg-white border border-[#BFBFBF] rounded text-[10px] font-semibold text-[#666A73]">
-                                        vs
-                                    </div>
-                                {% endif %}
                             {% endfor %}
                         </div>
-                        <p class="mt-4 text-center text-sm text-[#666A73]">Oy vermek için <a href="{% url 'login' %}" class="text-[#666A73] hover:text-[#000000] font-semibold">giriş yapın</a></p>
+                        {% if not user.is_authenticated %}
+                            <p class="mt-4 text-center text-sm text-[#666A73]">Oy vermek için <a href="{% url 'login' %}" class="text-[#666A73] hover:text-[#000000] font-semibold">giriş yapın</a></p>
+                        {% endif %}
                     {% endif %}
                 </div>
             {% endif %}
@@ -158,20 +182,43 @@
             <div class="flex items-center justify-between pt-6 border-t border-[#BFBFBF]">
                 <div class="flex items-center space-x-4">
                     {% if user == post.author %}
-                        <a href="{% url 'edit_post' post.pk %}" class="text-[#666A73] hover:text-[#000000] font-medium transition duration-200">
+                        <a href="{% url 'edit_post' post.pk %}" class="inline-flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold text-[#000000] bg-white border border-[#BFBFBF] hover:border-[#666A73] transition duration-200">
                             <i class="fas fa-edit mr-1"></i>Düzenle
                         </a>
-                        <a href="{% url 'delete_post' post.pk %}" class="text-[#B33F00] hover:text-[#000000] font-medium transition duration-200">
+                        <a href="{% url 'delete_post' post.pk %}" class="inline-flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold text-[#B33F00] bg-white border border-[#BFBFBF] hover:border-[#B33F00] transition duration-200">
                             <i class="fas fa-trash mr-1"></i>Sil
                         </a>
                     {% endif %}
                 </div>
 
-                {% if user.is_authenticated and user != post.author %}
-                    <a href="{% url 'create_report' 'post' post.pk %}" class="text-[#666A73] hover:text-[#B33F00] font-medium transition duration-200">
-                        <i class="fas fa-flag mr-1"></i>Rapor Et
-                    </a>
-                {% endif %}
+                <div class="flex items-center gap-3">
+                    <button id="post-share-btn" type="button" class="js-share-post inline-flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold text-[#000000] bg-white border border-[#BFBFBF] hover:border-[#666A73] transition duration-200" data-share-url="{{ share_url }}" data-share-title="{{ post.title|escapejs }}" aria-label="Paylaş">
+                        <i class="fas fa-share-nodes mr-1"></i>Paylaş
+                    </button>
+
+                    {% if poll_closed and post.post_type != 'comment_only' %}
+                        <button
+                            id="poll-share-btn"
+                            type="button"
+                            class="inline-flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold text-[#000000] bg-white border border-[#BFBFBF] hover:border-[#666A73] transition duration-200"
+                            data-result-share-url="{{ share_url }}"
+                            data-result-share-title="{{ post.title|escapejs }}"
+                            data-result-share-text="{{ poll_share_text|escapejs }}"
+                            data-post-id="{{ post.pk }}"
+                            data-total-votes="{{ poll_total_votes }}"
+                            data-results='{{ poll_results_json|default:"[]"|escape }}'
+                            data-share-theme="jade"
+                            aria-label="Sonuçları paylaş">
+                            <i class="fas fa-square-poll-horizontal mr-1"></i>Sonuçları paylaş
+                        </button>
+                    {% endif %}
+
+                    {% if user.is_authenticated and user != post.author %}
+                        <a href="{% url 'create_report' 'post' post.pk %}" class="inline-flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold text-[#000000] bg-white border border-[#BFBFBF] hover:border-[#B33F00] hover:text-[#B33F00] transition duration-200">
+                            <i class="fas fa-flag mr-1"></i>Rapor Et
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -190,7 +237,7 @@
                             </div>
                             <div class="flex-1">
                                 {{ comment_form.content }}
-                                <button type="submit" class="mt-2 bg-[#666A73] hover:bg-[#000000] text-white px-6 py-2 rounded-xl transition duration-200">
+                                <button type="submit" class="mt-2 bg-[#000000] hover:bg-[#666A73] text-white px-6 py-2.5 rounded-xl transition duration-200 text-sm font-semibold">
                                     Yorum Yap
                                 </button>
                             </div>
@@ -256,14 +303,11 @@
         </a>
     </div>
 </div>
-
-<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
-    <div id="toast-inner" class="bg-[#666A73] text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg border border-[#000000]"></div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Çerezlerden verilen anahtarı okuyup CSRF gibi değerleri döndürmek için yardımcı fonksiyon
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -271,6 +315,7 @@
         return null;
     }
 
+    // Üstteki toast bileşenini kolayca tetikleyip bildirim vermek için kullanılır
     function showToast(message) {
         const toast = document.getElementById('toast');
         const inner = document.getElementById('toast-inner');
@@ -283,6 +328,24 @@
         }, 2200);
     }
 
+    // Sayılar arası yumuşak geçiş animasyonu
+    function animateNumber(el, start, end, options = {}) {
+        if (!el) return;
+        const {
+            duration = 350,
+            formatter = (value) => `${Math.round(value)}`,
+        } = options;
+        const startTime = performance.now();
+        function frame(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const current = start + (end - start) * progress;
+            el.textContent = formatter(current);
+            if (progress < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    }
+
+    // Çoklu butonları aynı anda devre dışı bırakmak için yardımcı
     function setDisabledForNode(node, disabled) {
         if (!node) return;
         node.disabled = disabled;
@@ -293,66 +356,64 @@
         }
     }
 
+    /**
+     * updatePollUI(postId, results)
+     *  - Oy kullanımı sonrası seçeneklere ait yüzdeleri, oy sayılarını ve bar genişliklerini günceller
+     *  - En yüksek oya sahip seçeneğe .poll-option-selected sınıfını atar
+     *  - Toplam oy sayısını kart üstünde günceller
+     */
     function updatePollUI(postId, results) {
         const cards = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
         if (!cards.length) return;
 
         const byOptionId = new Map(results.map(r => [String(r.option_id), r]));
         let totalVotes = 0;
+        let maxPct = 0;
+
+        results.forEach(r => {
+            const votes = Number(r.vote_count || 0);
+            totalVotes += votes;
+            maxPct = Math.max(maxPct, Number(r.percentage || 0));
+        });
 
         cards.forEach(card => {
             const optionId = card.dataset.optionId;
             const r = byOptionId.get(String(optionId));
             if (!r) return;
-
-            totalVotes += Number(r.vote_count || 0);
 
             const percentEl = card.querySelector('.js-option-percent');
             const votesEl = card.querySelector('.js-option-votes');
-            if (percentEl) percentEl.textContent = `${Math.round(r.percentage)}%`;
-            if (votesEl) votesEl.textContent = `${r.vote_count} oy`;
-        });
+            const barEl = card.querySelector('.js-option-bar');
 
-        const maxPct = results.reduce((m, r) => Math.max(m, Number(r.percentage || 0)), 0);
-        cards.forEach(card => {
-            const optionId = card.dataset.optionId;
-            const r = byOptionId.get(String(optionId));
-            if (!r) return;
-
-            const isWinner = results.length > 0 && Number(r.percentage || 0) === maxPct && totalVotes > 0;
-            if (isWinner) {
-                card.classList.add('bg-[#000000]', 'border-[#000000]', 'text-white');
-                card.classList.remove('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
-                card.querySelectorAll('.js-option-percent, .js-option-votes, .text-xs').forEach(el => {
-                    el.classList.add('text-white');
-                    el.classList.remove('text-[#000000]', 'text-[#666A73]');
+            if (votesEl) {
+                const prevVotes = Number(card.dataset.prevVotes || votesEl.textContent.replace(/\D/g, '') || 0);
+                animateNumber(votesEl, prevVotes, Number(r.vote_count || 0), {
+                    formatter: (value) => `${Math.round(value)} oy`,
                 });
-            } else {
-                card.classList.remove('bg-[#000000]', 'border-[#000000]', 'text-white');
-                card.classList.add('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
-                
-                const titleEl = card.querySelector('.text-xs');
-                if (titleEl) {
-                    titleEl.classList.remove('text-white');
-                    titleEl.classList.add('text-[#666A73]');
-                }
-                const percentEl = card.querySelector('.js-option-percent');
-                if (percentEl) {
-                    percentEl.classList.remove('text-white');
-                    percentEl.classList.add('text-[#000000]');
-                }
-                const votesEl = card.querySelector('.js-option-votes');
-                if (votesEl) {
-                    votesEl.classList.remove('text-white/70');
-                    votesEl.classList.add('text-[#666A73]');
-                }
+                card.dataset.prevVotes = String(r.vote_count || 0);
             }
+
+            if (percentEl) {
+                const prevPct = Number(card.dataset.prevPercent || percentEl.textContent.replace('%', '') || 0);
+                animateNumber(percentEl, prevPct, Number(r.percentage || 0), {
+                    formatter: (value) => `${Math.round(value)}%`,
+                });
+                card.dataset.prevPercent = String(r.percentage || 0);
+            }
+
+            if (barEl) {
+                barEl.style.width = `${Math.round(r.percentage || 0)}%`;
+            }
+
+            const isWinner = totalVotes > 0 && Number(r.percentage || 0) === maxPct;
+            card.classList.toggle('poll-option-selected', isWinner);
         });
 
         const totalEl = document.querySelector(`.js-total-votes[data-post-id="${postId}"]`);
         if (totalEl) totalEl.textContent = `Toplam ${totalVotes} oy`;
     }
 
+    // Oy API'sine POST isteği yapan yardımcı
     async function sendVote(voteUrl, optionIds, csrfToken) {
         const formData = new FormData();
         optionIds.forEach((id) => formData.append('options', id));
@@ -372,9 +433,11 @@
 
     const pollForm = document.getElementById('poll-form');
     if (pollForm) {
+        // Çoklu seçim modunda kullanıcı tercihlerini geçici olarak tuttuğumuz set
         const multiSubmit = document.getElementById('poll-multi-submit');
         const selected = new Set();
 
+        // Tekli oy akışı; kullanıcı butona bastığında doğrudan gönder
         pollForm.addEventListener('click', async function(e) {
             const btn = e.target.closest('.poll-option-card');
             if (!btn) return;
@@ -421,6 +484,7 @@
         });
 
         if (multiSubmit) {
+            // Multi-select akışında seçilenleri toplu gönderen buton dinleyicisi
             multiSubmit.addEventListener('click', async function() {
                 const anyBtn = pollForm.querySelector('.poll-option-card[data-vote-url]');
                 if (!anyBtn) return;
@@ -461,6 +525,457 @@
                 }
             });
         }
+    }
+
+    function canvasToBlob(canvas, options = {}) {
+        const { type = 'image/png', quality = 0.95 } = options;
+        return new Promise((resolve, reject) => {
+            if (canvas.toBlob) {
+                canvas.toBlob(blob => {
+                    if (blob) resolve(blob);
+                    else reject(new Error('Canvas boş döndü'));
+                }, type, quality);
+                return;
+            }
+
+            try {
+                const dataUrl = canvas.toDataURL(type, quality);
+                const byteString = atob(dataUrl.split(',')[1]);
+                const buffer = new ArrayBuffer(byteString.length);
+                const view = new Uint8Array(buffer);
+                for (let i = 0; i < byteString.length; i += 1) {
+                    view[i] = byteString.charCodeAt(i);
+                }
+                resolve(new Blob([buffer], { type }));
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    function drawRoundedRect(ctx, x, y, width, height, radius = 32) {
+        const r = Math.min(radius, height / 2, width / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + width - r, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+        ctx.lineTo(x + width, y + height - r);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        ctx.lineTo(x + r, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    const SHARE_THEMES = {
+        aurora: {
+            background: [
+                { stop: 0, color: '#030014' },
+                { stop: 0.35, color: '#130937' },
+                { stop: 0.75, color: '#1b1f47' },
+                { stop: 1, color: '#0f172a' },
+            ],
+            glow: [
+                { stop: 0, color: 'rgba(236,72,153,0.55)' },
+                { stop: 0.4, color: 'rgba(59,130,246,0.35)' },
+                { stop: 1, color: 'transparent' },
+            ],
+            pill: ['rgba(56,189,248,0.4)', 'rgba(236,72,153,0.4)'],
+            title: '#fdf2f8',
+            meta: '#c7d2fe',
+            divider: 'rgba(148,163,184,0.45)',
+            cardFill: 'rgba(9,12,28,0.88)',
+            cardStroke: 'rgba(147,197,253,0.18)',
+            shadow: 'rgba(14,0,40,0.55)',
+            accent: ['#5eead4', '#a855f7', '#f43f5e', '#f97316', '#38bdf8'],
+            rankFg: '#fdf2f8',
+            rankBg: '#0b1120',
+            infoTitle: '#facc15',
+            infoSubtitle: '#bae6fd',
+        },
+        citrus: {
+            background: [
+                { stop: 0, color: '#1a1309' },
+                { stop: 0.4, color: '#2b1600' },
+                { stop: 1, color: '#3d1b01' },
+            ],
+            glow: [
+                { stop: 0, color: 'rgba(251,191,36,0.55)' },
+                { stop: 0.5, color: 'rgba(249,115,22,0.35)' },
+                { stop: 1, color: 'transparent' },
+            ],
+            pill: ['rgba(251,191,36,0.45)', 'rgba(249,115,22,0.45)'],
+            title: '#fff7ed',
+            meta: '#fed7aa',
+            divider: 'rgba(253,230,138,0.4)',
+            cardFill: 'rgba(45,17,1,0.88)',
+            cardStroke: 'rgba(251,191,36,0.24)',
+            shadow: 'rgba(78,32,2,0.55)',
+            accent: ['#facc15', '#fb923c', '#f87171', '#f43f5e', '#fcd34d'],
+            rankFg: '#fff7ed',
+            rankBg: '#581c0c',
+            infoTitle: '#fbbf24',
+            infoSubtitle: '#fed7aa',
+        },
+        jade: {
+            background: [
+                { stop: 0, color: '#041815' },
+                { stop: 0.5, color: '#072824' },
+                { stop: 1, color: '#0a3c35' },
+            ],
+            glow: [
+                { stop: 0, color: 'rgba(43,200,179,0.55)' },
+                { stop: 0.6, color: 'rgba(123,217,158,0.35)' },
+                { stop: 1, color: 'transparent' },
+            ],
+            pill: ['rgba(43,200,179,0.5)', 'rgba(123,217,158,0.45)'],
+            title: '#e5e5e5',
+            meta: '#7bd99e',
+            divider: 'rgba(115,123,120,0.45)',
+            cardFill: 'rgba(6,29,26,0.94)',
+            cardStroke: 'rgba(43,200,179,0.2)',
+            shadow: 'rgba(6,29,26,0.55)',
+            accent: ['#2bc8b3', '#7bd99e', '#23a690', '#4ce0c3', '#7ae0c4'],
+            rankFg: '#061d1a',
+            rankBg: '#7bd99e',
+            infoTitle: '#2bc8b3',
+            infoSubtitle: '#e5e5e5',
+        },
+        tide: {
+            background: [
+                { stop: 0, color: '#00111a' },
+                { stop: 0.4, color: '#002737' },
+                { stop: 1, color: '#01394d' },
+            ],
+            glow: [
+                { stop: 0, color: 'rgba(34,211,238,0.5)' },
+                { stop: 0.6, color: 'rgba(16,185,129,0.35)' },
+                { stop: 1, color: 'transparent' },
+            ],
+            pill: ['rgba(34,211,238,0.45)', 'rgba(16,185,129,0.45)'],
+            title: '#ecfeff',
+            meta: '#bae6fd',
+            divider: 'rgba(125,211,252,0.45)',
+            cardFill: 'rgba(1,18,27,0.9)',
+            cardStroke: 'rgba(125,211,252,0.2)',
+            shadow: 'rgba(1,58,77,0.55)',
+            accent: ['#67e8f9', '#2dd4bf', '#5eead4', '#22d3ee', '#34d399'],
+            rankFg: '#ecfeff',
+            rankBg: '#022c39',
+            infoTitle: '#99f6e4',
+            infoSubtitle: '#bae6fd',
+        },
+    };
+
+    function pickShareTheme(theme) {
+        if (theme && SHARE_THEMES[theme]) return SHARE_THEMES[theme];
+        const keys = Object.keys(SHARE_THEMES);
+        const now = Date.now();
+        return SHARE_THEMES[keys[now % keys.length]];
+    }
+
+    async function renderPollShareImage({ title, results, totalVotes, shareUrl, theme }) {
+        const width = 1080;
+        const height = 1920;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        const palette = pickShareTheme(theme);
+
+        // Background
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        palette.background.forEach(({ stop, color }) => gradient.addColorStop(stop, color));
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        const glow = ctx.createRadialGradient(width * 0.32, height * 0.18, 0, width * 0.32, height * 0.18, width * 0.9);
+        palette.glow.forEach(({ stop, color }) => glow.addColorStop(stop, color));
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        for (let y = 80; y < height; y += 90) {
+            for (let x = 60; x < width; x += 90) {
+                ctx.fillRect(x, y, 4, 4);
+            }
+        }
+
+        ctx.fillStyle = palette.title;
+        ctx.font = '700 68px "Poppins", "Segoe UI", sans-serif';
+        ctx.fillText('bilemedilema', 96, 150);
+
+        // Status pill
+        const statusText = 'Anket sonuç kartı';
+        const pillWidth = ctx.measureText(statusText).width + 120;
+        drawRoundedRect(ctx, 96, 175, pillWidth, 60, 30);
+        const pillGradient = ctx.createLinearGradient(96, 175, 96 + pillWidth, 235);
+        pillGradient.addColorStop(0, palette.pill[0]);
+        pillGradient.addColorStop(1, palette.pill[1]);
+        ctx.fillStyle = pillGradient;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(248,250,252,0.45)';
+        ctx.stroke();
+        ctx.fillStyle = palette.meta;
+        ctx.font = '600 32px "Poppins", "Segoe UI", sans-serif';
+        ctx.fillText(statusText, 96 + 40, 215);
+
+        const cardX = 80;
+        const cardY = 260;
+        const cardWidth = width - 160;
+        const cardHeight = height - 560;
+
+        ctx.save();
+        ctx.shadowColor = palette.shadow;
+        ctx.shadowBlur = 70;
+        drawRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, 48);
+        ctx.fillStyle = palette.cardFill;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = palette.cardStroke;
+        ctx.lineWidth = 2;
+        drawRoundedRect(ctx, cardX + 14, cardY + 14, cardWidth - 28, cardHeight - 28, 42);
+        ctx.stroke();
+
+        const cardContentX = cardX + 80;
+        let cursorY = cardY + 140;
+
+        ctx.fillStyle = palette.title;
+        ctx.font = '700 60px "Poppins", "Segoe UI", sans-serif';
+        wrapCanvasText(ctx, title, cardContentX, cursorY, cardWidth - 160, 66);
+        cursorY += 120;
+
+        ctx.font = '500 36px "Poppins", "Segoe UI", sans-serif';
+        ctx.fillStyle = palette.meta;
+        const totalText = totalVotes <= 0 ? 'Henüz oy yok' : `Toplam ${totalVotes} oy`;
+        ctx.fillText(totalText, cardContentX, cursorY);
+        cursorY += 40;
+
+        ctx.fillStyle = palette.divider;
+        ctx.fillRect(cardContentX, cursorY + 10, cardWidth - 160, 2);
+        cursorY += 60;
+
+        const sorted = [...results]
+            .sort((a, b) => b.vote_count - a.vote_count)
+            .slice(0, 5);
+        const barHeight = 110;
+        const barGap = 40;
+        const accent = palette.accent;
+
+        sorted.forEach((item, idx) => {
+            const rowY = cursorY + idx * (barHeight + barGap);
+            const barBgWidth = cardWidth - 160;
+
+            ctx.globalAlpha = 0.75;
+            drawRoundedRect(ctx, cardContentX, rowY, barBgWidth, barHeight, 32);
+            ctx.fillStyle = 'rgba(12,18,37,0.92)';
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            const value = Math.max(item.percentage || 0, 0);
+            const fillWidth = Math.max((value / 100) * barBgWidth, 8);
+            const barGradient = ctx.createLinearGradient(cardContentX, rowY, cardContentX + fillWidth, rowY + barHeight);
+            const color = accent[idx % accent.length];
+            barGradient.addColorStop(0, color);
+            barGradient.addColorStop(1, `${color}dd`);
+            drawRoundedRect(ctx, cardContentX, rowY, fillWidth, barHeight, 32);
+            ctx.fillStyle = barGradient;
+            ctx.fill();
+
+            ctx.fillStyle = palette.rankBg;
+            ctx.font = '600 34px "Poppins", "Segoe UI", sans-serif';
+            drawRoundedRect(ctx, cardContentX - 60, rowY + barHeight / 2 - 32, 64, 64, 28);
+            ctx.fillStyle = palette.rankBg;
+            ctx.fill();
+            ctx.fillStyle = palette.rankFg;
+            ctx.textAlign = 'center';
+            ctx.fillText(String(idx + 1), cardContentX - 28, rowY + barHeight / 2 + 12);
+            ctx.textAlign = 'left';
+
+            ctx.fillStyle = palette.title;
+            ctx.font = '600 40px "Poppins", "Segoe UI", sans-serif';
+            wrapCanvasText(ctx, item.text || item.option_text || 'Seçenek', cardContentX + 32, rowY + 55, barBgWidth - 260, 44);
+
+            ctx.fillStyle = palette.meta;
+            ctx.font = '500 32px "Poppins", "Segoe UI", sans-serif';
+            ctx.fillText(`${item.vote_count} oy`, cardContentX + 32, rowY + barHeight - 18);
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '700 46px "Poppins", "Segoe UI", sans-serif';
+            ctx.fillText(`${Math.round(value)}%`, cardContentX + barBgWidth - 12, rowY + barHeight / 2 + 18);
+            ctx.textAlign = 'left';
+        });
+
+        const infoY = cardY + cardHeight - 120;
+        ctx.fillStyle = palette.infoTitle;
+        ctx.font = '600 32px "Poppins", "Segoe UI", sans-serif';
+        ctx.fillText('Tartışmayı büyüt', cardContentX, infoY);
+
+        ctx.font = '400 30px "Poppins", "Segoe UI", sans-serif';
+        ctx.fillStyle = palette.infoSubtitle;
+        ctx.fillText(shareUrl.replace(/^https?:\/\//, ''), cardContentX, infoY + 48);
+
+        return canvasToBlob(canvas, { type: 'image/png', quality: 0.95 });
+    }
+
+    function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+        if (!text) return;
+        const words = String(text).split(' ');
+        let line = '';
+        let offsetY = 0;
+        for (let n = 0; n < words.length; n++) {
+            const testLine = `${line}${words[n]} `;
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+                ctx.fillText(line.trim(), x, y + offsetY);
+                line = `${words[n]} `;
+                offsetY += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        if (line) ctx.fillText(line.trim(), x, y + offsetY);
+    }
+
+    let pollShareModalUrl = null;
+
+    function ensurePollShareModal() {
+        let modal = document.getElementById('poll-share-modal');
+        if (modal) return modal;
+        modal = document.createElement('div');
+        modal.id = 'poll-share-modal';
+        modal.className = 'hidden fixed inset-0 z-[70]';
+        modal.innerHTML = `
+            <div class="absolute inset-0 bg-black/70" data-poll-share-close></div>
+            <div class="absolute inset-0 flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative text-center space-y-4">
+                    <button type="button" class="absolute top-4 right-4 text-[#666A73] hover:text-[#000000]" data-poll-share-close aria-label="Kapat">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                    <h3 class="text-lg font-semibold text-[#000000]">Görsel hazır</h3>
+                    <p class="text-sm text-[#666A73]">Aşağıdaki görseli uzun basarak kaydedebilir veya indir butonunu kullanabilirsin.</p>
+                    <div class="rounded-xl border border-[#E5E7EB] overflow-hidden bg-[#F9FAFB] max-h-[60vh]">
+                        <img class="poll-share-modal-image w-full h-auto object-contain" alt="Anket sonucu görseli" />
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button type="button" class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#000000] hover:bg-[#666A73] transition" data-poll-share-download>
+                            <i class="fas fa-download mr-2"></i>Görseli indir
+                        </button>
+                        <button type="button" class="text-sm text-[#666A73] hover:text-[#000000]" data-poll-share-close>Kapat</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (event) => {
+            if (event.target.matches('[data-poll-share-close]')) {
+                hidePollShareModal();
+            }
+        });
+        const downloadBtn = modal.querySelector('[data-poll-share-download]');
+        downloadBtn.addEventListener('click', () => {
+            if (!pollShareModalUrl) return;
+            const link = document.createElement('a');
+            link.href = pollShareModalUrl;
+            link.download = 'poll-result.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        return modal;
+    }
+
+    function showPollShareModal(url) {
+        const modal = ensurePollShareModal();
+        const img = modal.querySelector('.poll-share-modal-image');
+        if (img) img.src = url;
+        pollShareModalUrl = url;
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function hidePollShareModal() {
+        const modal = document.getElementById('poll-share-modal');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        const img = modal.querySelector('.poll-share-modal-image');
+        if (img) img.src = '';
+        if (pollShareModalUrl) {
+            URL.revokeObjectURL(pollShareModalUrl);
+            pollShareModalUrl = null;
+        }
+    }
+
+    const pollShareBtn = document.getElementById('poll-share-btn');
+    if (pollShareBtn) {
+        pollShareBtn.addEventListener('click', async (event) => {
+            try {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                const results = JSON.parse(pollShareBtn.dataset.results || '[]');
+                if (!results.length) {
+                    showToast('Paylaşmak için sonuç bulunamadı.');
+                    return;
+                }
+                const totalVotes = Number(pollShareBtn.dataset.totalVotes || 0);
+                const title = pollShareBtn.dataset.resultShareTitle || pollShareBtn.dataset.shareTitle || 'Anket Sonucu';
+                const shareUrl = pollShareBtn.dataset.resultShareUrl || pollShareBtn.dataset.shareUrl || window.location.href;
+                const blob = await renderPollShareImage({ title, results, totalVotes, shareUrl });
+                const fileName = `poll-result-${pollShareBtn.dataset.postId || 'result'}.png`;
+                const blobUrl = URL.createObjectURL(blob);
+                const shareText = pollShareBtn.dataset.resultShareText || pollShareBtn.dataset.shareText || title;
+                const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent || '');
+
+                let shared = false;
+                if (typeof File !== 'undefined' && navigator.canShare) {
+                    try {
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title,
+                                text: shareText,
+                            });
+                            shared = true;
+                        }
+                    } catch (shareError) {
+                        if (shareError && shareError.name === 'AbortError') {
+                            shared = true;
+                        } else {
+                            console.warn('Share API desteklemiyor veya reddetti:', shareError);
+                        }
+                    }
+                }
+
+                if (shared) {
+                    URL.revokeObjectURL(blobUrl);
+                    return;
+                }
+
+                if (isMobile) {
+                    showPollShareModal(blobUrl);
+                    showToast('Görseli basılı tutarak kaydedebilirsin.');
+                } else {
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast('Görsel indirildi, paylaşmak için kullanabilirsin.');
+                    URL.revokeObjectURL(blobUrl);
+                }
+            } catch (error) {
+                console.error('Poll share error', error);
+                showToast('Paylaşım için görsel oluşturulamadı.');
+            }
+        });
     }
 
     const commentForm = document.getElementById('comment-form');
@@ -596,5 +1111,6 @@
             if (e.key === 'ArrowRight') navigate(1);
         });
     })();
-</script>
+
+    </script>
 {% endblock %}

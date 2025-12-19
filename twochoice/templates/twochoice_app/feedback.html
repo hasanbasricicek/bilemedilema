@@ -3,7 +3,7 @@
 {% block title %}Geri Bildirim - bilemedilema{% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto">
+<div class="max-w-xl mx-auto space-y-6">
     <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm p-8">
         <div class="mb-6">
             <h1 class="text-2xl sm:text-3xl font-semibold text-[#000000] tracking-tight mb-1">Geri Bildirim</h1>
@@ -39,5 +39,81 @@
             Gönderdiğin geri bildirim moderatörler tarafından görüntülenir.
         </p>
     </div>
+
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm p-8">
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold text-[#000000]">Gönderilen Geri Bildirimler</h2>
+            <p class="text-sm text-[#666A73]">Durumu ve yanıtları buradan takip edebilirsin.</p>
+        </div>
+
+        <div class="space-y-4">
+            {% for item in feedbacks %}
+                <div id="feedback-{{ item.id }}" class="border border-[#BFBFBF] rounded-xl p-4">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-xs text-[#666A73]">
+                                <span class="font-semibold text-[#000000]">Tarih:</span> {{ item.created_at|date:"d.m.Y H:i" }}
+                            </p>
+                            <a href="{% url 'feedback_detail' item.id %}" class="mt-1 font-semibold text-[#000000] hover:text-[#666A73] transition duration-200 inline-block">{{ item.subject }}</a>
+                        </div>
+
+                        {% if item.status == 'open' %}
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#BFBFBF] text-[#666A73] bg-white">İnceleniyor</span>
+                        {% else %}
+                            <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#0B5275] text-[#0B5275] bg-[#0B5275]/10">Yanıtlandı / Çözüldü</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="bg-[#BFBFBF]/20 rounded-xl p-3 mt-3">
+                        <p class="text-sm text-[#666A73] whitespace-pre-wrap">{{ item.message }}</p>
+                    </div>
+
+                    {% if item.moderator_reply %}
+                        <div class="bg-[#0B5275]/10 border border-[#0B5275]/30 rounded-xl p-3 mt-3">
+                            <p class="text-xs font-semibold text-[#0B5275] mb-2">Yanıt</p>
+                            <p class="text-sm text-[#000000] whitespace-pre-wrap">{{ item.moderator_reply }}</p>
+                            <p class="mt-2 text-[11px] text-[#666A73]">Yanıtlayan: {{ item.replied_by.username }}{% if item.replied_at %} ({{ item.replied_at|date:"d.m.Y H:i" }}){% endif %}</p>
+                        </div>
+                    {% else %}
+                        <div class="bg-white border border-[#BFBFBF] rounded-xl p-3 mt-3">
+                            <p class="text-sm text-[#666A73]">Geri bildiriminiz inceleniyor, geri bildiriminiz için teşekkür ederiz.</p>
+                        </div>
+                    {% endif %}
+
+                    {% if item.status == 'resolved' %}
+                        <div class="bg-white border border-[#BFBFBF] rounded-xl p-3 mt-3">
+                            <div class="text-sm text-[#666A73] space-y-1">
+                                <p>Merhaba,</p>
+                                <p>Paylaştığınız geri bildirim doğrultusunda ilgili konu çözüme kavuşturulmuştur.</p>
+                                <p>İlginiz ve sabrınız için teşekkür ederiz.</p>
+                                <p>Uygulamamızı birlikte daha iyi hale getirdiğimiz için mutluyuz.</p>
+                                <p>Görüş ve önerilerinizi her zaman bizimle paylaşabilirsiniz. 🌟</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="bg-[#F8F9F6] border border-[#BFBFBF] rounded-xl p-6 text-center">
+                    <p class="text-sm text-[#666A73]">Henüz geri bildirim göndermedin.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const focusId = params.get('focus');
+        if (!focusId) return;
+
+        const el = document.getElementById(`feedback-${focusId}`);
+        if (!el) return;
+
+        el.classList.add('ring-2', 'ring-[#0B5275]', 'bg-[#0B5275]/5');
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    })();
+</script>
 {% endblock %}

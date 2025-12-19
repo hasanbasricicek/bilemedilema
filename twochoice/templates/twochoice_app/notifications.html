@@ -13,12 +13,12 @@
             <form method="post" action="{% url 'mark_all_notifications_read' %}">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{% url 'notifications' %}">
-                <button type="submit" class="px-3 py-2 rounded-xl text-sm bg-[#666A73] hover:bg-[#000000] text-white font-medium transition duration-200">Hepsini Okundu</button>
+                <button type="submit" class="px-3 py-2.5 rounded-xl text-sm bg-[#000000] hover:bg-[#666A73] text-white font-semibold transition duration-200">Hepsini Okundu</button>
             </form>
             <form method="post" action="{% url 'clear_read_notifications' %}" onsubmit="return confirm('Okunan bildirimler temizlensin mi?');">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{% url 'notifications' %}">
-                <button type="submit" class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73] text-[#000000] bg-white font-medium transition duration-200">Okunanları Temizle</button>
+                <button type="submit" class="px-3 py-2.5 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73] text-[#000000] bg-white font-semibold transition duration-200">Okunanları Temizle</button>
             </form>
             <div class="text-sm text-[#666A73]">Sayfa {{ notifications.number }} / {{ notifications.paginator.num_pages }}</div>
         </div>
@@ -28,8 +28,18 @@
         <div class="divide-y divide-[#BFBFBF]">
             {% for item in notifications %}
                 {% if item.type == 'grouped' and item.post %}
-                    <a href="{% url 'post_detail' item.post.pk %}" class="block p-4 sm:p-5 hover:bg-[#F8F9F6] transition duration-200 {% if not item.is_read %}bg-[#F8F9F6]{% endif %}">
-                        <div class="text-sm text-[#000000]">
+                    <a href="{% url 'post_detail' item.post.pk %}" class="block p-4 sm:p-5 hover:bg-[#F8F9F6] transition duration-200 border-l-4 {% if not item.is_read %}bg-[#F8F9F6] border-[#0B5275]{% else %}border-transparent{% endif %}">
+                        <div class="flex items-start gap-3">
+                            <div class="shrink-0 mt-0.5 w-9 h-9 rounded-xl border border-[#BFBFBF] bg-white flex items-center justify-center text-[#666A73]">
+                                {% if item.action == 'vote' %}
+                                    <i class="fas fa-square-poll-horizontal"></i>
+                                {% else %}
+                                    <i class="fas fa-comment"></i>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-[#000000]">
                             {% with actors=item.actors %}
                                 {% if actors|length == 1 %}
                                     <span class="font-semibold">{{ actors.0.username }}</span>
@@ -48,12 +58,32 @@
                                     gönderinize yorum yaptı
                                 {% endif %}
                             </span>
+                            {% if item.count and item.count|add:'0' > 1 %}
+                                <span class="ml-2 inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border border-[#BFBFBF] text-[#666A73] bg-white">
+                                    {{ item.count }}
+                                </span>
+                            {% endif %}
                         </div>
-                        <div class="mt-1 text-xs text-gray-500">{{ item.created_at|date:"d.m.Y H:i" }}</div>
+                                <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                                    {% if not item.is_read %}
+                                        <span class="inline-flex items-center gap-1 text-[#0B5275] font-semibold">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#0B5275]"></span>
+                                            Yeni
+                                        </span>
+                                    {% endif %}
+                                    <span>{{ item.created_at|date:"d.m.Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </a>
                 {% elif item.type == 'single' and item.notification.post %}
-                    <a href="{% url 'post_detail' item.notification.post.pk %}" class="block p-4 sm:p-5 hover:bg-[#F8F9F6] transition duration-200 {% if not item.is_read %}bg-[#F8F9F6]{% endif %}">
-                        <div class="text-sm text-[#000000]">
+                    <a href="{% url 'post_detail' item.notification.post.pk %}" class="block p-4 sm:p-5 hover:bg-[#F8F9F6] transition duration-200 border-l-4 {% if not item.is_read %}bg-[#F8F9F6] border-[#0B5275]{% else %}border-transparent{% endif %}">
+                        <div class="flex items-start gap-3">
+                            <div class="shrink-0 mt-0.5 w-9 h-9 rounded-xl border border-[#BFBFBF] bg-white flex items-center justify-center text-[#666A73]">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-[#000000]">
                             {% if item.notification.verb|slice:":1" == '"' %}
                                 <span class="text-[#000000]">{{ item.notification.verb }}</span>
                             {% else %}
@@ -64,8 +94,45 @@
                                 {% endif %}
                                 <span class="text-[#000000]">{{ item.notification.verb }}</span>
                             {% endif %}
+                                </div>
+                                <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                                    {% if not item.is_read %}
+                                        <span class="inline-flex items-center gap-1 text-[#0B5275] font-semibold">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#0B5275]"></span>
+                                            Yeni
+                                        </span>
+                                    {% endif %}
+                                    <span>{{ item.created_at|date:"d.m.Y H:i" }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mt-1 text-xs text-gray-500">{{ item.created_at|date:"d.m.Y H:i" }}</div>
+                    </a>
+                {% elif item.type == 'single' and item.notification.feedback %}
+                    <a href="{% url 'feedback_detail' item.notification.feedback.id %}" class="block p-4 sm:p-5 hover:bg-[#F8F9F6] transition duration-200 border-l-4 {% if not item.is_read %}bg-[#F8F9F6] border-[#0B5275]{% else %}border-transparent{% endif %}">
+                        <div class="flex items-start gap-3">
+                            <div class="shrink-0 mt-0.5 w-9 h-9 rounded-xl border border-[#BFBFBF] bg-white flex items-center justify-center text-[#666A73]">
+                                <i class="fas fa-message"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-[#000000]">
+                            {% if item.notification.actor %}
+                                <span class="font-semibold">{{ item.notification.actor.username }}</span>
+                            {% else %}
+                                <span class="font-semibold">Sistem</span>
+                            {% endif %}
+                            <span class="text-[#000000]">{{ item.notification.verb }}</span>
+                                </div>
+                                <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                                    {% if not item.is_read %}
+                                        <span class="inline-flex items-center gap-1 text-[#0B5275] font-semibold">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#0B5275]"></span>
+                                            Yeni
+                                        </span>
+                                    {% endif %}
+                                    <span>{{ item.created_at|date:"d.m.Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </a>
                 {% else %}
                     <div class="p-4 sm:p-5 {% if not item.is_read %}bg-[#F8F9F6]{% endif %}">
@@ -94,12 +161,12 @@
         <div class="px-4 py-3 bg-white border-t border-[#BFBFBF] flex items-center justify-between">
             <div class="text-sm text-[#666A73]">
                 {% if notifications.has_previous %}
-                    <a class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73]" href="?page={{ notifications.previous_page_number }}">Önceki</a>
+                    <a class="px-3 py-2.5 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73] text-[#000000] bg-white font-semibold transition duration-200" href="?page={{ notifications.previous_page_number }}">Önceki</a>
                 {% endif %}
             </div>
             <div class="text-sm text-[#666A73]">
                 {% if notifications.has_next %}
-                    <a class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73]" href="?page={{ notifications.next_page_number }}">Sonraki</a>
+                    <a class="px-3 py-2.5 rounded-xl text-sm border border-[#BFBFBF] hover:border-[#666A73] text-[#000000] bg-white font-semibold transition duration-200" href="?page={{ notifications.next_page_number }}">Sonraki</a>
                 {% endif %}
             </div>
         </div>

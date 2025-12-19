@@ -19,6 +19,9 @@ urlpatterns = [
     path('report/<str:content_type>/<int:content_id>/', views.create_report, name='create_report'),
 
     path('feedback/', views.create_feedback, name='create_feedback'),
+    path('feedback/<int:pk>/', views.feedback_detail, name='feedback_detail'),
+    path('feedback/<int:pk>/message/', views.add_feedback_message, name='add_feedback_message'),
+    path('feedback/mine/', views.my_feedback, name='my_feedback'),
     
     path('moderate/posts/', views.moderate_posts, name='moderate_posts'),
     path('moderate/post/<int:pk>/approve/', views.approve_post, name='approve_post'),
@@ -26,15 +29,20 @@ urlpatterns = [
     path('moderate/reports/', views.moderate_reports, name='moderate_reports'),
     path('moderate/report/<int:pk>/', views.handle_report, name='handle_report'),
     path('moderate/users/', views.moderate_users, name='moderate_users'),
+    path('moderate/logs/', views.moderation_logs, name='moderation_logs'),
     path('moderate/feedback/', views.moderate_feedback, name='moderate_feedback'),
     path('moderate/feedback/<int:pk>/resolve/', views.resolve_feedback, name='resolve_feedback'),
+    path('moderate/feedback/<int:pk>/reply/', views.reply_feedback, name='reply_feedback'),
 
     path('notifications/', views.notifications, name='notifications'),
+    path('notifications/unread-count/', views.notifications_unread_count_api, name='notifications_unread_count_api'),
+    path('notifications/latest-unread/', views.notifications_latest_unread_api, name='notifications_latest_unread_api'),
     path('notifications/<int:pk>/read/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/read-all/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     path('notifications/clear-read/', views.clear_read_notifications, name='clear_read_notifications'),
 
     path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('settings/notifications/', views.notification_settings, name='notification_settings'),
     path('avatar/preview/', views.avatar_preview, name='avatar_preview'),
     
     path('user/<str:username>/', views.user_profile, name='user_profile'),

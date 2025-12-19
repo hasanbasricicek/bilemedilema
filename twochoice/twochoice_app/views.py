@@ -1,15 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.contrib.auth.models import User
 from django.urls import reverse
+from django.http import JsonResponse, HttpResponse
+from django.db import IntegrityError
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
+from django.conf import settings
 from datetime import timedelta
 import logging
 import os
@@ -17,11 +21,157 @@ import requests
 import json
 import hashlib
 import base64
-from .models import Post, Comment, Report, PollOption, PollVote, UserProfile, PostImage, Notification, Feedback
+from .models import (
+    Post,
+    Comment,
+    Report,
+    PollOption,
+    PollVote,
+    UserProfile,
+    PostImage,
+    Notification,
+    Feedback,
+    FeedbackMessage,
+    ModerationLog,
+)
 from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, FeedbackForm, ProfileAvatarForm
 from .avatar import render_avatar_svg_from_config, resolve_profile_avatar_config, sanitize_avatar_config
 
 logger = logging.getLogger(__name__)
+
+POLL_STATUS_THEME_STYLES = {
+    'open': {
+        'badge_classes': 'border-[#0B7A4B]/30 text-[#0B7A4B] bg-[#0B7A4B]/10',
+        'icon': 'fa-infinity',
+    },
+    'scheduled': {
+        'badge_classes': 'border-[#0B5275]/35 text-[#0B5275] bg-[#0B5275]/10',
+        'icon': 'fa-hourglass-half',
+    },
+    'warning': {
+        'badge_classes': 'border-[#B66A00]/35 text-[#B66A00] bg-[#B66A00]/10',
+        'icon': 'fa-hourglass-end',
+    },
+    'closed': {
+        'badge_classes': 'border-[#666A73]/40 text-[#666A73] bg-[#666A73]/10',
+        'icon': 'fa-lock',
+    },
+}
+
+
+def get_poll_status_meta(post):
+    if not post or getattr(post, 'post_type', None) == 'comment_only':
+        return None
+
+    closes_at = getattr(post, 'poll_closes_at', None)
+    default_style = POLL_STATUS_THEME_STYLES.get('closed')
+
+    if post.is_poll_closed():
+        local_close = timezone.localtime(closes_at) if closes_at else None
+        meta = {
+            'code': 'closed',
+            'label': 'Kapandı',
+            'theme': 'closed',
+            'title': local_close.strftime('%d.%m.%Y %H:%M') if local_close else '',
+        }
+        meta['style'] = POLL_STATUS_THEME_STYLES.get(meta['theme'], default_style)
+        return meta
+
+    if post.poll_close_mode == 'none' or not closes_at:
+        meta = {
+            'code': 'open',
+            'label': 'Süresiz',
+            'theme': 'open',
+            'title': '',
+        }
+        meta['style'] = POLL_STATUS_THEME_STYLES.get(meta['theme'], default_style)
+        return meta
+
+    remaining = closes_at - timezone.now()
+    local_close = timezone.localtime(closes_at)
+    if remaining <= timedelta(hours=1):
+        label = 'Son Saat'
+        theme = 'warning'
+    elif remaining <= timedelta(hours=6):
+        label = 'Kapanış <6s'
+        theme = 'warning'
+    else:
+        label = f"Kapanış {local_close.strftime('%d.%m %H:%M')}"
+        theme = 'scheduled'
+
+    meta = {
+        'code': 'scheduled',
+        'label': label,
+        'theme': theme,
+        'title': local_close.strftime('%d.%m.%Y %H:%M'),
+    }
+    meta['style'] = POLL_STATUS_THEME_STYLES.get(meta['theme'], default_style)
+    return meta
+
+
+def can_send_notification(receiver, category):
+    if not receiver or not getattr(receiver, 'is_authenticated', False):
+        return False
+
+    profile = getattr(receiver, 'profile', None)
+    if not profile:
+        return True
+
+    if category == 'votes':
+        return bool(getattr(profile, 'notify_votes', True))
+    if category == 'comments':
+        return bool(getattr(profile, 'notify_comments', True))
+    if category == 'feedback':
+        return bool(getattr(profile, 'notify_feedback', True))
+    if category == 'moderation':
+        return bool(getattr(profile, 'notify_moderation', True))
+    return True
+
+
+def notify_or_bump(*, user, actor=None, verb, post=None, comment=None, feedback=None):
+    """Idempotent notification creation.
+
+    If the same notification already exists, reuse it and bump it to the top.
+    This prevents duplicate notifications caused by refresh/double submits.
+    """
+    if not user:
+        return None
+
+    try:
+        existing = (
+            Notification.objects.filter(
+                user=user,
+                actor=actor,
+                post=post,
+                feedback=feedback,
+                verb=verb,
+            )
+            .order_by('-created_at')
+            .first()
+        )
+
+        if existing:
+            if comment is not None:
+                existing.comment = comment
+            existing.is_read = False
+            existing.created_at = timezone.now()
+            fields = ['is_read', 'created_at']
+            if comment is not None:
+                fields.append('comment')
+            existing.save(update_fields=fields)
+            return existing
+
+        return Notification.objects.create(
+            user=user,
+            actor=actor,
+            post=post,
+            comment=comment,
+            feedback=feedback,
+            verb=verb,
+        )
+    except Exception:
+        logger.exception('notify_or_bump failed user=%s verb=%s', getattr(user, 'id', None), verb)
+        return None
 
 
 def home(request):
@@ -71,33 +221,31 @@ def home(request):
             post.home_poll_options = []
             post.home_poll_total_votes = 0
             post.home_poll_more_count = 0
-            continue
+        else:
+            total_votes = post.votes.count()
+            all_options = list(post.poll_options.all())
+            options = all_options
+            results = []
 
-        total_votes = post.votes.count()
-        all_options = list(post.poll_options.all())
-        options = all_options
-        results = []
-        percents = []
+            for option in options:
+                vote_count = option.votes.count()
+                pct = int(round((vote_count / total_votes) * 100)) if total_votes > 0 else 0
+                selected_options = user_votes_by_post.get(post.id, set())
+                results.append({
+                    'option': option,
+                    'vote_count': vote_count,
+                    'percent': pct,
+                    'is_selected': option.id in selected_options,
+                })
 
-        for option in options:
-            vote_count = option.votes.count()
-            pct = int(round((vote_count / total_votes) * 100)) if total_votes > 0 else 0
-            selected_options = user_votes_by_post.get(post.id, set())
-            results.append({
-                'option': option,
-                'vote_count': vote_count,
-                'percent': pct,
-                'is_selected': option.id in selected_options,
-            })
-            percents.append(pct)
+            post.home_poll_total_votes = total_votes
+            post.home_poll_options = results
+            post.home_poll_more_count = max(len(all_options) - 2, 0)
 
-        max_percent = max(percents) if percents else 0
-        for item in results:
-            item['is_winner'] = total_votes > 0 and item['percent'] == max_percent
-
-        post.home_poll_total_votes = total_votes
-        post.home_poll_options = results
-        post.home_poll_more_count = max(len(all_options) - 2, 0)
+        if getattr(settings, 'FEATURE_POLL_STATUS_BADGE', False):
+            post.poll_status_meta = get_poll_status_meta(post)
+        else:
+            post.poll_status_meta = None
     
     context = {
         'posts': posts_page,
@@ -120,8 +268,17 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            try:
+                user = form.save()
+            except IntegrityError:
+                form.add_error('username', 'Bu kullanıcı adı zaten kullanılıyor.')
+                return render(request, 'twochoice_app/register.html', {'form': form}, status=400)
             login(request, user)
+            profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'age': 18})
+            if not profile.has_seen_welcome_popup:
+                profile.has_seen_welcome_popup = True
+                profile.save(update_fields=['has_seen_welcome_popup'])
+                request.session['show_welcome_popup'] = 1
             messages.success(request, 'Kayıt başarılı! Hoş geldiniz.')
             return redirect('home')
     else:
@@ -164,12 +321,22 @@ def setup_admin(request):
 
 @login_required
 def create_feedback(request):
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('moderate_feedback')
+
     if request.method == 'POST':
         form = FeedbackForm(request.POST)
         if form.is_valid():
             feedback = form.save(commit=False)
             feedback.user = request.user
             feedback.save()
+
+            staff_users = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).exclude(id=request.user.id)
+            verb = f'"{feedback.subject}" geri bildirimi gönderdi'
+            for staff_user in staff_users:
+                if can_send_notification(staff_user, 'feedback'):
+                    notify_or_bump(user=staff_user, actor=request.user, feedback=feedback, verb=verb)
+
             messages.success(request, 'Geri bildiriminiz alındı. Teşekkürler!')
             return redirect('home')
     else:
@@ -179,7 +346,65 @@ def create_feedback(request):
             initial['page_url'] = ref
         form = FeedbackForm(initial=initial)
 
-    return render(request, 'twochoice_app/feedback.html', {'form': form})
+    feedbacks = Feedback.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'twochoice_app/feedback.html', {'form': form, 'feedbacks': feedbacks})
+
+
+@login_required
+def my_feedback(request):
+    return redirect('create_feedback')
+
+
+@login_required
+def feedback_detail(request, pk):
+    feedback = get_object_or_404(Feedback.objects.select_related('user', 'replied_by', 'resolved_by'), pk=pk)
+
+    if not (request.user.is_staff or request.user.is_superuser) and feedback.user_id != request.user.id:
+        return HttpResponse(status=404)
+
+    thread = FeedbackMessage.objects.filter(feedback=feedback).select_related('author').order_by('created_at')
+
+    reply_in_thread = False
+    if feedback.moderator_reply and feedback.replied_by_id:
+        reply_in_thread = thread.filter(author_id=feedback.replied_by_id, message=feedback.moderator_reply).exists()
+
+    return render(request, 'twochoice_app/feedback_detail.html', {
+        'feedback': feedback,
+        'thread': thread,
+        'reply_in_thread': reply_in_thread,
+        'is_moderator': (request.user.is_staff or request.user.is_superuser),
+    })
+
+
+@login_required
+@require_POST
+def add_feedback_message(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk)
+
+    is_mod = request.user.is_staff or request.user.is_superuser
+    if not is_mod and feedback.user_id != request.user.id:
+        return HttpResponse(status=404)
+
+    text = (request.POST.get('message') or '').strip()
+    if not text:
+        messages.error(request, 'Mesaj boş olamaz.')
+        return redirect('feedback_detail', pk=pk)
+
+    FeedbackMessage.objects.create(
+        feedback=feedback,
+        author=request.user,
+        message=text,
+    )
+
+    if not is_mod:
+        staff_users = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).exclude(id=request.user.id)
+        verb = f'"{feedback.subject}" geri bildiriminize ek mesaj gönderdi'
+        for staff_user in staff_users:
+            if can_send_notification(staff_user, 'feedback'):
+                notify_or_bump(user=staff_user, actor=request.user, feedback=feedback, verb=verb)
+
+    messages.success(request, 'Mesajınız gönderildi.')
+    return redirect('feedback_detail', pk=pk)
 
 
 def user_login(request):
@@ -193,6 +418,11 @@ def user_login(request):
         
         if user is not None:
             login(request, user)
+            profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'age': 18})
+            if not profile.has_seen_welcome_popup:
+                profile.has_seen_welcome_popup = True
+                profile.save(update_fields=['has_seen_welcome_popup'])
+                request.session['show_welcome_popup'] = 1
             messages.success(request, 'Giriş başarılı!')
             return redirect('home')
         else:
@@ -220,6 +450,17 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             post.status = 'd'
+
+            post.poll_close_mode = (post.poll_close_mode or 'none').strip() or 'none'
+            if post.post_type not in {'poll_only', 'both'}:
+                post.poll_close_mode = 'none'
+                post.poll_closes_at = None
+            elif post.poll_close_mode == '24h':
+                post.poll_closes_at = timezone.now() + timedelta(hours=24)
+            elif post.poll_close_mode == '3d':
+                post.poll_closes_at = timezone.now() + timedelta(days=3)
+            elif post.poll_close_mode == 'none':
+                post.poll_closes_at = None
             post.save()
             
             if post.post_type in ['poll_only', 'both']:
@@ -279,6 +520,17 @@ def edit_post(request, pk):
         if form.is_valid():
             post = form.save(commit=False)
             post.status = 'd'
+
+            post.poll_close_mode = (post.poll_close_mode or 'none').strip() or 'none'
+            if post.post_type not in {'poll_only', 'both'}:
+                post.poll_close_mode = 'none'
+                post.poll_closes_at = None
+            elif post.poll_close_mode == '24h':
+                post.poll_closes_at = timezone.now() + timedelta(hours=24)
+            elif post.poll_close_mode == '3d':
+                post.poll_closes_at = timezone.now() + timedelta(days=3)
+            elif post.poll_close_mode == 'none':
+                post.poll_closes_at = None
             post.save()
             
             if post.post_type in ['poll_only', 'both']:
@@ -293,10 +545,19 @@ def edit_post(request, pk):
         initial_data = {}
         if post.post_type in ['poll_only', 'both']:
             options = list(post.poll_options.all())
-            for i, option in enumerate(options[:6], 1):
+            for i, option in enumerate(options[:4], 1):
                 initial_data[f'poll_option_{i}'] = option.option_text
         
         form = PostForm(instance=post, initial=initial_data)
+
+    try:
+        if post.votes.exists() and post.post_type in {'poll_only', 'both'}:
+            for i in range(1, 5):
+                fn = f'poll_option_{i}'
+                if fn in form.fields:
+                    form.fields[fn].widget.attrs['disabled'] = 'disabled'
+    except Exception:
+        pass
     
     return render(request, 'twochoice_app/edit_post.html', {'form': form, 'post': post})
 
@@ -331,7 +592,12 @@ def post_detail(request, pk):
         user_votes = PollVote.objects.filter(user=request.user, post=post).values_list('option_id', flat=True)
     
     poll_results = []
+    poll_results_payload = []
+    poll_closed = False
+    poll_share_text = ''
+    total_votes = 0
     if post.post_type in ['poll_only', 'both']:
+        poll_closed = post.is_poll_closed()
         total_votes = post.votes.count()
         for option in post.poll_options.all():
             vote_count = option.votes.count()
@@ -339,8 +605,36 @@ def post_detail(request, pk):
             poll_results.append({
                 'option': option,
                 'vote_count': vote_count,
-                'percentage': percentage
+                'percentage': percentage,
             })
+            poll_results_payload.append({
+                'text': option.option_text,
+                'vote_count': vote_count,
+                'percentage': percentage,
+            })
+
+        if poll_closed:
+            if total_votes <= 0:
+                poll_share_text = f"Anket sonucu: {post.title}\nToplam 0 oy"
+            else:
+                max_votes = max((r['vote_count'] for r in poll_results), default=0)
+                winners = [r for r in poll_results if r['vote_count'] == max_votes and max_votes > 0]
+                if not winners:
+                    poll_share_text = f"Anket sonucu: {post.title}\nToplam {total_votes} oy"
+                elif len(winners) == 1:
+                    w = winners[0]
+                    poll_share_text = (
+                        f"Anket sonucu: {post.title}"
+                        f"\nKazanan: {w['option'].option_text} (%{int(round(w['percentage']))})"
+                        f"\nToplam {total_votes} oy"
+                    )
+                else:
+                    names = ', '.join([w['option'].option_text for w in winners])
+                    poll_share_text = (
+                        f"Anket sonucu: {post.title}"
+                        f"\nBerabere: {names}"
+                        f"\nToplam {total_votes} oy"
+                    )
     
     context = {
         'post': post,
@@ -348,6 +642,11 @@ def post_detail(request, pk):
         'comment_form': CommentForm(),
         'user_votes': list(user_votes),
         'poll_results': poll_results,
+        'poll_closed': poll_closed,
+        'poll_total_votes': total_votes,
+        'share_url': request.build_absolute_uri(reverse('post_detail', kwargs={'pk': post.pk})),
+        'poll_share_text': poll_share_text,
+        'poll_results_json': json.dumps(poll_results_payload),
     }
     
     return render(request, 'twochoice_app/post_detail.html', context)
@@ -371,7 +670,7 @@ def add_comment(request, pk):
         comment.author = request.user
         comment.save()
 
-        if post.author != request.user:
+        if post.author != request.user and can_send_notification(post.author, 'comments'):
             # Avoid repeating notifications like "hasan, hasan, hasan" for the same post.
             # Reuse the existing notification and bump it to the top.
             verb = 'gönderine yorum yaptı'
@@ -388,13 +687,7 @@ def add_comment(request, pk):
                 existing.created_at = timezone.now()
                 existing.save(update_fields=['comment', 'is_read', 'created_at'])
             else:
-                Notification.objects.create(
-                    user=post.author,
-                    actor=request.user,
-                    post=post,
-                    comment=comment,
-                    verb=verb,
-                )
+                notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
         
         return JsonResponse({
             'success': True,
@@ -422,6 +715,9 @@ def vote_poll(request, pk):
     
     if post.post_type == 'comment_only':
         return JsonResponse({'error': 'Bu gönderi bir anket değil.'}, status=400)
+
+    if post.is_poll_closed():
+        return JsonResponse({'error': 'Anket kapanmış. Oy veremezsiniz.'}, status=403)
     
     if not post.allow_multiple_choices and len(option_ids) > 1:
         return JsonResponse({'error': 'Sadece bir seçenek seçebilirsiniz.'}, status=400)
@@ -434,7 +730,7 @@ def vote_poll(request, pk):
 
     logger.info('vote_poll user=%s post=%s options=%s', request.user.username, post.id, option_ids)
 
-    if post.author != request.user:
+    if post.author != request.user and can_send_notification(post.author, 'votes'):
         verb = 'anketine oy verdi'
         existing = Notification.objects.filter(
             user=post.author,
@@ -448,12 +744,7 @@ def vote_poll(request, pk):
             existing.created_at = timezone.now()
             existing.save(update_fields=['is_read', 'created_at'])
         else:
-            Notification.objects.create(
-                user=post.author,
-                actor=request.user,
-                post=post,
-                verb=verb,
-            )
+            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
     
     total_votes = post.votes.count()
     results = []
@@ -467,6 +758,8 @@ def vote_poll(request, pk):
         })
     
     return JsonResponse({'success': True, 'results': results})
+
+
 
 
 @login_required
@@ -498,6 +791,20 @@ def is_moderator(user):
     return user.is_staff or user.is_superuser
 
 
+def create_moderation_log(*, actor, action, target_type, target_id, summary='', details=None):
+    try:
+        ModerationLog.objects.create(
+            actor=actor,
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            summary=(summary or '')[:255],
+            details=details or {},
+        )
+    except Exception:
+        logger.exception('Failed to create moderation log action=%s target=%s:%s', action, target_type, target_id)
+
+
 @login_required
 @user_passes_test(is_moderator)
 def moderate_feedback(request):
@@ -505,7 +812,7 @@ def moderate_feedback(request):
     if tab not in {'open', 'resolved'}:
         tab = 'open'
 
-    base_qs = Feedback.objects.select_related('user', 'resolved_by').order_by('-created_at')
+    base_qs = Feedback.objects.select_related('user', 'resolved_by', 'replied_by').order_by('-created_at')
     feedbacks = base_qs.filter(status=tab)
 
     context = {
@@ -528,7 +835,65 @@ def resolve_feedback(request, pk):
     feedback.resolved_by = request.user
     feedback.resolved_at = timezone.now()
     feedback.save(update_fields=['status', 'resolved_by', 'resolved_at'])
+
+    create_moderation_log(
+        actor=request.user,
+        action='resolve_feedback',
+        target_type='feedback',
+        target_id=feedback.id,
+        summary=f'"{feedback.subject}" çözüldü',
+        details={'user_id': feedback.user_id},
+    )
+
+    if feedback.user_id and feedback.user_id != request.user.id and can_send_notification(feedback.user, 'feedback'):
+        notify_or_bump(
+            user=feedback.user,
+            actor=request.user,
+            feedback=feedback,
+            verb=f'"{feedback.subject}" geri bildiriminizi çözüldü olarak işaretledi',
+        )
+
     messages.success(request, 'Geri bildirim çözüldü olarak işaretlendi.')
+    return redirect('moderate_feedback')
+
+
+@login_required
+@user_passes_test(is_moderator)
+@require_POST
+def reply_feedback(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk)
+    old_reply = feedback.moderator_reply or ''
+    reply = (request.POST.get('moderator_reply') or '').strip()
+    feedback.moderator_reply = reply
+    feedback.replied_by = request.user
+    feedback.replied_at = timezone.now()
+    feedback.save(update_fields=['moderator_reply', 'replied_by', 'replied_at'])
+
+    if reply and reply != old_reply:
+        FeedbackMessage.objects.create(
+            feedback=feedback,
+            author=request.user,
+            message=reply,
+        )
+
+    create_moderation_log(
+        actor=request.user,
+        action='reply_feedback',
+        target_type='feedback',
+        target_id=feedback.id,
+        summary=f'"{feedback.subject}" yanıtlandı',
+        details={'user_id': feedback.user_id},
+    )
+
+    if feedback.user_id and feedback.user_id != request.user.id and can_send_notification(feedback.user, 'feedback'):
+        notify_or_bump(
+            user=feedback.user,
+            actor=request.user,
+            feedback=feedback,
+            verb=f'"{feedback.subject}" geri bildiriminize yanıt verdi',
+        )
+
+    messages.success(request, 'Geri bildirim yanıtı kaydedildi.')
     return redirect('moderate_feedback')
 
 
@@ -557,6 +922,7 @@ def moderate_posts(request):
 
 @login_required
 @user_passes_test(is_moderator)
+@require_POST
 def approve_post(request, pk):
     post = get_object_or_404(Post, pk=pk)
     post.status = 'p'
@@ -565,7 +931,16 @@ def approve_post(request, pk):
     post.moderation_note = ''
     post.save(update_fields=['status', 'moderated_by', 'moderated_at', 'moderation_note'])
 
-    if post.author != request.user:
+    create_moderation_log(
+        actor=request.user,
+        action='approve_post',
+        target_type='post',
+        target_id=post.id,
+        summary=f'"{post.title}" onaylandı',
+        details={'author_id': post.author_id},
+    )
+
+    if post.author != request.user and can_send_notification(post.author, 'moderation'):
         base = 'anketiniz onaylandı ve yayınlandı' if post.post_type in {'poll_only', 'both'} else 'gönderiniz onaylandı ve yayınlandı'
         verb = f'"{post.title}" isimli {base}'
         existing = Notification.objects.filter(
@@ -580,12 +955,7 @@ def approve_post(request, pk):
             existing.created_at = timezone.now()
             existing.save(update_fields=['is_read', 'created_at'])
         else:
-            Notification.objects.create(
-                user=post.author,
-                actor=request.user,
-                post=post,
-                verb=verb,
-            )
+            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
     
     messages.success(request, f'Gönderi "{post.title}" onaylandı.')
     return redirect('moderate_posts')
@@ -593,6 +963,7 @@ def approve_post(request, pk):
 
 @login_required
 @user_passes_test(is_moderator)
+@require_POST
 def reject_post(request, pk):
     post = get_object_or_404(Post, pk=pk)
     post.status = 'r'
@@ -601,7 +972,16 @@ def reject_post(request, pk):
     post.moderation_note = (request.POST.get('moderation_note') or '').strip()
     post.save(update_fields=['status', 'moderated_by', 'moderated_at', 'moderation_note'])
 
-    if post.author != request.user:
+    create_moderation_log(
+        actor=request.user,
+        action='reject_post',
+        target_type='post',
+        target_id=post.id,
+        summary=f'"{post.title}" reddedildi',
+        details={'author_id': post.author_id, 'moderation_note': post.moderation_note},
+    )
+
+    if post.author != request.user and can_send_notification(post.author, 'moderation'):
         base = 'anketiniz reddedildi ve yayınlanmadı' if post.post_type in {'poll_only', 'both'} else 'gönderiniz reddedildi ve yayınlanmadı'
         verb = f'"{post.title}" isimli {base}'
         existing = Notification.objects.filter(
@@ -616,12 +996,7 @@ def reject_post(request, pk):
             existing.created_at = timezone.now()
             existing.save(update_fields=['is_read', 'created_at'])
         else:
-            Notification.objects.create(
-                user=post.author,
-                actor=request.user,
-                post=post,
-                verb=verb,
-            )
+            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
     
     messages.success(request, f'Gönderi "{post.title}" reddedildi.')
     return redirect(f"{reverse('moderate_posts')}?tab=rejected")
@@ -676,6 +1051,14 @@ def handle_report(request, pk):
             report.status = 'dismissed'
             report.save()
             messages.success(request, 'Rapor reddedildi.')
+            create_moderation_log(
+                actor=request.user,
+                action='handle_report',
+                target_type='report',
+                target_id=report.id,
+                summary='Rapor reddedildi',
+                details={'action': action, 'moderator_notes': moderator_notes},
+            )
             if not next_url:
                 next_url = f"{reverse('moderate_reports')}?tab=rejected"
         
@@ -689,6 +1072,14 @@ def handle_report(request, pk):
                 report.status = 'action_taken'
                 report.save()
                 messages.success(request, f'{report.reported_user.username} kullanıcısına {ban_days} gün yorum yasağı verildi.')
+                create_moderation_log(
+                    actor=request.user,
+                    action='handle_report',
+                    target_type='report',
+                    target_id=report.id,
+                    summary=f'Rapor: yorum yasağı ({ban_days} gün)',
+                    details={'action': action, 'ban_days': ban_days, 'reported_user_id': report.reported_user_id, 'moderator_notes': moderator_notes},
+                )
                 if not next_url:
                     next_url = f"{reverse('moderate_reports')}?tab=approved"
         
@@ -702,6 +1093,14 @@ def handle_report(request, pk):
                 report.status = 'action_taken'
                 report.save()
                 messages.success(request, f'{report.reported_user.username} kullanıcısına {ban_days} gün gönderi yasağı verildi.')
+                create_moderation_log(
+                    actor=request.user,
+                    action='handle_report',
+                    target_type='report',
+                    target_id=report.id,
+                    summary=f'Rapor: gönderi yasağı ({ban_days} gün)',
+                    details={'action': action, 'ban_days': ban_days, 'reported_user_id': report.reported_user_id, 'moderator_notes': moderator_notes},
+                )
                 if not next_url:
                     next_url = f"{reverse('moderate_reports')}?tab=approved"
         
@@ -713,6 +1112,19 @@ def handle_report(request, pk):
             report.status = 'action_taken'
             report.save()
             messages.success(request, 'İçerik silindi.')
+            create_moderation_log(
+                actor=request.user,
+                action='handle_report',
+                target_type='report',
+                target_id=report.id,
+                summary='Rapor: içerik silindi',
+                details={
+                    'action': action,
+                    'reported_post_id': report.reported_post_id,
+                    'reported_comment_id': report.reported_comment_id,
+                    'moderator_notes': moderator_notes,
+                },
+            )
             if not next_url:
                 next_url = f"{reverse('moderate_reports')}?tab=approved"
         
@@ -731,6 +1143,36 @@ def user_profile(request, username):
         posts = profile_user.posts.all().order_by('-created_at')
     else:
         posts = profile_user.posts.filter(status='p').order_by('-created_at')
+    
+    # Attach home_poll_options to each post, same as home view
+    for post in posts:
+        if post.post_type != 'comment_only':
+            total_votes = post.votes.count()
+            poll_opts = []
+            for opt in post.poll_options.all():
+                vote_count = opt.votes.count()
+                percent = (vote_count / total_votes * 100) if total_votes > 0 else 0
+                is_selected = False
+                if request.user.is_authenticated:
+                    is_selected = opt.votes.filter(user=request.user).exists()
+                poll_opts.append({
+                    'option': opt,
+                    'vote_count': vote_count,
+                    'percent': percent,
+                    'is_selected': is_selected,
+                })
+
+            post.home_poll_options = poll_opts
+            post.home_poll_total_votes = total_votes
+        else:
+            post.home_poll_options = []
+            post.home_poll_total_votes = 0
+            post.home_poll_more_count = 0
+
+        if getattr(settings, 'FEATURE_POLL_STATUS_BADGE', False):
+            post.poll_status_meta = get_poll_status_meta(post)
+        else:
+            post.poll_status_meta = None
     
     context = {
         'profile_user': profile_user,
@@ -784,6 +1226,28 @@ def edit_profile(request):
 
 
 @login_required
+def notification_settings(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user, defaults={'age': 13})
+
+    if request.method == 'POST':
+        form = ProfileAvatarForm(request.POST, instance=profile)
+        if form.is_valid():
+            profile.notify_votes = form.cleaned_data.get('notify_votes', True)
+            profile.notify_comments = form.cleaned_data.get('notify_comments', True)
+            profile.notify_feedback = form.cleaned_data.get('notify_feedback', True)
+            profile.notify_moderation = form.cleaned_data.get('notify_moderation', True)
+            profile.save(update_fields=['notify_votes', 'notify_comments', 'notify_feedback', 'notify_moderation'])
+            messages.success(request, 'Bildirim ayarları güncellendi.')
+            return redirect('notification_settings')
+    else:
+        form = ProfileAvatarForm(instance=profile)
+
+    return render(request, 'twochoice_app/notification_settings.html', {
+        'form': form,
+    })
+
+
+@login_required
 @require_POST
 def avatar_preview(request):
     if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
@@ -832,6 +1296,14 @@ def ban_user(request, username):
             profile.comment_ban_until = timezone.now() + timezone.timedelta(days=ban_days)
             profile.save()
             logger.info('ban_user moderator=%s target=%s type=comment days=%s reason=%s', request.user.username, target_user.username, ban_days, reason)
+            create_moderation_log(
+                actor=request.user,
+                action='ban_user',
+                target_type='user',
+                target_id=target_user.id,
+                summary=f'{target_user.username} yorum yasağı',
+                details={'username': target_user.username, 'ban_type': 'comment', 'ban_days': ban_days, 'reason': reason},
+            )
             messages.success(request, f'{target_user.username} kullanıcısına {ban_days} gün yorum yasağı verildi.')
         
         elif ban_type == 'post':
@@ -839,6 +1311,14 @@ def ban_user(request, username):
             profile.post_ban_until = timezone.now() + timezone.timedelta(days=ban_days)
             profile.save()
             logger.info('ban_user moderator=%s target=%s type=post days=%s reason=%s', request.user.username, target_user.username, ban_days, reason)
+            create_moderation_log(
+                actor=request.user,
+                action='ban_user',
+                target_type='user',
+                target_id=target_user.id,
+                summary=f'{target_user.username} gönderi yasağı',
+                details={'username': target_user.username, 'ban_type': 'post', 'ban_days': ban_days, 'reason': reason},
+            )
             messages.success(request, f'{target_user.username} kullanıcısına {ban_days} gün gönderi yasağı verildi.')
         
         return redirect('user_profile', username=username)
@@ -862,6 +1342,14 @@ def unban_user(request, username):
 
     profile.save()
     logger.info('unban_user moderator=%s target=%s type=%s', request.user.username, target_user.username, ban_type)
+    create_moderation_log(
+        actor=request.user,
+        action='unban_user',
+        target_type='user',
+        target_id=target_user.id,
+        summary=f'{target_user.username} yasağı kaldırıldı',
+        details={'username': target_user.username, 'ban_type': ban_type},
+    )
     messages.success(request, f'{target_user.username} kullanıcısının yasağı kaldırıldı.')
 
     next_url = request.POST.get('next')
@@ -901,11 +1389,27 @@ def moderate_users(request):
                 target_user.is_active = False
                 target_user.save(update_fields=['is_active'])
                 logger.warning('deactivate_user moderator=%s target=%s', request.user.username, username)
+                create_moderation_log(
+                    actor=request.user,
+                    action='deactivate_user',
+                    target_type='user',
+                    target_id=target_user.id,
+                    summary=f'{username} pasife alındı',
+                    details={'username': username},
+                )
                 messages.success(request, f'{username} kullanıcısı pasife alındı.')
             else:
                 target_user.is_active = True
                 target_user.save(update_fields=['is_active'])
                 logger.warning('reactivate_user moderator=%s target=%s', request.user.username, username)
+                create_moderation_log(
+                    actor=request.user,
+                    action='reactivate_user',
+                    target_type='user',
+                    target_id=target_user.id,
+                    summary=f'{username} aktif edildi',
+                    details={'username': username},
+                )
                 messages.success(request, f'{username} kullanıcısı tekrar aktif edildi.')
             return redirect('moderate_users')
 
@@ -917,6 +1421,14 @@ def moderate_users(request):
             profile.post_ban_until = None
             profile.save()
             logger.info('unban_all moderator=%s target=%s', request.user.username, username)
+            create_moderation_log(
+                actor=request.user,
+                action='unban_all',
+                target_type='user',
+                target_id=target_user.id,
+                summary=f'{username} tüm yasakları kaldırıldı',
+                details={'username': username},
+            )
             messages.success(request, f'{username} kullanıcısının tüm yasakları kaldırıldı.')
             return redirect('moderate_users')
 
@@ -932,11 +1444,47 @@ def moderate_users(request):
 
 
 @login_required
+@user_passes_test(is_moderator)
+def moderation_logs(request):
+    qs = ModerationLog.objects.select_related('actor').order_by('-created_at')
+
+    q = (request.GET.get('q') or '').strip()
+    action = (request.GET.get('action') or '').strip()
+    target_type = (request.GET.get('target_type') or '').strip()
+    actor_username = (request.GET.get('actor') or '').strip()
+
+    if action:
+        qs = qs.filter(action=action)
+    if target_type:
+        qs = qs.filter(target_type=target_type)
+    if actor_username:
+        qs = qs.filter(actor__username__icontains=actor_username)
+    if q:
+        qs = qs.filter(Q(summary__icontains=q) | Q(actor__username__icontains=q))
+
+    page = request.GET.get('page', 1)
+    paginator = Paginator(qs, 50)
+    logs_page = paginator.get_page(page)
+
+    return render(request, 'twochoice_app/moderation_logs.html', {
+        'logs': logs_page,
+        'filters': {
+            'q': q,
+            'action': action,
+            'target_type': target_type,
+            'actor': actor_username,
+        },
+        'action_choices': ModerationLog.ACTION_CHOICES,
+        'target_choices': ModerationLog.TARGET_CHOICES,
+    })
+
+
+@login_required
 def notifications(request):
     from collections import defaultdict
     from django.db.models import Q
     
-    qs = Notification.objects.filter(user=request.user).select_related('actor', 'post', 'comment').order_by('-created_at')
+    qs = Notification.objects.filter(user=request.user).select_related('actor', 'post', 'comment', 'feedback').order_by('-created_at')
     
     grouped_notifications = []
     grouped_map = defaultdict(lambda: {'vote': [], 'comment': []})
@@ -953,15 +1501,27 @@ def notifications(request):
         for action_type in ['vote', 'comment']:
             notifs = actions[action_type]
             if notifs:
+                seen_actor_ids = set()
+                unique_actors = []
+                for n in notifs:
+                    if not n.actor_id:
+                        continue
+                    if n.actor_id in seen_actor_ids:
+                        continue
+                    seen_actor_ids.add(n.actor_id)
+                    unique_actors.append(n.actor)
+
+                newest_created_at = max((n.created_at for n in notifs), default=notifs[0].created_at)
                 grouped_notifications.append({
                     'type': 'grouped',
                     'action': action_type,
                     'post': notifs[0].post,
                     'notifications': notifs,
-                    'actors': [n.actor for n in notifs if n.actor],
+                    'actors': unique_actors,
                     'is_read': all(n.is_read for n in notifs),
-                    'created_at': notifs[0].created_at,
-                    'ids': [n.id for n in notifs]
+                    'created_at': newest_created_at,
+                    'ids': [n.id for n in notifs],
+                    'count': len(notifs),
                 })
     
     for notif in standalone_notifications:
@@ -970,7 +1530,8 @@ def notifications(request):
             'notification': notif,
             'is_read': notif.is_read,
             'created_at': notif.created_at,
-            'ids': [notif.id]
+            'ids': [notif.id],
+            'count': 1,
         })
     
     grouped_notifications.sort(key=lambda x: x['created_at'], reverse=True)
@@ -982,6 +1543,40 @@ def notifications(request):
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
 
     return render(request, 'twochoice_app/notifications.html', {'notifications': notifications_page})
+
+
+@login_required
+def notifications_unread_count_api(request):
+    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return JsonResponse({'count': count})
+
+
+@login_required
+def notifications_latest_unread_api(request):
+    notif = (
+        Notification.objects.filter(user=request.user, is_read=False)
+        .select_related('actor', 'post', 'feedback')
+        .order_by('-created_at')
+        .first()
+    )
+
+    if not notif:
+        return JsonResponse({'id': None, 'text': '', 'url': reverse('notifications')})
+
+    actor = getattr(notif.actor, 'username', None)
+    if actor:
+        text = f'{actor} {notif.verb}'
+    else:
+        text = notif.verb
+
+    if notif.feedback_id:
+        url = reverse('feedback_detail', kwargs={'pk': notif.feedback_id})
+    elif notif.post_id:
+        url = reverse('post_detail', kwargs={'pk': notif.post_id})
+    else:
+        url = reverse('notifications')
+
+    return JsonResponse({'id': notif.id, 'text': text, 'url': url})
 
 
 @login_required

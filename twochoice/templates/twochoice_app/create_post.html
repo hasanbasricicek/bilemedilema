@@ -4,52 +4,52 @@
 
 {% block content %}
 <div class="max-w-3xl mx-auto">
-    <div class="bg-white rounded-lg shadow-lg p-8">
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm p-8">
         <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">Yeni Gönderi Oluştur</h2>
-            <p class="text-gray-600">Kararsızlığını paylaş, topluluktan yardım al!</p>
+            <h2 class="text-3xl font-bold text-[#000000] mb-2">Yeni Gönderi Oluştur</h2>
+            <p class="text-[#666A73]">Kararsızlığını paylaş, topluluktan yardım al!</p>
         </div>
 
         <form method="post" enctype="multipart/form-data" id="post-form" class="space-y-6">
             {% csrf_token %}
             
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-medium text-[#000000] mb-2">
                     {{ form.title.label }}
                 </label>
                 {{ form.title }}
                 {% if form.title.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                    <p class="mt-1 text-sm text-[#B33F00]">{{ form.title.errors.0 }}</p>
                 {% endif %}
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-medium text-[#000000] mb-2">
                     {{ form.content.label }}
                 </label>
                 {{ form.content }}
                 {% if form.content.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.content.errors.0 }}</p>
+                    <p class="mt-1 text-sm text-[#B33F00]">{{ form.content.errors.0 }}</p>
                 {% endif %}
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-medium text-[#000000] mb-2">
                     {{ form.topic.label }}
                 </label>
                 {{ form.topic }}
                 {% if form.topic.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.topic.errors.0 }}</p>
+                    <p class="mt-1 text-sm text-[#B33F00]">{{ form.topic.errors.0 }}</p>
                 {% endif %}
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-medium text-[#000000] mb-2">
                     {{ form.post_type.label }}
                 </label>
                 {{ form.post_type }}
                 {% if form.post_type.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.post_type.errors.0 }}</p>
+                    <p class="mt-1 text-sm text-[#B33F00]">{{ form.post_type.errors.0 }}</p>
                 {% endif %}
             </div>
 
@@ -60,7 +60,7 @@
                     </label>
                     {{ form.poll_option_1 }}
                     {% if form.poll_option_1.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_1.errors.0 }}</p>
+                        <p class="mt-1 text-sm text-[#B33F00]">{{ form.poll_option_1.errors.0 }}</p>
                     {% endif %}
                 </div>
 
@@ -70,7 +70,7 @@
                     </label>
                     {{ form.poll_option_2 }}
                     {% if form.poll_option_2.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_2.errors.0 }}</p>
+                        <p class="mt-1 text-sm text-[#B33F00]">{{ form.poll_option_2.errors.0 }}</p>
                     {% endif %}
                 </div>
 
@@ -78,9 +78,9 @@
                     <label class="block text-sm font-medium text-[#666A73] mb-2">
                         {{ form.poll_option_3.label }}
                     </label>
-                    {{ form.poll_option_3 }}
+                    <div id="poll-opt-3">{{ form.poll_option_3 }}</div>
                     {% if form.poll_option_3.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_3.errors.0 }}</p>
+                        <p class="mt-1 text-sm text-[#B33F00]">{{ form.poll_option_3.errors.0 }}</p>
                     {% endif %}
                 </div>
 
@@ -88,30 +88,15 @@
                     <label class="block text-sm font-medium text-[#666A73] mb-2">
                         {{ form.poll_option_4.label }}
                     </label>
-                    {{ form.poll_option_4 }}
+                    <div id="poll-opt-4">{{ form.poll_option_4 }}</div>
                     {% if form.poll_option_4.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_4.errors.0 }}</p>
+                        <p class="mt-1 text-sm text-[#B33F00]">{{ form.poll_option_4.errors.0 }}</p>
                     {% endif %}
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-[#666A73] mb-2">
-                        {{ form.poll_option_5.label }}
-                    </label>
-                    {{ form.poll_option_5 }}
-                    {% if form.poll_option_5.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_5.errors.0 }}</p>
-                    {% endif %}
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#666A73] mb-2">
-                        {{ form.poll_option_6.label }}
-                    </label>
-                    {{ form.poll_option_6 }}
-                    {% if form.poll_option_6.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.poll_option_6.errors.0 }}</p>
-                    {% endif %}
+                <div class="flex items-center justify-end gap-2 pt-1">
+                    <button type="button" id="btn-remove-opt" class="px-3 py-2 rounded-xl text-sm border border-[#BFBFBF] bg-white text-[#000000] hover:bg-[#F8F9F6] transition duration-200">Şık kaldır</button>
+                    <button type="button" id="btn-add-opt" class="px-3 py-2 rounded-xl text-sm bg-[#000000] text-white font-semibold hover:bg-[#666A73] transition duration-200">Şık ekle</button>
                 </div>
 
                 <div class="flex items-center pt-2">
@@ -120,21 +105,35 @@
                         {{ form.allow_multiple_choices.label }}
                     </label>
                 </div>
+
+                <div class="pt-2">
+                    <label class="block text-sm font-medium text-[#000000] mb-2">
+                        {{ form.poll_close_mode.label }}
+                    </label>
+                    {{ form.poll_close_mode }}
+                </div>
+
+                <div class="pt-2 hidden" id="poll-close-at-wrapper">
+                    <label class="block text-sm font-medium text-[#000000] mb-2">
+                        {{ form.poll_closes_at.label }}
+                    </label>
+                    {{ form.poll_closes_at }}
+                </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-medium text-[#000000] mb-2">
                     Görseller (Opsiyonel)
                 </label>
-                <input type="file" name="images" multiple accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <p class="mt-1 text-sm text-gray-500">Birden fazla görsel yükleyebilirsiniz.</p>
+                <input type="file" name="images" multiple accept="image/*" class="w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]">
+                <p class="mt-1 text-sm text-[#666A73]">Birden fazla görsel yükleyebilirsiniz.</p>
             </div>
 
-            <div class="flex items-center justify-between pt-6 border-t">
-                <a href="{% url 'home' %}" class="text-gray-600 hover:text-gray-800 transition duration-200">
+            <div class="flex items-center justify-between pt-6 border-t border-[#BFBFBF]">
+                <a href="{% url 'home' %}" class="text-[#666A73] hover:text-[#000000] font-semibold transition duration-200">
                     <i class="fas fa-arrow-left mr-2"></i>İptal
                 </a>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 flex items-center space-x-2">
+                <button type="submit" class="bg-[#000000] hover:bg-[#666A73] text-white font-semibold px-6 py-3 rounded-xl transition duration-200 flex items-center space-x-2">
                     <i class="fas fa-paper-plane"></i>
                     <span>Gönder</span>
                 </button>
@@ -148,6 +147,57 @@
 <script>
     const postTypeSelect = document.getElementById('id_post_type');
     const pollOptionsContainer = document.getElementById('poll-options-container');
+    const closeModeSelect = document.getElementById('id_poll_close_mode');
+    const closeAtWrapper = document.getElementById('poll-close-at-wrapper');
+    const opt3 = document.getElementById('poll-opt-3');
+    const opt4 = document.getElementById('poll-opt-4');
+    const btnAddOpt = document.getElementById('btn-add-opt');
+    const btnRemoveOpt = document.getElementById('btn-remove-opt');
+
+    function syncOptionsVisibility() {
+        const v3 = (document.getElementById('id_poll_option_3')?.value || '').trim();
+        const v4 = (document.getElementById('id_poll_option_4')?.value || '').trim();
+        if (opt3) opt3.parentElement.classList.toggle('hidden', !v3 && !v4);
+        if (opt4) opt4.parentElement.classList.toggle('hidden', !v4);
+    }
+
+    function addOption() {
+        const i3 = document.getElementById('id_poll_option_3');
+        const i4 = document.getElementById('id_poll_option_4');
+        if (i3 && (!i3.value || !i3.value.trim())) {
+            i3.parentElement.classList.remove('hidden');
+            i3.focus();
+            return;
+        }
+        if (i4 && (!i4.value || !i4.value.trim())) {
+            i4.parentElement.classList.remove('hidden');
+            i4.focus();
+            return;
+        }
+    }
+
+    function removeOption() {
+        const i4 = document.getElementById('id_poll_option_4');
+        const i3 = document.getElementById('id_poll_option_3');
+        if (i4 && i4.parentElement && !i4.parentElement.classList.contains('hidden')) {
+            i4.value = '';
+            i4.parentElement.classList.add('hidden');
+            return;
+        }
+        if (i3 && i3.parentElement && !i3.parentElement.classList.contains('hidden')) {
+            i3.value = '';
+            i3.parentElement.classList.add('hidden');
+        }
+    }
+
+    function syncCloseAt() {
+        if (!closeModeSelect || !closeAtWrapper) return;
+        if (closeModeSelect.value === 'manual') {
+            closeAtWrapper.classList.remove('hidden');
+        } else {
+            closeAtWrapper.classList.add('hidden');
+        }
+    }
 
     postTypeSelect.addEventListener('change', function() {
         if (this.value === 'poll_only' || this.value === 'both') {
@@ -155,10 +205,26 @@
         } else {
             pollOptionsContainer.classList.add('hidden');
         }
+        syncCloseAt();
     });
+
+    if (closeModeSelect) {
+        closeModeSelect.addEventListener('change', syncCloseAt);
+    }
+
+    if (btnAddOpt) btnAddOpt.addEventListener('click', addOption);
+    if (btnRemoveOpt) btnRemoveOpt.addEventListener('click', removeOption);
 
     if (postTypeSelect.value === 'poll_only' || postTypeSelect.value === 'both') {
         pollOptionsContainer.classList.remove('hidden');
     }
+    syncCloseAt();
+
+    try {
+        const i3 = document.getElementById('id_poll_option_3');
+        const i4 = document.getElementById('id_poll_option_4');
+        if (i3 && !i3.value.trim()) i3.parentElement.classList.add('hidden');
+        if (i4 && !i4.value.trim()) i4.parentElement.classList.add('hidden');
+    } catch (e) {}
 </script>
 {% endblock %}

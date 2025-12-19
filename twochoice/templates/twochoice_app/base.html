@@ -7,40 +7,752 @@
     {% load static %}
     <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        (function preloadTheme() {
+            try {
+                const key = 'bilemedilema-theme';
+                const stored = localStorage.getItem(key);
+                const preferDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = stored === 'dark' || stored === 'light' ? stored : (preferDark ? 'dark' : 'light');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {
+                // ignore storage errors
+            }
+        })();
+    </script>
+    <style>
+        /* Site genelinde kullanılan açık tema renk değişkenleri */
+        :root {
+            --background: oklch(0.99 0 0);
+            --foreground: oklch(0.145 0 0);
+            --card: oklch(1 0 0);
+            --card-foreground: oklch(0.145 0 0);
+            --popover: oklch(1 0 0);
+            --popover-foreground: oklch(0.145 0 0);
+            --primary: oklch(0.55 0.22 285);
+            --primary-foreground: oklch(1 0 0);
+            --secondary: oklch(0.96 0.01 285);
+            --secondary-foreground: oklch(0.3 0 0);
+            --muted: oklch(0.96 0.01 285);
+            --muted-foreground: oklch(0.48 0 0);
+            --accent: oklch(0.96 0.01 285);
+            --accent-foreground: oklch(0.3 0 0);
+            --destructive: oklch(0.577 0.245 27.325);
+            --destructive-foreground: oklch(1 0 0);
+            --border: oklch(0.9 0 0);
+            --input: oklch(0.922 0 0);
+            --ring: oklch(0.55 0.22 285);
+            --poll-option-bg: oklch(0.98 0 0);
+            --poll-option-border: oklch(0.9 0 0);
+            --poll-option-hover: oklch(0.965 0.01 285);
+            --poll-winner-glow: oklch(0.55 0.22 285 / 0.15);
+            --poll-progress-bg: oklch(0.94 0 0);
+            --chart-1: oklch(0.646 0.222 41.116);
+            --chart-2: oklch(0.6 0.118 184.704);
+            --chart-3: oklch(0.398 0.07 227.392);
+            --chart-4: oklch(0.828 0.189 84.429);
+            --chart-5: oklch(0.769 0.188 70.08);
+            --logo-dot: #7C3AED;
+            --radius: 0.75rem;
+            --sidebar: oklch(0.985 0 0);
+            --sidebar-foreground: oklch(0.145 0 0);
+            --sidebar-primary: oklch(0.55 0.22 285);
+            --sidebar-primary-foreground: oklch(1 0 0);
+            --sidebar-accent: oklch(0.96 0.01 285);
+            --sidebar-accent-foreground: oklch(0.3 0 0);
+            --sidebar-border: oklch(0.922 0 0);
+            --sidebar-ring: oklch(0.708 0 0);
+        }
+
+        /* Karanlık tema aktif olduğunda güncellenen renk değişkenleri */
+        .dark {
+            --background: oklch(0.12 0.02 250);
+            --foreground: oklch(0.94 0.02 250);
+            --card: oklch(0.18 0.015 260);
+            --card-foreground: oklch(0.96 0.02 260);
+            --popover: oklch(0.18 0.015 260);
+            --popover-foreground: oklch(0.96 0.02 260);
+            --primary: oklch(0.7 0.24 285);
+            --primary-foreground: oklch(0.99 0.01 285);
+            --secondary: oklch(0.23 0.008 250);
+            --secondary-foreground: oklch(0.9 0.01 250);
+            --muted: oklch(0.22 0.01 250);
+            --muted-foreground: oklch(0.72 0.02 250);
+            --accent: oklch(0.25 0.02 310);
+            --accent-foreground: oklch(0.96 0.02 310);
+            --destructive: oklch(0.45 0.18 25);
+            --destructive-foreground: oklch(0.98 0.01 25);
+            --border: oklch(0.27 0.01 250);
+            --input: oklch(0.28 0.01 250);
+            --ring: oklch(0.64 0.24 285);
+            --poll-option-bg: oklch(0.18 0.015 260);
+            --poll-option-border: oklch(0.32 0.01 260);
+            --poll-option-hover: oklch(0.28 0.015 260);
+            --poll-winner-glow: oklch(0.7 0.24 285 / 0.3);
+            --poll-progress-bg: oklch(0.24 0.01 260);
+        }
+
+        /* Sayfanın temel tipografi ve arka plan ayarları */
+        body {
+            font-family: "Geist", "Geist Fallback", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+        }
+
+        /* Üst navigasyon şeridi */
+        nav {
+            background: var(--card) !important;
+            border-bottom: 1px solid var(--border) !important;
+            color: var(--foreground);
+            box-shadow: 0 8px 30px oklch(0.145 0 0 / 0.05);
+        }
+
+        nav a,
+        nav button,
+        nav span,
+        nav i {
+            color: var(--muted-foreground) !important;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover,
+        nav button:hover {
+            color: var(--foreground) !important;
+        }
+
+        /* Alt bilgi alanı */
+        footer {
+            background-color: var(--card);
+            border-top: 1px solid var(--border);
+        }
+
+        footer p {
+            color: var(--muted-foreground) !important;
+        }
+
+        main.max-w-7xl {
+            padding-top: 2.5rem;
+            padding-bottom: 6rem;
+        }
+
+        @media (min-width: 640px) {
+            main.max-w-7xl {
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+            }
+        }
+
+        .text-\[\#000000\] {
+            color: var(--foreground) !important;
+        }
+
+        .text-\[\#666A73\],
+        .text-\[\#7A7F92\] {
+            color: var(--muted-foreground) !important;
+        }
+
+        .border-\[\#BFBFBF\],
+        .border-\[\#B5BBCD\] {
+            border-color: var(--border) !important;
+        }
+
+        .border-\[\#666A73\] {
+            border-color: color-mix(in oklch, var(--border) 70%, var(--foreground)) !important;
+        }
+
+        .bg-\[\#F5F5F0\],
+        .bg-\[\#F8F9F6\],
+        .bg-\[\#F9FAFB\] {
+            background-color: var(--background) !important;
+        }
+
+        .bg-white,
+        .bg-white\/75,
+        .bg-white\/95 {
+            background-color: var(--card) !important;
+            color: var(--card-foreground) !important;
+        }
+
+        .bg-\[\#000000\],
+        .bg-\[\#666A73\] {
+            background-color: var(--primary) !important;
+            color: #ffffff !important;
+        }
+
+        .hover\:bg-\[\#666A73\]:hover,
+        .hover\:bg-\[\#000000\]:hover {
+            background-color: var(--foreground) !important;
+            color: var(--primary-foreground) !important;
+        }
+
+        /* Kart tabanlı bileşenlerin paylaştığı yüzey stili */
+        .card-surface {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: 0 18px 35px oklch(0.145 0 0 / 0.08);
+            color: var(--card-foreground);
+        }
+
+        /* Başlıkta gösterilen logo + marka yazısı */
+        .logo-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--foreground);
+        }
+
+        .logo-mark svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* Mobil alt gezinme şeridi */
+        .mobile-nav {
+            background-color: var(--card) !important;
+            border-top: 1px solid var(--border) !important;
+        }
+
+        .mobile-nav-link {
+            color: var(--muted-foreground) !important;
+            transition: color 0.2s ease, transform 0.2s ease;
+            position: relative;
+        }
+
+        .mobile-nav-link:hover,
+        .mobile-nav-link[aria-current="page"] {
+            color: var(--primary) !important;
+        }
+
+        .mobile-nav-link.active-icon i,
+        .mobile-nav-link.active-icon .theme-toggle-icon {
+            color: var(--primary) !important;
+        }
+
+        #notifications-unread-badge-mobile {
+            position: absolute;
+            top: 2px;
+            right: 8px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: var(--destructive);
+            color: var(--destructive-foreground);
+            font-size: 0.65rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+        }
+
+        .page-header {
+            margin-bottom: 2.5rem;
+            position: sticky;
+            top: calc(64px + 0.75rem);
+            z-index: 30;
+            background: transparent;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        @keyframes badgePulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 6px rgba(0, 0, 0, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+            }
+        }
+
+        #notifications-unread-badge-mobile.active-badge {
+            animation: badgePulse 1.75s ease-in-out infinite;
+        }
+
+        #fab-create-post {
+            transition: transform 0.25s ease, opacity 0.25s ease;
+        }
+
+        .fab-hidden {
+            transform: translateY(120%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--muted-foreground);
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .filter-pill:hover {
+            color: var(--foreground);
+            background: var(--muted);
+            transform: translateY(-1px);
+        }
+
+        .filter-pill-active {
+            background: var(--primary);
+            color: var(--primary-foreground);
+            border-color: var(--primary);
+            box-shadow: 0 6px 14px oklch(0.145 0 0 / 0.12);
+        }
+
+        .filter-pill-active:hover {
+            transform: translateY(-1px) scale(1.01);
+        }
+
+        .btn-outline {
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--foreground);
+        }
+
+        .btn-outline:hover {
+            background: var(--muted);
+            border-color: var(--muted-foreground);
+        }
+
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+            mask: none;
+            animation: spin 0.75s linear infinite;
+            border: 2px solid var(--primary-foreground);
+            border-top-color: transparent;
+            border-radius: 999px;
+            width: 1.1rem;
+            height: 1.1rem;
+            margin: auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes softPulse {
+            0% { box-shadow: 0 0 0 0 var(--poll-winner-glow); }
+            70% { box-shadow: 0 0 0 12px color-mix(in oklch, var(--poll-winner-glow) 0%, transparent); }
+            100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--poll-winner-glow) 0%, transparent); }
+        }
+
+        .animate-soft-pulse {
+            animation: softPulse 2.5s ease-in-out infinite;
+        }
+
+        .poll-option {
+            background: var(--poll-option-bg);
+            border: 2px solid var(--poll-option-border);
+            border-radius: calc(var(--radius) + 0.25rem);
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px oklch(0.145 0 0 / 0.05);
+            color: var(--foreground);
+        }
+
+        .poll-option:hover {
+            background: var(--poll-option-hover);
+            border-color: color-mix(in oklch, var(--primary) 40%, var(--poll-option-border));
+            box-shadow: 0 4px 12px oklch(0.145 0 0 / 0.08);
+            transform: translateY(-1px);
+        }
+
+        .poll-option-selected {
+            background: color-mix(in oklch, var(--primary) 10%, var(--poll-option-bg));
+            border-color: color-mix(in oklch, var(--primary) 70%, var(--poll-option-border));
+            box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 25%, transparent);
+        }
+
+        .poll-option-winner {
+            border-color: color-mix(in oklch, var(--primary) 50%, var(--poll-option-border));
+            background: color-mix(in oklch, var(--primary) 7%, var(--poll-option-bg));
+            box-shadow: 0 0 0 3px var(--poll-winner-glow), 0 4px 12px oklch(0.145 0 0 / 0.1);
+        }
+
+        .poll-progress-bar {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius);
+            background: var(--poll-progress-bg);
+            height: 0.65rem;
+        }
+
+        .poll-progress-bar-compact {
+            height: 0.35rem;
+        }
+
+        .poll-progress-fill {
+            height: 100%;
+            transition: width 0.4s ease-out;
+            background: linear-gradient(90deg, var(--primary), color-mix(in oklch, var(--primary) 70%, #ffffff));
+            position: relative;
+        }
+
+        .poll-progress-fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent, color-mix(in oklch, var(--primary) 30%, #fff), transparent);
+            opacity: 0.25;
+            animation: progressShimmer 1.2s linear infinite;
+        }
+
+        .poll-progress-fill.secondary {
+            background: linear-gradient(90deg, var(--muted-foreground), color-mix(in oklch, var(--muted-foreground) 60%, #ffffff));
+        }
+
+        @keyframes progressShimmer {
+            from { transform: translateX(-60%); }
+            to { transform: translateX(60%); }
+        }
+
+        .poll-percentage {
+            font-size: 1.875rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 1px 2px oklch(0 0 0 / 0.1);
+        }
+
+        .poll-vote-count {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--muted-foreground);
+        }
+
+        .poll-card {
+            background: var(--card);
+            border-radius: calc(var(--radius) + 0.5rem);
+            border: 1px solid var(--border);
+            padding: 1.75rem;
+            box-shadow: 0 2px 8px oklch(0.145 0 0 / 0.04), 0 1px 3px oklch(0.145 0 0 / 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .poll-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px oklch(0.145 0 0 / 0.08), 0 2px 6px oklch(0.145 0 0 / 0.1);
+        }
+
+        .poll-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .poll-status-open {
+            background: color-mix(in oklch, var(--primary) 15%, transparent);
+            color: var(--primary);
+            border: 1px solid color-mix(in oklch, var(--primary) 30%, transparent);
+            animation: softPulse 3s ease-in-out infinite;
+        }
+
+        .poll-status-closed {
+            background: color-mix(in oklch, var(--destructive) 12%, transparent);
+            color: var(--destructive);
+            border: 1px solid color-mix(in oklch, var(--destructive) 30%, transparent);
+        }
+
+        .poll-action-button {
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .poll-action-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px oklch(0.145 0 0 / 0.12);
+        }
+
+        .poll-tab {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            color: var(--muted-foreground);
+            transition: all 0.2s ease;
+        }
+
+        .poll-tab-active {
+            background: var(--primary);
+            color: var(--primary-foreground);
+            box-shadow: 0 2px 6px oklch(0.145 0 0 / 0.15);
+        }
+
+        .poll-tab:not(.poll-tab-active):hover {
+            background: var(--muted);
+            color: var(--foreground);
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0;
+        }
+
+        @keyframes tooltipFloat {
+            from { transform: translateY(2px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        [data-poll-tooltip] {
+            position: relative;
+        }
+
+        [data-poll-tooltip]:hover::after {
+            content: attr(data-poll-tooltip);
+            position: absolute;
+            top: -2.25rem;
+            right: 0;
+            background: var(--foreground);
+            color: var(--background);
+            font-size: 0.7rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            white-space: nowrap;
+            animation: tooltipFloat 0.2s ease forwards;
+        }
+
+        .notification-ping {
+            animation: softPulse 2s ease-in-out infinite;
+        }
+
+        .avatar-shell {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: var(--muted);
+            font-weight: 600;
+            color: var(--primary);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .avatar-shell:hover {
+            box-shadow: 0 8px 20px oklch(0.145 0 0 / 0.15);
+            transform: translateY(-1px);
+        }
+
+        .avatar-shell img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-shell .avatar-fallback {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            font-size: 0.95rem;
+            color: var(--primary);
+            background: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .avatar-shell.show-fallback .avatar-fallback {
+            opacity: 1;
+        }
+
+        .avatar-online-dot {
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: oklch(0.75 0.18 150);
+            border: 2px solid var(--card);
+            box-shadow: 0 0 6px oklch(0.75 0.18 150 / 0.7);
+        }
+
+        .post-card {
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px oklch(0.145 0 0 / 0.08);
+            border-color: var(--border);
+        }
+
+        button,
+        a {
+            transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        button:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--ring);
+            outline-offset: 3px;
+        }
+
+        /* Profil sayfasındaki kahraman blokları için degrade arka plan */
+        .profile-hero {
+            background: linear-gradient(135deg,
+                color-mix(in oklch, var(--background) 70%, var(--card)),
+                color-mix(in oklch, var(--card) 90%, var(--foreground) 5%));
+            border-bottom: 1px solid var(--border);
+            color: var(--card-foreground);
+        }
+
+        .profile-avatar-shell {
+            background: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: 0 6px 18px oklch(0 0 0 / 0.12);
+        }
+
+        .profile-stat {
+            background: color-mix(in oklch, var(--card) 85%, var(--background));
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+            text-align: center;
+            box-shadow: 0 4px 12px oklch(0 0 0 / 0.08);
+        }
+
+        .profile-stat-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--foreground);
+        }
+
+        .profile-stat-label {
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        .profile-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px oklch(0 0 0 / 0.07);
+        }
+
+        /* Karanlık/Aydınlık seçenekli dropdown butonu */
+        .theme-toggle-menu {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            color: var(--foreground);
+        }
+
+        .theme-toggle-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 999px;
+            padding: 0.2rem 0.8rem;
+            background: color-mix(in oklch, var(--primary) 18%, transparent);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .theme-toggle-icon {
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 999px;
+            background: var(--foreground);
+            color: var(--background);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .mobile-nav {
+            background-color: var(--card) !important;
+            border-top: 1px solid var(--border) !important;
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-[#F5F5F0] min-h-screen">
+<body data-theme="nocturne" class="min-h-screen">
     <nav class="bg-white/95 backdrop-blur border-b border-[#BFBFBF] sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <a href="{% url 'home' %}" class="flex items-center space-x-2">
-                        {% load static %}
-                        <img src="{% static 'logo.svg' %}" alt="bilemedilema logo" class="w-8 h-8">
-                        <span class="text-xl font-semibold text-[#000000] tracking-tight">bilemedilema</span>
+                    <a href="{% url 'home' %}" class="logo-mark" aria-label="bilemedilema ana sayfa">
+                        <svg viewBox="0 0 80 80" fill="none" role="img" aria-hidden="true">
+                            <path
+                                d="M25 20 L25 60 L45 60 C52 60 56 56 56 50 C56 46 54 43 50 42 C54 41 56 38 56 34 C56 28 52 20 45 20 L25 20 Z"
+                                stroke="currentColor"
+                                stroke-width="4"
+                                fill="none"
+                                stroke-linejoin="round"
+                            />
+                            <circle cx="43" cy="32" r="3" fill="var(--logo-dot)"></circle>
+                            <circle cx="43" cy="48" r="3" fill="var(--logo-dot)"></circle>
+                        </svg>
+                        <span class="logo-text">bilemedilema</span>
                     </a>
                 </div>
                 
                 <div class="hidden sm:flex items-center space-x-4">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'create_feedback' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200" title="Geri Bildirim">
-                            <i class="fas fa-comment-dots mr-1"></i>Geri Bildirim
-                        </a>
+                        {% if not user.is_staff and not user.is_superuser %}
+                            <a id="nav-feedback" href="{% url 'create_feedback' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200" title="Geri Bildirim">
+                                <i class="fas fa-comment-dots mr-1"></i>Geri Bildirim
+                            </a>
+                        {% endif %}
                         <a href="{% url 'home' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200">
                             <i class="fas fa-home mr-1"></i>Ana Sayfa
                         </a>
-                        <a href="{% url 'create_post' %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl transition duration-200 flex items-center space-x-2">
+                        <a id="nav-create-post" href="{% url 'create_post' %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl transition duration-200 flex items-center space-x-2">
                             <i class="fas fa-plus"></i>
                             <span>Yeni Gönderi</span>
                         </a>
 
-                        <a href="{% url 'notifications' %}" class="relative text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200" title="Bildirimler">
+                        <a id="nav-notifications-desktop" href="{% url 'notifications' %}" class="relative text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200" title="Bildirimler">
                             <i class="fas fa-bell text-[15px]"></i>
-                            {% if notifications_unread_count and notifications_unread_count > 0 %}
-                                <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#B33F00] text-white text-[11px] font-bold flex items-center justify-center">
-                                    {{ notifications_unread_count }}
-                                </span>
-                            {% endif %}
+                            <span id="notifications-unread-badge-desktop" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#B33F00] text-white text-[11px] font-bold flex items-center justify-center {% if not notifications_unread_count or notifications_unread_count <= 0 %}hidden{% endif %}">
+                                {{ notifications_unread_count }}
+                            </span>
                         </a>
                         
                         {% if user.is_staff or user.is_superuser %}
@@ -53,13 +765,16 @@
                             <a href="{% url 'moderate_users' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200">
                                 <i class="fas fa-users mr-1"></i>Kullanıcılar
                             </a>
+                            <a href="{% url 'moderation_logs' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200">
+                                <i class="fas fa-clipboard-list mr-1"></i>Loglar
+                            </a>
                             <a href="{% url 'moderate_feedback' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200">
                                 <i class="fas fa-comment-dots mr-1"></i>Geri Bildirimler
                             </a>
                         {% endif %}
                         
                         <div class="relative group">
-                            <button type="button" class="flex items-center space-x-2 text-[#000000] hover:text-[#666A73] transition duration-200">
+                            <button id="nav-user-menu" type="button" class="flex items-center space-x-2 text-[#000000] hover:text-[#666A73] transition duration-200">
                                 <i class="fas fa-user-circle text-2xl"></i>
                                 <div class="flex items-center space-x-1">
                                     <span class="font-medium">{{ user.username }}</span>
@@ -80,6 +795,16 @@
                                     <a href="{% url 'user_profile' user.username %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
                                         <i class="fas fa-user mr-2"></i>Profilim
                                     </a>
+                                    <a href="{% url 'notification_settings' %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
+                                        <i class="fas fa-bell mr-2"></i>Bildirim Ayarları
+                                    </a>
+                                    <button type="button" id="theme-toggle-menu-button" class="theme-toggle-menu" data-theme-toggle>
+                                        <span>Temayı değiştir</span>
+                                        <span class="theme-toggle-chip">
+                                            <span class="theme-toggle-icon" data-theme-icon>🌙</span>
+                                            <span data-theme-label>Karanlık</span>
+                                        </span>
+                                    </button>
                                     <a href="{% url 'logout' %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
                                         <i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap
                                     </a>
@@ -110,56 +835,77 @@
                 </div>
             {% endfor %}
         </div>
+
+        {% if not user.is_staff and not user.is_superuser %}
+            <div id="onboarding-tour" class="fixed inset-0 z-[70] hidden" aria-hidden="true">
+                <div class="absolute inset-0 bg-black/60"></div>
+                <div id="onboarding-spotlight" class="absolute rounded-2xl ring-4 ring-white/70 pointer-events-none"></div>
+                <div id="onboarding-card" class="absolute max-w-sm bg-white border border-[#BFBFBF] rounded-2xl shadow-xl p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p id="onboarding-step" class="text-xs font-semibold text-[#666A73]"></p>
+                            <p id="onboarding-title" class="mt-1 text-base font-semibold text-[#000000]"></p>
+                        </div>
+                        <button type="button" class="text-[#666A73] hover:text-[#000000]" aria-label="Kapat" data-onboarding-skip>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p id="onboarding-text" class="mt-2 text-sm text-[#666A73]"></p>
+                    <div class="mt-4 flex items-center justify-between">
+                        <button type="button" class="text-sm font-semibold text-[#666A73] hover:text-[#000000] transition duration-200" data-onboarding-back>Geri</button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="text-sm font-semibold px-3 py-2 rounded-xl border border-[#BFBFBF] bg-white text-[#000000] hover:bg-[#F8F9F6] transition duration-200" data-onboarding-skip>Geç</button>
+                            <button type="button" class="text-sm font-semibold px-4 py-2 rounded-xl bg-[#000000] text-white hover:bg-[#666A73] transition duration-200" data-onboarding-next>İleri</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     {% endif %}
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 sm:pb-8">
         {% block content %}{% endblock %}
     </main>
 
+    <div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+        <div id="toast-inner" class="bg-[#666A73] text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg border border-[#000000]"></div>
+    </div>
+
     {% if user.is_authenticated %}
-        <a href="{% url 'create_post' %}" class="sm:hidden fixed bottom-20 right-4 z-[55] w-14 h-14 rounded-full bg-[#000000] text-white shadow-lg border border-white/10 flex items-center justify-center hover:bg-[#666A73] transition duration-200" aria-label="Yeni Gönderi">
+        <a id="fab-create-post" href="{% url 'create_post' %}" class="sm:hidden fixed bottom-20 right-4 z-[55] w-14 h-14 rounded-full bg-[#000000] text-white shadow-lg border border-white/10 flex items-center justify-center hover:bg-[#666A73] transition duration-200" aria-label="Yeni Gönderi">
             <i class="fas fa-plus text-[18px]"></i>
         </a>
     {% endif %}
 
     <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-[#BFBFBF]">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="h-16 flex items-center justify-between">
-                <a href="{% url 'home' %}" class="flex-1 flex flex-col items-center justify-center transition duration-200 {% if request.resolver_match.url_name == 'home' %}text-[#000000]{% else %}text-[#666A73] hover:text-[#000000]{% endif %}">
-                    <i class="fas fa-home text-[18px]"></i>
-                    <span class="text-[11px] font-semibold mt-1">Ana Sayfa</span>
+            <div class="flex justify-between items-center h-16 text-xs font-semibold text-[#666A73]">
+                <a href="{% url 'home' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'home' %}active-icon text-[#000000]{% endif %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-home text-lg"></i>
+                    Ana Sayfa
                 </a>
-
+                <a href="{% url 'create_feedback' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'create_feedback' %}active-icon text-[#000000]{% endif %}" {% if request.resolver_match.url_name == 'create_feedback' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-comment-dots text-lg"></i>
+                    Geri Bildirim
+                </a>
+                <a href="{% url 'notifications' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'notifications' %}active-icon text-[#000000]{% endif %}" {% if request.resolver_match.url_name == 'notifications' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-bell text-lg"></i>
+                    Bildirim
+                </a>
+                <button type="button" class="mobile-nav-link flex flex-col items-center justify-center gap-1 text-[#666A73] hover:text-[#000000]" data-theme-toggle aria-label="Karanlık modu aç">
+                    <span class="theme-toggle-icon text-[14px]" data-theme-icon>🌙</span>
+                    <span class="text-[11px] font-semibold" data-theme-label>Karanlık</span>
+                </button>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'create_post' %}" class="flex-1 flex flex-col items-center justify-center transition duration-200 {% if request.resolver_match.url_name == 'create_post' %}text-[#000000]{% else %}text-[#666A73] hover:text-[#000000]{% endif %}">
-                        <i class="fas fa-plus-circle text-[18px]"></i>
-                        <span class="text-[11px] font-semibold mt-1">Yeni</span>
-                    </a>
-
-                    <a href="{% url 'notifications' %}" class="relative flex-1 flex flex-col items-center justify-center transition duration-200 {% if request.resolver_match.url_name == 'notifications' %}text-[#000000]{% else %}text-[#666A73] hover:text-[#000000]{% endif %}">
-                        <i class="fas fa-bell text-[18px]"></i>
-                        {% if notifications_unread_count and notifications_unread_count > 0 %}
-                            <span class="absolute top-2 right-[28%] min-w-[18px] h-[18px] px-1 rounded-full bg-[#B33F00] text-white text-[11px] font-bold flex items-center justify-center">
-                                {{ notifications_unread_count }}
-                            </span>
-                        {% endif %}
-                        <span class="text-[11px] font-semibold mt-1">Bildirim</span>
-                    </a>
-
-                    <a href="{% url 'user_profile' user.username %}" class="flex-1 flex flex-col items-center justify-center transition duration-200 {% if request.resolver_match.url_name == 'user_profile' %}text-[#000000]{% else %}text-[#666A73] hover:text-[#000000]{% endif %}">
-                        <i class="fas fa-user-circle text-[18px]"></i>
-                        <span class="text-[11px] font-semibold mt-1">Profil</span>
+                    <a href="{% url 'user_profile' user.username %}" class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'user_profile' %}text-[#000000]{% endif %}">
+                        <i class="fas fa-user text-lg"></i>
+                        Profil
                     </a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="flex-1 flex flex-col items-center justify-center transition duration-200 {% if request.resolver_match.url_name == 'login' %}text-[#000000]{% else %}text-[#666A73] hover:text-[#000000]{% endif %}">
-                        <i class="fas fa-sign-in-alt text-[18px]"></i>
-                        <span class="text-[11px] font-semibold mt-1">Giriş</span>
+                    <a href="{% url 'login' %}" class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'login' %}text-[#000000]{% endif %}">
+                        <i class="fas fa-user text-lg"></i>
+                        Giriş
                     </a>
-                    <a href="{% url 'register' %}" class="flex-1 flex flex-col items-center justify-center transition duration-200 {% if request.resolver_match.url_name == 'register' %}text-[#000000]{% else %}text-[#666A73] hover:text-[#000000]{% endif %}">
-                        <i class="fas fa-user-plus text-[18px]"></i>
-                        <span class="text-[11px] font-semibold mt-1">Kayıt</span>
-                    </a>
-                    <div class="flex-1"></div>
                 {% endif %}
             </div>
         </div>
@@ -172,6 +918,544 @@
             </p>
         </div>
     </footer>
+
+    {% if user.is_authenticated %}
+        <div id="welcome-modal" class="fixed inset-0 z-[60] hidden" aria-hidden="true">
+            <div class="absolute inset-0 bg-black/50" data-welcome-close></div>
+            <div class="relative mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center">
+                <div class="bg-white w-full rounded-2xl border border-[#BFBFBF] shadow-xl overflow-hidden">
+                    <div class="flex items-start justify-between p-5 border-b border-[#BFBFBF]">
+                        <h2 class="text-lg sm:text-xl font-semibold text-[#000000]">Hoş geldin!</h2>
+                        <button type="button" class="text-[#666A73] hover:text-[#000000]" aria-label="Kapat" data-welcome-close>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-5 sm:p-6">
+                        <div class="text-sm text-[#000000] whitespace-pre-line leading-relaxed">
+Hoş geldin!
+
+Bu uygulama, kararsız kaldığında sorabilmen ve insanların oylarıyla karar verebilmen için tasarlandı.
+Şu anda kullandığın uygulama bir beta sürümü ve bu da demek oluyor ki:
+Bu uygulama henüz tamamlanmadı — seninle birlikte tamamlanıyor.
+
+Uygulamanın logosu, adı, renkleri, tasarımı ve bazı deneyim detayları henüz net değil.
+Çünkü bu kararları tek başımıza vermek yerine, kullananların görüşleriyle şekillendirmek istiyoruz.
+
+Beğendiklerin kadar beğenmediklerin, aklına gelen küçük fikirler bile bu uygulamanın geleceğinde yer alabilir.
+Paylaştığın her geri bildirim, “senin de dokunduğun” bir ürüne dönüşecek.
+
+Zaman ayırıp denediğin ve bu sürecin bir parçası olduğun için gerçekten teşekkür ederiz 🙌
+                        </div>
+                    </div>
+                    <div class="p-5 border-t border-[#BFBFBF] flex items-center justify-end">
+                        <button type="button" class="bg-[#000000] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#666A73] transition duration-200" data-welcome-close>
+                            Tamam
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="notification-toast" class="fixed top-4 right-4 z-[65] hidden">
+            <div class="bg-white border border-[#BFBFBF] shadow-lg rounded-2xl px-4 py-3 max-w-sm">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 text-[#000000]">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-[#000000]">Yeni bildirim</p>
+                        <p id="notification-toast-text" class="text-sm text-[#666A73]">Bildirimlerin güncellendi.</p>
+                        <a id="notification-toast-link" href="{% url 'notifications' %}" class="inline-block mt-2 text-sm font-semibold text-[#0B5275] hover:text-[#000000] transition duration-200">Görüntüle</a>
+                    </div>
+                    <button type="button" class="text-[#666A73] hover:text-[#000000]" aria-label="Kapat" data-toast-close>
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <script>
+        (function() {
+            const endpoint = "{% url 'notifications_unread_count_api' %}";
+            const latestEndpoint = "{% url 'notifications_latest_unread_api' %}";
+            const badgeDesktop = document.getElementById('notifications-unread-badge-desktop');
+            const badgeMobile = document.getElementById('notifications-unread-badge-mobile');
+            const toast = document.getElementById('notification-toast');
+            const toastText = document.getElementById('notification-toast-text');
+            const toastLink = document.getElementById('notification-toast-link');
+            const isNotificationsPage = "{{ request.resolver_match.url_name }}" === "notifications";
+            let lastCount = Number("{{ notifications_unread_count|default:0 }}") || 0;
+            let toastTimer = null;
+
+            function showToast(message) {
+                if (!toast || isNotificationsPage) return;
+                if (toastText && message) toastText.textContent = message;
+                toast.classList.remove('hidden');
+
+                if (toastTimer) {
+                    clearTimeout(toastTimer);
+                    toastTimer = null;
+                }
+                toastTimer = setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 4500);
+            }
+
+            function hideToast() {
+                if (!toast) return;
+                toast.classList.add('hidden');
+                if (toastTimer) {
+                    clearTimeout(toastTimer);
+                    toastTimer = null;
+                }
+            }
+
+            if (toast) {
+                toast.querySelectorAll('[data-toast-close]').forEach((btn) => {
+                    btn.addEventListener('click', hideToast);
+                });
+            }
+
+            function applyCount(count) {
+                const elts = [badgeDesktop, badgeMobile].filter(Boolean);
+                elts.forEach((el) => {
+                    if (count > 0) {
+                        el.textContent = String(count);
+                        el.classList.remove('hidden');
+                        el.classList.add('active-badge');
+                    } else {
+                        el.textContent = '';
+                        el.classList.add('hidden');
+                        el.classList.remove('active-badge');
+                    }
+                });
+            }
+
+            async function refreshUnreadCount() {
+                try {
+                    const resp = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin',
+                    });
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    const count = Number(data && data.count);
+                    if (!Number.isNaN(count)) {
+                        if (count > lastCount) {
+                            try {
+                                const resp2 = await fetch(latestEndpoint, {
+                                    method: 'GET',
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                                    credentials: 'same-origin',
+                                });
+                                if (resp2.ok) {
+                                    const data2 = await resp2.json();
+                                    if (toastLink && data2 && data2.url) {
+                                        toastLink.setAttribute('href', data2.url);
+                                    }
+                                    const msg = (data2 && data2.text) ? String(data2.text) : 'Yeni bir bildirimin var.';
+                                    showToast(msg);
+                                } else {
+                                    showToast('Yeni bir bildirimin var.');
+                                }
+                            } catch (e) {
+                                showToast('Yeni bir bildirimin var.');
+                            }
+                        }
+                        applyCount(count);
+                        lastCount = count;
+                    }
+                } catch (e) {
+                }
+            }
+
+            refreshUnreadCount();
+            setInterval(refreshUnreadCount, 10000);
+        })();
+    </script>
+    {% endif %}
+
+    <script>
+        (function() {
+            function showPageToast(message) {
+                try {
+                    const toast = document.getElementById('toast');
+                    const inner = document.getElementById('toast-inner');
+                    if (!toast || !inner) return false;
+                    inner.textContent = message;
+                    toast.classList.remove('hidden');
+                    clearTimeout(window.__toastTimer);
+                    window.__toastTimer = setTimeout(() => {
+                        toast.classList.add('hidden');
+                    }, 2200);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            async function shareLink(url, title, text) {
+                const absUrl = (url && url.startsWith('/')) ? (window.location.origin + url) : url;
+                const payload = { title: title || document.title, url: absUrl };
+                if (text) payload.text = String(text);
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share(payload);
+                        showPageToast('Paylaşıldı.');
+                        return;
+                    } catch (e) {
+                    }
+                }
+
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        const combined = [text ? String(text) : '', absUrl].filter(Boolean).join('\n');
+                        await navigator.clipboard.writeText(combined);
+                        if (!showPageToast(text ? 'Paylaşım metni kopyalandı.' : 'Link panoya kopyalandı.')) {
+                            alert(text ? 'Paylaşım metni kopyalandı.' : 'Link panoya kopyalandı.');
+                        }
+                        return;
+                    }
+                } catch (e) {
+                }
+
+                try {
+                    window.prompt('Linki kopyala:', absUrl);
+                } catch (e) {
+                }
+            }
+
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-share-url]');
+                if (!btn) return;
+                e.preventDefault();
+                const url = btn.getAttribute('data-share-url') || '';
+                const title = btn.getAttribute('data-share-title') || '';
+                const text = btn.getAttribute('data-share-text') || '';
+                if (!url) return;
+                shareLink(url, title, text);
+            });
+        })();
+    </script>
+
+    {% if show_welcome_popup %}
+    <script>
+        (function() {
+            const modal = document.getElementById('welcome-modal');
+            if (!modal) return;
+
+            const isModerator = "{{ user.is_staff|yesno:'1,0' }}" === "1" || "{{ user.is_superuser|yesno:'1,0' }}" === "1";
+            const username = "{{ user.username|escapejs }}";
+            const tourKey = `onboarding_done_${username}`;
+            const tourRoot = document.getElementById('onboarding-tour');
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('overflow-hidden');
+
+                try {
+                    if (!isModerator && tourRoot && username && !localStorage.getItem(tourKey)) {
+                        startOnboardingTour();
+                    }
+                } catch (e) {
+                }
+            }
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            modal.querySelectorAll('[data-welcome-close]').forEach((btn) => {
+                btn.addEventListener('click', closeModal);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
+            });
+
+            function startOnboardingTour() {
+                if (!tourRoot) return;
+
+                const spotlight = document.getElementById('onboarding-spotlight');
+                const card = document.getElementById('onboarding-card');
+                const stepEl = document.getElementById('onboarding-step');
+                const titleEl = document.getElementById('onboarding-title');
+                const textEl = document.getElementById('onboarding-text');
+                const btnNext = tourRoot.querySelector('[data-onboarding-next]');
+                const btnBack = tourRoot.querySelector('[data-onboarding-back]');
+                const btnSkips = tourRoot.querySelectorAll('[data-onboarding-skip]');
+
+                const steps = [
+                    {
+                        getTarget: () => document.getElementById('nav-create-post') || document.getElementById('fab-create-post'),
+                        title: 'Yeni gönderi oluştur',
+                        text: 'Kararsız kaldığında sorunu paylaş ve anket aç. İnsanların oylarıyla karar ver!',
+                    },
+                    {
+                        getTarget: () => document.querySelector('.js-share-post'),
+                        title: 'Paylaş',
+                        text: 'Bir gönderiyi arkadaşlarınla paylaşmak için buradaki paylaş butonunu kullanabilirsin.',
+                    },
+                    {
+                        getTarget: () => document.getElementById('nav-notifications-desktop') || document.getElementById('nav-notifications-mobile'),
+                        title: 'Bildirimlerini takip et',
+                        text: 'Oylar, yorumlar ve geri bildirim yanıtları burada toplanır.',
+                    },
+                    {
+                        getTarget: () => document.getElementById('nav-feedback') || document.getElementById('nav-feedback-mobile'),
+                        title: 'Geri bildirim gönder',
+                        text: 'Beta sürümdeyiz. Fikirlerini paylaştıkça uygulama seninle birlikte gelişiyor.',
+                    },
+                    {
+                        getTarget: () => document.getElementById('nav-user-menu'),
+                        title: 'Bildirim ayarlarını yönet',
+                        text: 'Sağ üstteki menüden “Bildirim Ayarları” sayfasına gidip hangi bildirimleri almak istediğini seçebilirsin.',
+                    },
+                ];
+
+                let idx = 0;
+
+                function finish() {
+                    tourRoot.classList.add('hidden');
+                    tourRoot.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('overflow-hidden');
+                    try { localStorage.setItem(tourKey, '1'); } catch (e) {}
+                }
+
+                function place() {
+                    const s = steps[idx];
+                    const t = s.getTarget();
+                    if (!t) {
+                        finish();
+                        return;
+                    }
+
+                    const r = t.getBoundingClientRect();
+                    const pad = 10;
+                    const top = Math.max(r.top - pad, 8);
+                    const left = Math.max(r.left - pad, 8);
+                    const width = Math.min(r.width + pad * 2, window.innerWidth - left - 8);
+                    const height = Math.min(r.height + pad * 2, window.innerHeight - top - 8);
+
+                    spotlight.style.top = `${top}px`;
+                    spotlight.style.left = `${left}px`;
+                    spotlight.style.width = `${width}px`;
+                    spotlight.style.height = `${height}px`;
+
+                    const cardWidth = Math.min(380, window.innerWidth - 16);
+                    card.style.width = `${cardWidth}px`;
+
+                    const belowTop = top + height + 12;
+                    const aboveTop = top - 12;
+                    let cardTop = belowTop;
+                    if (belowTop + card.offsetHeight > window.innerHeight - 8) {
+                        cardTop = Math.max(8, aboveTop - card.offsetHeight);
+                    }
+                    const cardLeft = Math.min(window.innerWidth - cardWidth - 8, Math.max(8, left));
+
+                    card.style.top = `${cardTop}px`;
+                    card.style.left = `${cardLeft}px`;
+
+                    stepEl.textContent = `Adım ${idx + 1} / ${steps.length}`;
+                    titleEl.textContent = s.title;
+                    textEl.textContent = s.text;
+
+                    if (btnBack) btnBack.disabled = idx === 0;
+                    if (btnNext) btnNext.textContent = idx === steps.length - 1 ? 'Bitir' : 'İleri';
+                }
+
+                function open() {
+                    tourRoot.classList.remove('hidden');
+                    tourRoot.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('overflow-hidden');
+                    idx = 0;
+                    place();
+                }
+
+                function next() {
+                    if (idx >= steps.length - 1) {
+                        finish();
+                        return;
+                    }
+                    idx += 1;
+                    place();
+                }
+
+                function back() {
+                    if (idx <= 0) return;
+                    idx -= 1;
+                    place();
+                }
+
+                if (btnNext) btnNext.addEventListener('click', next);
+                if (btnBack) btnBack.addEventListener('click', back);
+                btnSkips.forEach((b) => b.addEventListener('click', finish));
+
+                window.addEventListener('resize', () => {
+                    if (!tourRoot.classList.contains('hidden')) place();
+                });
+                window.addEventListener('scroll', () => {
+                    if (!tourRoot.classList.contains('hidden')) place();
+                }, { passive: true });
+
+                open();
+            }
+
+            openModal();
+        })();
+    </script>
+    {% endif %}
+
+    <script>
+        (function initPollCountdown() {
+            if (window.__pollCountdownInit) return;
+            window.__pollCountdownInit = true;
+
+            function formatCountdown(ms) {
+                if (ms <= 0) return 'Kapandı';
+                const totalSec = Math.floor(ms / 1000);
+                const sec = totalSec % 60;
+                const totalMin = Math.floor(totalSec / 60);
+                const min = totalMin % 60;
+                const totalHr = Math.floor(totalMin / 60);
+                const hr = totalHr % 24;
+                const day = Math.floor(totalHr / 24);
+
+                if (day > 0) return `${day}g ${hr}s`;
+                if (totalHr > 0) return `${hr}s ${min}dk`;
+                return `${min}dk ${sec}sn`;
+            }
+
+            function updateCountdowns(root) {
+                const scope = root || document;
+                const els = scope.querySelectorAll('.poll-countdown[data-closes-at]');
+                const now = Date.now();
+                els.forEach((el) => {
+                    const raw = el.getAttribute('data-closes-at') || '';
+                    const t = Date.parse(raw);
+                    if (!t) return;
+                    const diff = t - now;
+                    const txt = formatCountdown(diff);
+                    const textEl = el.querySelector('.poll-countdown-text') || el;
+                    const barInner = el.querySelector('.poll-countdown-bar-inner');
+                    const durationSec = Number(el.getAttribute('data-duration-sec') || '');
+                    const iconWrap = el.querySelector('.poll-countdown-icon');
+
+                    function setState(state) {
+                        el.setAttribute('data-state', state);
+                        if (state === 'closed') {
+                            el.classList.remove('text-[#666A73]', 'border-[#BFBFBF]');
+                            el.classList.add('text-[#B33F00]', 'border-[#B33F00]/40');
+                            if (iconWrap) {
+                                iconWrap.classList.remove('bg-[#BFBFBF]/25', 'text-[#666A73]');
+                                iconWrap.classList.add('bg-[#B33F00]/10', 'text-[#B33F00]');
+                            }
+                            if (barInner) {
+                                barInner.classList.remove('from-[#0B5275]/65', 'to-[#666A73]/65');
+                                barInner.classList.add('from-[#B33F00]/70', 'to-[#B33F00]/40');
+                            }
+                        } else {
+                            el.classList.remove('text-[#B33F00]', 'border-[#B33F00]/40');
+                            el.classList.add('text-[#666A73]', 'border-[#BFBFBF]');
+                            if (iconWrap) {
+                                iconWrap.classList.remove('bg-[#B33F00]/10', 'text-[#B33F00]');
+                                iconWrap.classList.add('bg-[#BFBFBF]/25', 'text-[#666A73]');
+                            }
+                            if (barInner) {
+                                barInner.classList.remove('from-[#B33F00]/70', 'to-[#B33F00]/40');
+                                barInner.classList.add('from-[#0B5275]/65', 'to-[#666A73]/65');
+                            }
+                        }
+                    }
+
+                    if (txt === 'Kapandı') {
+                        if (textEl) textEl.textContent = 'Anket kapandı';
+                        setState('closed');
+                        if (barInner) {
+                            barInner.style.width = '100%';
+                            barInner.classList.remove('animate-pulse');
+                        }
+                    } else {
+                        if (textEl) textEl.textContent = `Kapanış: ${txt}`;
+                        setState('open');
+                        if (barInner) {
+                            if (!Number.isNaN(durationSec) && durationSec > 0) {
+                                const start = t - durationSec * 1000;
+                                const pct = Math.max(0, Math.min(1, (now - start) / (t - start)));
+                                barInner.style.width = `${Math.round(pct * 100)}%`;
+                                barInner.classList.remove('animate-pulse');
+                            } else {
+                                barInner.classList.add('animate-pulse');
+                                barInner.style.width = '50%';
+                            }
+                        }
+                    }
+                });
+            }
+
+            function tick() {
+                updateCountdowns(document);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', tick);
+            } else {
+                tick();
+            }
+            setInterval(tick, 1000);
+        })();
+    </script>
+
+    <script>
+        // Karanlık / aydınlık tema değiştirme
+        (function initThemeToggle() {
+            const storageKey = 'bilemedilema-theme';
+            const body = document.body;
+            const buttons = document.querySelectorAll('[data-theme-toggle]');
+            const iconEls = document.querySelectorAll('[data-theme-icon]');
+            const labelEls = document.querySelectorAll('[data-theme-label]');
+
+            function applyTheme(theme, announce = false) {
+                if (theme === 'dark') {
+                    body.classList.add('dark');
+                    buttons.forEach(btn => btn.setAttribute('aria-label', 'Aydınlık moda dön'));
+                    iconEls.forEach(iconEl => iconEl.textContent = '☀️');
+                    labelEls.forEach(labelEl => labelEl.textContent = 'Aydınlık');
+                } else {
+                    body.classList.remove('dark');
+                    buttons.forEach(btn => btn.setAttribute('aria-label', 'Karanlık modu aç'));
+                    iconEls.forEach(iconEl => iconEl.textContent = '🌙');
+                    labelEls.forEach(labelEl => labelEl.textContent = 'Karanlık');
+                }
+                if (announce) localStorage.setItem(storageKey, theme);
+            }
+
+            function getInitialTheme() {
+                const stored = localStorage.getItem(storageKey);
+                if (stored === 'light' || stored === 'dark') return stored;
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'light';
+            }
+
+            let currentTheme = getInitialTheme();
+            applyTheme(currentTheme);
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    applyTheme(currentTheme, true);
+                });
+            });
+        })();
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

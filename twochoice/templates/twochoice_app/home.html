@@ -92,10 +92,6 @@
 <div id="no-more-posts" class="hidden text-center py-8">
     <p class="text-[#666A73]">Daha fazla gönderi yok.</p>
 </div>
-
-<div id="toast" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
-    <div id="toast-inner" class="bg-[#666A73] text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg border border-[#000000]"></div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -107,6 +103,7 @@
     const selectedTopic = "{{ selected_topic|default:'' }}";
     const selectedSort = "{{ selected_sort|default:'new' }}";
 
+    // CSRF gibi küçük değerleri çerezlerden okuyabilmek için genel yardımcı
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -231,6 +228,24 @@
         }, 2200);
     }
 
+    // Kart üzerindeki sayıların yumuşak yükseliş/azalış animasyonu
+    function animateNumber(el, start, end, options = {}) {
+        if (!el) return;
+        const {
+            duration = 350,
+            formatter = (value) => `${Math.round(value)}`,
+        } = options;
+        const startTime = performance.now();
+        function frame(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const current = start + (end - start) * progress;
+            el.textContent = formatter(current);
+            if (progress < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    }
+
+    // Aynı anketteki tüm butonları topluca kilitlemek için yardımcı
     function setDisabledForNode(node, disabled) {
         if (!node) return;
         node.disabled = disabled;
@@ -241,73 +256,57 @@
         }
     }
 
+    /**
+     * updatePollUI(postId, results)
+     *  - Ana sayfadaki anket kartlarının yüzdelerini, oy sayılarını ve progress barlarını günceller
+     *  - En yüksek oy oranına sahip seçeneğin görsel durumunu (poll-option-selected) aktive eder
+     *  - Kart üstündeki toplam oy sayısını günceller
+     */
     function updatePollUI(postId, results) {
         const cards = document.querySelectorAll(`.poll-option-card[data-post-id="${postId}"]`);
         if (!cards.length) return;
 
         const byOptionId = new Map(results.map(r => [String(r.option_id), r]));
         let totalVotes = 0;
+        let maxPct = 0;
+
+        results.forEach(r => {
+            const votes = Number(r.vote_count || 0);
+            totalVotes += votes;
+            maxPct = Math.max(maxPct, Number(r.percentage || 0));
+        });
 
         cards.forEach(card => {
             const optionId = card.dataset.optionId;
             const r = byOptionId.get(String(optionId));
             if (!r) return;
-
-            totalVotes += Number(r.vote_count || 0);
 
             const percentEl = card.querySelector('.js-option-percent');
             const votesEl = card.querySelector('.js-option-votes');
             const barEl = card.querySelector('.js-option-bar');
-            if (percentEl) percentEl.textContent = `${Math.round(r.percentage)}%`;
-            if (votesEl) votesEl.textContent = `${r.vote_count} oy`;
-            if (barEl) barEl.style.width = `${Math.round(r.percentage)}%`;
-        });
 
-        // winner state (max percentage)
-        const maxPct = results.reduce((m, r) => Math.max(m, Number(r.percentage || 0)), 0);
-        cards.forEach(card => {
-            const optionId = card.dataset.optionId;
-            const r = byOptionId.get(String(optionId));
-            if (!r) return;
-
-            const isWinner = results.length > 0 && Number(r.percentage || 0) === maxPct && totalVotes > 0;
-            if (isWinner) {
-                card.classList.add('bg-[#000000]', 'border-[#000000]', 'text-white');
-                card.classList.remove('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
-                const barEl = card.querySelector('.js-option-bar');
-                if (barEl) {
-                    barEl.classList.add('bg-white/15');
-                    barEl.classList.remove('bg-[#000000]/10');
-                }
-                card.querySelectorAll('.js-option-percent, .js-option-votes, .text-sm').forEach(el => {
-                    el.classList.add('text-white');
-                    el.classList.remove('text-[#000000]', 'text-[#666A73]');
+            if (votesEl) {
+                const prevVotes = Number(card.dataset.prevVotes || votesEl.textContent.replace(/\D/g, '') || 0);
+                animateNumber(votesEl, prevVotes, Number(r.vote_count || 0), {
+                    formatter: (value) => `${Math.round(value)} oy`,
                 });
-            } else {
-                card.classList.remove('bg-[#000000]', 'border-[#000000]', 'text-white');
-                card.classList.add('bg-[#BFBFBF]/30', 'border-[#BFBFBF]', 'text-[#000000]');
-                const barEl = card.querySelector('.js-option-bar');
-                if (barEl) {
-                    barEl.classList.remove('bg-white/15');
-                    barEl.classList.add('bg-[#000000]/10');
-                }
-                // restore common text colors
-                const titleEl = card.querySelector('.text-sm');
-                if (titleEl) {
-                    titleEl.classList.remove('text-white');
-                    titleEl.classList.add('text-[#000000]');
-                }
-                const percentEl = card.querySelector('.js-option-percent');
-                if (percentEl) {
-                    percentEl.classList.remove('text-white');
-                    percentEl.classList.add('text-[#000000]');
-                }
-                const votesEl = card.querySelector('.js-option-votes');
-                if (votesEl) {
-                    votesEl.classList.remove('text-white/80');
-                    votesEl.classList.add('text-[#666A73]');
-                }
+                card.dataset.prevVotes = String(r.vote_count || 0);
             }
+
+            if (percentEl) {
+                const prevPct = Number(card.dataset.prevPercent || percentEl.textContent.replace('%', '') || 0);
+                animateNumber(percentEl, prevPct, Number(r.percentage || 0), {
+                    formatter: (value) => `${Math.round(value)}%`,
+                });
+                card.dataset.prevPercent = String(r.percentage || 0);
+            }
+
+            if (barEl) {
+                barEl.style.width = `${Math.round(r.percentage || 0)}%`;
+            }
+
+            const isWinner = totalVotes > 0 && Number(r.percentage || 0) === maxPct;
+            card.classList.toggle('poll-option-selected', isWinner);
         });
 
         const totalEl = document.querySelector(`.js-total-votes[data-post-id="${postId}"]`);

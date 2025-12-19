@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import UserProfile, Post, PostImage, PollOption, PollVote, Comment, Report, Notification, Feedback
+from .models import UserProfile, Post, PostImage, PollOption, PollVote, Comment, Report, Notification, Feedback, FeedbackMessage, ModerationLog
 
 
 class UserProfileInline(admin.StackedInline):
@@ -65,6 +65,14 @@ class FeedbackAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'resolved_at']
 
 
+@admin.register(FeedbackMessage)
+class FeedbackMessageAdmin(admin.ModelAdmin):
+    list_display = ['created_at', 'feedback', 'author']
+    list_filter = ['created_at']
+    search_fields = ['feedback__subject', 'author__username', 'message']
+    readonly_fields = ['created_at']
+
+
 @admin.register(PostImage)
 class PostImageAdmin(admin.ModelAdmin):
     list_display = ['post', 'imgur_url', 'uploaded_at']
@@ -102,7 +110,7 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ['user', 'actor', 'verb', 'post', 'is_read', 'created_at']
+    list_display = ['user', 'actor', 'verb', 'post', 'feedback', 'is_read', 'created_at']
     list_filter = ['is_read', 'created_at']
     search_fields = ['user__username', 'actor__username', 'verb', 'post__title']
     readonly_fields = ['created_at']
