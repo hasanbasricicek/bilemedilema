@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -21,6 +22,7 @@ import requests
 import json
 import hashlib
 import base64
+from django.views.generic import TemplateView
 from .models import (
     Post,
     Comment,
@@ -172,6 +174,156 @@ def notify_or_bump(*, user, actor=None, verb, post=None, comment=None, feedback=
     except Exception:
         logger.exception('notify_or_bump failed user=%s verb=%s', getattr(user, 'id', None), verb)
         return None
+
+
+def format_count(value:int)->str:
+    if value >= 1000:
+        scaled = value / 1000
+        if scaled == int(scaled):
+            scaled = int(scaled)
+        return f"{scaled}K+"
+    return str(value)
+
+
+class LandingView(TemplateView):
+    template_name = 'twochoice_app/index.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return home(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        active_users = User.objects.filter(is_active=True).count()
+        active_dilemmas = Post.objects.filter(status='p', post_type__in=['poll_only', 'both']).count()
+        total_votes = PollVote.objects.count()
+        context.update(
+            {
+                'body_class': 'landing-page',
+                'theme': 'light',
+                'hero_badge': "Türkiye'nin İlk Dilema Platformu",
+                'hero_title': 'Kararlarını Birlikte Verelim',
+                'hero_description': [
+                    'Bilemedilema, aynı anda birden fazla sonuca yönlendiren, topluluk temelli bir karar platformudur.',
+                    'Sadece oy değil; hikayeler, duygu ve anlayış kazanarak hangi yolu seçmen gerektiğini birlikte keşfederiz.',
+                ],
+                'hero_metric': format_count(active_users) + ' Aktif Kullanıcı',
+                'hero_options': [
+                    {
+                        'label': "Yüksek maaşlı ama yoğun iş",
+                        'percent': 68,
+                        'votes': '842 oy',
+                    },
+                    {
+                        'label': "Work-life balance'lı ama düşük maaş",
+                        'percent': 32,
+                        'votes': '392 oy',
+                    },
+                ],
+                'categories': [
+                    {
+                        'name': 'İlişkiler',
+                        'icon': 'heart',
+                        'count': '1.2K',
+                        'description': 'Aşk, sevgi ve arkadaşlık dilemaları',
+                        'icon_style': 'background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(236,72,153,0.2)); color: #be185d;',
+                        'icon_svg': '<path d="M12 20s-7-4.35-7-8.5c0-2.42 1.79-4.5 4-4.5 1.29 0 2.42.64 3 1.64.58-1 1.71-1.64 3-1.64 2.21 0 4 2.08 4 4.5C19 15.65 12 20 12 20z" />',
+                    },
+                    {
+                        'name': 'Kariyer',
+                        'icon': 'trending-up',
+                        'count': '2.5K',
+                        'description': 'İş, eğitim ve kariyer kararları',
+                        'icon_style': 'background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(14,165,233,0.18)); color: #0ea5e9;',
+                        'icon_svg': '<polyline points="4 14 8 10 12 14 20 6"/><polyline points="12 6 12 14 20 14"/>',
+                    },
+                    {
+                        'name': 'Yaşam',
+                        'icon': 'sparkles',
+                        'count': '3.1K',
+                        'description': 'Günlük hayat ve kişisel kararlar',
+                        'icon_style': 'background: linear-gradient(135deg, rgba(129,140,248,0.18), rgba(139,92,246,0.18)); color: #7c3aed;',
+                        'icon_svg': '<path d="M12 3l.94 1.9 2.1.3-1.52 1.48.36 2.1L12 7.88l-1.88 1 0.36-2.1L9 5.2l2.1-.3L12 3z"/>',
+                    },
+                    {
+                        'name': 'Sosyal',
+                        'icon': 'users',
+                        'count': '890',
+                        'description': 'Arkadaşlık ve sosyal durumlar',
+                        'icon_style': 'background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(34,197,94,0.18)); color: #059669;',
+                        'icon_svg': '<circle cx="9" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2 21c0-4.97 4.03-9 9-9h2c4.97 0 9 4.03 9 9"/>',
+                    },
+                ],
+                'features': [
+                    {
+                        'icon': 'users',
+                        'icon_bg': 'bg-blue-100',
+                        'icon_color': 'text-blue-600',
+                        'title': 'Topluluk Desteği',
+                        'description': 'Binlerce kullanıcının deneyiminden faydalanarak en iyi kararı ver',
+                    },
+                    {
+                        'icon': 'trending-up',
+                        'icon_bg': 'bg-blue-100',
+                        'icon_color': 'text-blue-600',
+                        'title': 'Gerçek Zamanlı Sonuçlar',
+                        'description': 'Anlık oy dağılımları ve istatistiklerle karar sürecini hızlandır',
+                    },
+                    {
+                        'icon': 'sparkles',
+                        'icon_bg': 'bg-purple-100',
+                        'icon_color': 'text-purple-600',
+                        'title': 'Kategori Çeşitliliği',
+                        'description': 'İş, aşk, eğitim, sağlık ve daha fazla kategoride dilema paylaş',
+                    },
+                ],
+                'testimonials': [
+                    {
+                        'name': 'Ayşe Yılmaz',
+                        'username': '@ayse_y',
+                        'initials': 'AY',
+                        'text': 'Kariyer değişikliği konusunda çok kararsızdım. Bilemedilema sayesinde farklı bakış açıları görebildim ve doğru kararı verdim. Teşekkürler!',
+                        'gradient': 'linear-gradient(135deg, rgba(99,102,241,0.4), rgba(236,72,153,0.4))',
+                        'rating': 5,
+                    },
+                    {
+                        'name': 'Mehmet Kaya',
+                        'username': '@mehmet_k',
+                        'initials': 'MK',
+                        'text': 'Evlilik teklifi zamanlaması konusunda topluluktan aldığım geri bildirimler çok değerliydi. Platform gerçekten işe yarıyor!',
+                        'gradient': 'linear-gradient(135deg, rgba(16,185,129,0.4), rgba(59,130,246,0.4))',
+                        'rating': 5,
+                    },
+                    {
+                        'name': 'Zeynep Demir',
+                        'username': '@zeynep_d',
+                        'initials': 'ZD',
+                        'text': 'Yurt dışı eğitim kararımı verirken çok yardımcı oldu. Deneyimli insanların görüşlerini almak paha biçilmez!',
+                        'gradient': 'linear-gradient(135deg, rgba(236,72,153,0.4), rgba(14,165,233,0.4))',
+                        'rating': 5,
+                    },
+                ],
+                'stats': [
+                    {
+                        'value': format_count(active_users),
+                        'label': 'Aktif Kullanıcı',
+                        'gradient': 'linear-gradient(135deg, rgba(99,102,241,1), rgba(236,72,153,1))',
+                    },
+                    {
+                        'value': format_count(active_dilemmas),
+                        'label': 'Paylaşılan Dilema',
+                        'gradient': 'linear-gradient(135deg, rgba(236,72,153,1), rgba(107,33,168,1))',
+                    },
+                    {
+                        'value': format_count(total_votes),
+                        'label': 'Verilen Oy',
+                        'gradient': 'linear-gradient(135deg, rgba(16,185,129,1), rgba(6,182,212,1))',
+                    },
+                ],
+            }
+        )
+        return context
 
 
 def home(request):

@@ -159,35 +159,66 @@
                     </a>
 
                     {% if post.post_type != 'comment_only' and post.home_poll_options %}
-                        <div class="mb-4 bg-white rounded-xl p-3 -mx-1">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="poll-card bg-white border border-[#BFBFBF] rounded-2xl p-4 space-y-5">
+                            <div class="flex flex-wrap items-start justify-between gap-3 pb-2 border-b border-[#BFBFBF]/60">
+                                <div>
+                                    <p class="text-[11px] font-semibold tracking-[0.25em] uppercase text-[#666A73]">Anket</p>
+                                    <div class="flex items-center gap-2 mt-2 flex-wrap">
+                                        <span class="poll-status-badge poll-status-open">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
+                                            Açık
+                                        </span>
+                                        {% if post.poll_closes_at and post.poll_close_mode != 'none' %}
+                                            <span class="poll-countdown inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#BFBFBF] bg-white text-[#666A73] text-[11px] font-semibold" data-state="open" data-closes-at="{{ post.poll_closes_at|date:'c' }}" data-close-mode="{{ post.poll_close_mode }}" {% if post.poll_close_mode == '24h' %}data-duration-sec="86400"{% elif post.poll_close_mode == '3d' %}data-duration-sec="259200"{% endif %}>
+                                                <i class="fas fa-clock text-[10px]"></i>
+                                                <span class="poll-countdown-text">Kapanış: --:--</span>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="text-xs font-semibold text-[#666A73] js-total-votes" data-post-id="{{ post.pk }}" aria-live="polite">
+                                    Toplam {{ post.home_poll_total_votes }} oy
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-4">
                                 {% for item in post.home_poll_options %}
-                                    <button type="button" data-post-id="{{ post.pk }}" data-option-id="{{ item.option.id }}" data-vote-url="{% url 'vote_poll' post.pk %}" data-allow-multiple="{{ post.allow_multiple_choices|lower }}" class="poll-option-card text-center relative rounded-lg p-3 border transition duration-150 active:scale-[0.98] {% if item.is_selected %}bg-[#000000] border-[#000000] text-white{% else %}bg-[#BFBFBF]/30 border-[#BFBFBF] text-[#000000] hover:border-[#666A73]{% endif %}">
-                                        <div class="js-option-bar absolute left-0 top-0 bottom-0 rounded-lg pointer-events-none transition-[width] duration-200 {% if item.is_selected %}bg-white/15{% else %}bg-[#000000]/10{% endif %}" style="width: {{ item.percent }}%;"></div>
-                                        <div class="relative z-10">
-                                            <div class="text-xs font-medium mb-1 {% if item.is_selected %}text-white{% else %}text-[#666A73]{% endif %}">
-                                                {{ item.option.option_text }}
+                                    <button
+                                        type="button"
+                                        class="poll-option poll-option-card text-left {% if item.is_selected %}poll-option-selected{% endif %}"
+                                        data-post-id="{{ post.pk }}"
+                                        data-option-id="{{ item.option.id }}"
+                                        data-vote-url="{% url 'vote_poll' post.pk %}"
+                                        data-allow-multiple="{{ post.allow_multiple_choices|lower }}"
+                                        aria-pressed="{% if item.is_selected %}true{% else %}false{% endif %}"
+                                    >
+                                        <div class="flex flex-wrap items-center justify-between gap-4">
+                                            <div>
+                                                <span class="text-sm font-medium text-[#1f2933]">{{ item.option.option_text }}</span>
+                                                <span class="poll-vote-count js-option-votes">{{ item.vote_count }} oy</span>
                                             </div>
-                                            <div class="js-option-percent text-xl font-bold tracking-tight {% if item.is_selected %}text-white{% else %}text-[#000000]{% endif %}">
-                                                {{ item.percent }}%
+                                            <div class="flex items-baseline gap-2">
+                                                <span class="poll-percentage js-option-percent text-3xl">{{ item.percent|floatformat:0 }}%</span>
+                                                <span class="text-[11px] uppercase tracking-wide text-[#6b7280]">pay</span>
                                             </div>
-                                            <div class="js-option-votes text-[10px] {% if item.is_selected %}text-white/70{% else %}text-[#666A73]{% endif %}">
-                                                {{ item.vote_count }} oy
-                                            </div>
+                                        </div>
+                                        <div class="poll-progress-bar mt-3" role="img" aria-label="{{ item.option.option_text }} için {{ item.percent|floatformat:0 }}%, {{ item.vote_count }} oy">
+                                            <div class="poll-progress-fill js-option-bar" style="width: {{ item.percent|floatformat:0 }}%"></div>
                                         </div>
                                     </button>
                                 {% endfor %}
                             </div>
 
                             {% if post.allow_multiple_choices %}
-                                <button type="button" class="js-home-multi-submit mt-3 w-full bg-[#000000] hover:bg-[#666A73] text-white font-semibold py-2.5 rounded-xl text-sm transition duration-200" data-post-id="{{ post.pk }}" data-vote-url="{% url 'vote_poll' post.pk %}">
-                                    Oy Ver
-                                </button>
+                                <div class="flex flex-col gap-2">
+                                    <button type="button" class="js-home-multi-submit poll-action-button bg-[#000000] text-white hover:bg-[#1f2933]" data-post-id="{{ post.pk }}" data-vote-url="{% url 'vote_poll' post.pk %}">
+                                        Oy Ver
+                                    </button>
+                                    <div class="text-[11px] text-[#666A73]">Birden fazla seçenek seçebilirsin.</div>
+                                </div>
+                            {% else %}
+                                <div class="text-[11px] text-[#666A73]">Seçeneğe tıklayınca oy verilir.</div>
                             {% endif %}
-
-                            <div class="js-total-votes mt-3 text-xs text-[#666A73]" data-post-id="{{ post.pk }}">
-                                Toplam {{ post.home_poll_total_votes }} oy
-                            </div>
                         </div>
                     {% endif %}
 

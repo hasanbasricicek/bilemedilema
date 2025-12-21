@@ -709,10 +709,15 @@
             background-color: var(--card) !important;
             border-top: 1px solid var(--border) !important;
         }
+
+        body.landing-page nav.app-main-nav {
+            display: none;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
 </head>
-<body data-theme="nocturne" class="min-h-screen">
+<body data-theme="{{ theme|default:'light' }}" class="min-h-screen {{ body_class|default:'' }}">
     <nav class="bg-white/95 backdrop-blur border-b border-[#BFBFBF] sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
@@ -1417,19 +1422,19 @@ Zaman ayırıp denediğin ve bu sürecin bir parçası olduğun için gerçekten
         // Karanlık / aydınlık tema değiştirme
         (function initThemeToggle() {
             const storageKey = 'bilemedilema-theme';
-            const body = document.body;
+            const root = document.documentElement;
             const buttons = document.querySelectorAll('[data-theme-toggle]');
             const iconEls = document.querySelectorAll('[data-theme-icon]');
             const labelEls = document.querySelectorAll('[data-theme-label]');
 
             function applyTheme(theme, announce = false) {
                 if (theme === 'dark') {
-                    body.classList.add('dark');
+                    root.classList.add('dark');
                     buttons.forEach(btn => btn.setAttribute('aria-label', 'Aydınlık moda dön'));
                     iconEls.forEach(iconEl => iconEl.textContent = '☀️');
                     labelEls.forEach(labelEl => labelEl.textContent = 'Aydınlık');
                 } else {
-                    body.classList.remove('dark');
+                    root.classList.remove('dark');
                     buttons.forEach(btn => btn.setAttribute('aria-label', 'Karanlık modu aç'));
                     iconEls.forEach(iconEl => iconEl.textContent = '🌙');
                     labelEls.forEach(labelEl => labelEl.textContent = 'Karanlık');
