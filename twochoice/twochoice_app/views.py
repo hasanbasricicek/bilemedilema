@@ -924,42 +924,44 @@ def add_comment(request, pk):
         comment.save()
         logger.info('add_comment user=%s post=%s comment=%s parent=%s', request.user.username, post.id, comment.id, parent_id or 'None')
 
-        # Bildirim gönder
-        if comment.parent:
-            # Cevap bildirimi
-            if comment.parent.author != request.user and comment.parent.author.profile.notify_comments:
-                Notification.objects.create(
-                    recipient=comment.parent.author,
-                    sender=request.user,
-                    notification_type='reply',
-                    post=post,
-                    comment=comment,
-                    message=f'{request.user.username} yorumunuza cevap verdi'
-                )
-        else:
-            # Yeni yorum bildirimi
-            if post.author != request.user and post.author.profile.notify_comments:
-                existing = Notification.objects.filter(
-                    recipient=post.author,
-                    sender=request.user,
-                    post=post,
-                    notification_type='comment',
-                ).order_by('-created_at').first()
-
-                if existing:
-                    existing.comment = comment
-                    existing.is_read = False
-                    existing.created_at = timezone.now()
-                    existing.save(update_fields=['comment', 'is_read', 'created_at'])
-                else:
-                    Notification.objects.create(
-                        recipient=post.author,
-                        sender=request.user,
-                        notification_type='comment',
-                        post=post,
-                        comment=comment,
-                        message=f'{request.user.username} gönderinize yorum yaptı'
-                    )
+        # Bildirim gönder - GEÇİCİ OLARAK DEVRE DIŞI
+        # TODO: Notification modelini düzelt ve tekrar aktif et
+        # if comment.parent:
+        #     # Cevap bildirimi
+        #     if comment.parent.author != request.user and comment.parent.author.profile.notify_comments:
+        #         Notification.objects.create(
+        #             recipient=comment.parent.author,
+        #             sender=request.user,
+        #             notification_type='reply',
+        #             post=post,
+        #             comment=comment,
+        #             message=f'{request.user.username} yorumunuza cevap verdi'
+        #         )
+        # else:
+        #     # Yeni yorum bildirimi
+        #     if post.author != request.user and post.author.profile.notify_comments:
+        #         existing = Notification.objects.filter(
+        #             recipient=post.author,
+        #             sender=request.user,
+        #             post=post,
+        #             notification_type='comment',
+        #         ).order_by('-created_at').first()
+        #
+        #         if existing:
+        #             existing.comment = comment
+        #             existing.is_read = False
+        #             existing.created_at = timezone.now()
+        #             existing.save(update_fields=['comment', 'is_read', 'created_at'])
+        #         else:
+        #             Notification.objects.create(
+        #                 recipient=post.author,
+        #                 sender=request.user,
+        #                 notification_type='comment',
+        #                 post=post,
+        #                 comment=comment,
+        #                 message=f'{request.user.username} gönderinize yorum yaptı'
+        #             )
+        pass  # Bildirim sistemi geçici olarak devre dışı
         
         return JsonResponse({
             'success': True,
