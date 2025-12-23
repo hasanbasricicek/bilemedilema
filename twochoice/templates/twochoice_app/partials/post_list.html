@@ -97,7 +97,7 @@
         </a>
 
         {# Ana sayfada gösterilen kart anket içeriyorsa detaylı sonuç/vote bileşenini çiz #}
-        {% include 'twochoice_app/partials/poll_card.html' with poll_options=post.home_poll_options total_votes=post.home_poll_total_votes %}
+        {% include 'twochoice_app/partials/poll_card.html' with poll_options=post.home_poll_options total_votes=post.home_poll_total_votes hide_title=True %}
 
         {% if post.images.all %}
             {% with total_images=post.images.count %}
