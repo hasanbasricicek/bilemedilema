@@ -1358,8 +1358,8 @@
     {% if user.is_authenticated %}
         <div id="welcome-modal" class="fixed inset-0 z-[60] hidden" aria-hidden="true">
             <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-welcome-close></div>
-            <div class="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center">
-                <div class="bg-white w-full rounded-3xl shadow-2xl overflow-hidden transform transition-all" style="animation: modalSlideIn 0.3s ease-out;">
+            <div class="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center py-8">
+                <div class="bg-white w-full rounded-3xl shadow-2xl overflow-hidden transform transition-all max-h-[90vh] overflow-y-auto" style="animation: modalSlideIn 0.3s ease-out;">
                     <!-- Gradient Header -->
                     <div class="relative bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 p-8 text-white">
                         <div class="absolute top-4 right-4">
