@@ -467,10 +467,14 @@ def register(request):
                     profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'age': age or 18})
                     profile.age = age or profile.age
                     profile.email_verified = True
-                    profile.save(update_fields=['age', 'email_verified'])
+                    profile.has_seen_welcome_popup = False
+                    profile.save(update_fields=['age', 'email_verified', 'has_seen_welcome_popup'])
                 
-                messages.success(request, 'Kayıt başarılı! Şimdi giriş yapabilirsiniz.')
-                return redirect('login')
+                # Otomatik giriş yap
+                login(request, user)
+                request.session['show_welcome_popup'] = 1
+                messages.success(request, 'Kayıt başarılı! Hoş geldin!')
+                return redirect('home')
             except IntegrityError:
                 # DB unique constraint gibi durumlarda doğru alan hatasını göster
                 if username and User.objects.filter(username__iexact=username).exists():
