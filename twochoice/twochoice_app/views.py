@@ -809,7 +809,7 @@ def post_detail(request, pk):
         messages.error(request, 'Bu gönderiyi görüntüleme yetkiniz yok.')
         return redirect('home')
     
-    comments = post.comments.all()
+    comments = post.comments.filter(is_deleted=False)
     user_votes = []
     
     if request.user.is_authenticated:
