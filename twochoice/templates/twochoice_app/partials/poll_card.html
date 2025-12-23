@@ -5,13 +5,15 @@ Kullanım: {% include 'twochoice_app/partials/poll_card.html' with post=post pol
 
 {% if post.post_type != 'comment_only' and poll_options %}
 <div class="poll-card premium-card hover-lift animate-fade-in p-6 space-y-5 {% if post.is_poll_closed %}poll-closed{% endif %}" role="region" aria-label="Anket: {{ post.title }}">
-    <!-- Post Title & Link -->
+    <!-- Post Title & Link - Sadece ana sayfada göster -->
+    {% if not hide_title %}
     <div class="mb-4">
         <a href="{% url 'post_detail' post.pk %}" class="text-xl font-bold text-[#000000] hover:text-[#666A73] transition duration-200">
             {{ post.title }}
         </a>
         <p class="text-sm text-[#666A73] mt-1">{{ post.author.username }} • {{ post.created_at|date:"d.m.Y" }}</p>
     </div>
+    {% endif %}
     
     <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#BFBFBF]/60">
         <p class="text-[11px] font-semibold tracking-[0.25em] uppercase text-[#666A73]">Anket</p>
