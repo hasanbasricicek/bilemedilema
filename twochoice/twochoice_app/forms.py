@@ -11,10 +11,30 @@ class UserRegistrationForm(UserCreationForm):
         'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
         'placeholder': 'E-posta adresiniz'
     }))
-    age = forms.IntegerField(required=True, min_value=13, max_value=120, widget=forms.NumberInput(attrs={
+    age = forms.IntegerField(required=True, min_value=18, max_value=120, widget=forms.NumberInput(attrs={
         'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
-        'placeholder': 'Yaşınız'
+        'placeholder': 'Yaşınız (18+)'
     }))
+    
+    def clean_age(self):
+        age = self.cleaned_data.get('age')
+        if age and age < 18:
+            raise forms.ValidationError('18 yaşından küçükler kayıt olamaz.')
+        return age
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email__iexact=email, is_active=True).exists():
+            raise forms.ValidationError('Bu e-posta adresi zaten kullanılıyor.')
+        return email
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if not username:
+            return username
+        if User.objects.filter(username__iexact=username, is_active=True).exists():
+            raise forms.ValidationError('Bu kullanıcı adı zaten kullanılıyor.')
+        return username
 
     class Meta:
         model = User
@@ -40,14 +60,6 @@ class UserRegistrationForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         if commit:
             user.save()
-            if hasattr(user, 'profile'):
-                user.profile.age = self.cleaned_data['age']
-                user.profile.save()
-            else:
-                UserProfile.objects.create(
-                    user=user,
-                    age=self.cleaned_data['age']
-                )
         return user
 
 
@@ -371,3 +383,65 @@ class ProfileAvatarForm(forms.ModelForm):
         if commit:
             profile.save()
         return profile
+
+
+class UserProfileEditForm(forms.ModelForm):
+    """Form for editing user profile personalization"""
+    
+    bio = forms.CharField(
+        required=False,
+        max_length=500,
+        widget=forms.Textarea(attrs={
+            'class': 'w-full px-4 py-3 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73] resize-none',
+            'placeholder': 'Kendin hakkında birkaç şey yaz...',
+            'rows': 4
+        })
+    )
+    
+    banner_image = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'hidden',
+            'accept': 'image/*',
+            'id': 'banner-upload'
+        })
+    )
+    
+    twitter_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+            'placeholder': 'https://twitter.com/kullaniciadi'
+        })
+    )
+    
+    instagram_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+            'placeholder': 'https://instagram.com/kullaniciadi'
+        })
+    )
+    
+    website_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
+            'placeholder': 'https://website.com'
+        })
+    )
+    
+    class Meta:
+        model = UserProfile
+        fields = ['bio', 'banner_image', 'twitter_url', 'instagram_url', 'website_url']
+    
+    def clean_banner_image(self):
+        banner = self.cleaned_data.get('banner_image')
+        if banner:
+            # Max 5MB
+            if banner.size > 5 * 1024 * 1024:
+                raise forms.ValidationError('Banner görseli en fazla 5MB olabilir.')
+            # Check image type
+            if not banner.content_type.startswith('image/'):
+                raise forms.ValidationError('Sadece görsel dosyaları yükleyebilirsiniz.')
+        return banner

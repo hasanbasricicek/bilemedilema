@@ -1,11 +1,56 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}bilemedilema{% endblock %}</title>
-    {% load static %}
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{% block meta_description %}İki seçenek arasında kaldın mı? Toplulukla birlikte karar ver! Anketler oluştur, oy ver, yorumla.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}anket, oylama, karar verme, topluluk, iki seçenek, bilemedilema{% endblock %}">
+    <meta name="author" content="bilemedilema">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}bilemedilema - İki Seçenek Arasında Karar Ver{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}İki seçenek arasında kaldın mı? Toplulukla birlikte karar ver! Anketler oluştur, oy ver, yorumla.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% static 'images/og-default.png' %}{% endblock %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="bilemedilema">
+    <meta property="og:locale" content="tr_TR">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="{% block twitter_card %}summary_large_image{% endblock %}">
+    <meta name="twitter:url" content="{% block twitter_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}bilemedilema - İki Seçenek Arasında Karar Ver{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}İki seçenek arasında kaldın mı? Toplulukla birlikte karar ver! Anketler oluştur, oy ver, yorumla.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% static 'images/og-default.png' %}{% endblock %}">
+    <meta name="twitter:creator" content="@bilemedilema">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#8B5CF6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="bilemedilema">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    
     <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/icon-192.png' %}">
+    
+    <!-- Premium UI Framework -->
+    <link rel="stylesheet" href="{% static 'css/premium-ui.css' %}">
+    
+    <!-- Design Improvements CSS -->
+    <link rel="stylesheet" href="{% static 'css/design-improvements.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing-improvements.css' %}">
+    <link rel="stylesheet" href="{% static 'css/themes.css' %}">
+    <link rel="stylesheet" href="{% static 'css/poll-countdown.css' %}">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         (function preloadTheme() {
@@ -713,8 +758,388 @@
         body.landing-page nav.app-main-nav {
             display: none;
         }
+        
+        /* Mobile Optimizations - Mobil İyileştirmeleri */
+        @media (max-width: 640px) {
+            /* Font size adjustments */
+            .poll-option .text-sm {
+                font-size: 0.875rem;  /* 14px - Daha okunabilir */
+            }
+            
+            .poll-percentage {
+                font-size: 1.875rem !important;
+            }
+            
+            .poll-vote-count {
+                font-size: 0.75rem;  /* 12px */
+            }
+            
+            .poll-card h2 {
+                font-size: 1.125rem;  /* 18px - Daha büyük başlık */
+            }
+            
+            .post-card h2 {
+                font-size: 1.125rem;  /* 18px */
+            }
+            
+            /* Kompakt padding mobilde */
+            .poll-card {
+                padding: 1rem !important;
+            }
+            
+            .post-card {
+                padding: 1rem !important;
+            }
+            
+            .premium-card {
+                padding: 1rem !important;
+            }
+            
+            /* Avatar boyutu */
+            .avatar-shell {
+                width: 36px !important;
+                height: 36px !important;
+            }
+            
+            /* Touch Targets - Minimum 44x44px */
+            button,
+            a.inline-flex,
+            .poll-option,
+            .mobile-nav-link {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Hover efektlerini mobilde devre dışı bırak */
+            .poll-card:hover,
+            .post-card:hover,
+            .premium-card:hover {
+                transform: none;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+            }
+            
+            button:hover:not(:disabled),
+            .btn:hover,
+            a.inline-flex:hover {
+                transform: none;
+            }
+            
+            /* Mobil için daha büyük input alanları */
+            input,
+            textarea {
+                font-size: 16px !important;  /* iOS zoom önleme */
+                padding: 12px 16px !important;
+            }
+            
+            /* Emoji picker mobilde daha küçük */
+            .emoji-picker-panel {
+                width: 280px !important;
+                max-height: 300px !important;
+            }
+            
+            .emoji-category {
+                grid-template-columns: repeat(6, 1fr) !important;
+            }
+            
+            .emoji-btn {
+                font-size: 20px !important;
+                padding: 6px !important;
+            }
+            
+            /* Mobil spacing ayarları */
+            .space-y-6 > * + * {
+                margin-top: 1rem !important;  /* Kartlar arası daha az boşluk */
+            }
+            
+            /* Bottom navigation için alan bırak */
+            main {
+                padding-bottom: 5rem !important;
+            }
+        }
+        
+        /* Modern Card Shadows - Yumuşak Gölgeler */
+        .premium-card,
+        .poll-card,
+        .post-card,
+        .bg-white {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+            border: 1px solid #F3F4F6;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Hover Effects - Etkileşimli Kartlar (Sadece Desktop) */
+        @media (min-width: 641px) {
+            .poll-card:hover,
+            .post-card:hover {
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+                transform: translateY(-2px);
+                border-color: #E5E7EB;
+            }
+            
+            .premium-card:hover {
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            }
+            
+            button:hover:not(:disabled),
+            .btn:hover,
+            a.inline-flex:hover {
+                transform: translateY(-1px);
+            }
+            
+            .bg-\[\#000000\]:hover,
+            .new-poll-button:hover {
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            }
+        }
+        
+        /* Button Transitions */
+        button,
+        .btn,
+        a.inline-flex {
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Active states (mobil için) */
+        button:active:not(:disabled),
+        .btn:active,
+        a.inline-flex:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+        
+        /* Spacing System - 8'in Katları */
+        :root {
+            --space-1: 0.25rem;  /* 4px */
+            --space-2: 0.5rem;   /* 8px */
+            --space-3: 0.75rem;  /* 12px */
+            --space-4: 1rem;     /* 16px */
+            --space-5: 1.25rem;  /* 20px */
+            --space-6: 1.5rem;   /* 24px */
+            --space-8: 2rem;     /* 32px */
+            --space-10: 2.5rem;  /* 40px */
+            --space-12: 3rem;    /* 48px */
+        }
+        
+        /* Card Padding - Daha Havadar */
+        .poll-card,
+        .post-card {
+            padding: var(--space-6) !important;
+        }
+        
+        .premium-card {
+            padding: var(--space-5) !important;
+        }
+        
+        /* Closed poll styling */
+        .poll-card.poll-closed {
+            opacity: 0.75;
+            filter: grayscale(0.3);
+        }
+        
+        .poll-card.poll-closed .poll-option {
+            cursor: not-allowed;
+            background-color: #f3f4f6 !important;
+        }
+        
+        .poll-card.poll-closed:hover {
+            transform: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .poll-card.poll-closed .poll-progress-fill {
+            background: linear-gradient(90deg, #9ca3af 0%, #6b7280 100%) !important;
+        }
+        
+        .poll-card.poll-closed .poll-percentage {
+            color: #6b7280 !important;
+        }
+        
+        /* Bottom Navigation Active Tab Animation */
+        .mobile-nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-nav-link.active-icon::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid #8B5CF6;
+            animation: bounce-arrow 0.6s ease-in-out;
+        }
+        
+        @keyframes bounce-arrow {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-4px); }
+        }
+        
+        .mobile-nav-link.active-icon {
+            transform: scale(1.1);
+        }
+        
+        /* Enhanced Progress Bars with Gradients */
+        .poll-progress-fill {
+            background: linear-gradient(90deg, #8B5CF6 0%, #EC4899 100%) !important;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .poll-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Hover effect on poll cards */
+        .poll-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        /* Badge Progress Bars */
+        .progress-bar-modern {
+            width: 100%;
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .progress-fill-modern {
+            height: 100%;
+            background: linear-gradient(90deg, #8B5CF6 0%, #EC4899 50%, #F59E0B 100%);
+            border-radius: 999px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+        
+        .progress-fill-modern::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: progress-shimmer 2s infinite;
+        }
+        
+        @keyframes progress-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Notification Badge Animation */
+        .notification-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification-badge .badge-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+            animation: badge-pulse 2s infinite;
+        }
+        
+        @keyframes badge-pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+            }
+        }
+        
+        .notification-badge .badge-count.new {
+            animation: badge-bounce 0.6s ease-in-out;
+        }
+        
+        @keyframes badge-bounce {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+            50% { transform: scale(0.9); }
+            75% { transform: scale(1.1); }
+        }
+        
+        /* New Poll Button with Gradient & Glow */
+        .new-poll-button {
+            background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .new-poll-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .new-poll-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.6);
+        }
+        
+        .new-poll-button:hover::before {
+            left: 100%;
+        }
+        
+        .new-poll-button:active {
+            transform: translateY(0);
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body data-theme="{{ theme|default:'light' }}" class="min-h-screen {{ body_class|default:'' }}">
@@ -748,17 +1173,24 @@
                         <a href="{% url 'home' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200">
                             <i class="fas fa-home mr-1"></i>Ana Sayfa
                         </a>
-                        <a id="nav-create-post" href="{% url 'create_post' %}" class="bg-[#666A73] hover:bg-[#000000] text-white px-4 py-2 rounded-xl transition duration-200 flex items-center space-x-2">
-                            <i class="fas fa-plus"></i>
-                            <span>Yeni Gönderi</span>
+                        <a href="{% url 'search' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200" title="Ara">
+                            <i class="fas fa-search mr-1"></i>Ara
+                        </a>
+                        <a id="nav-create-post" href="{% url 'create_post' %}" class="new-poll-button inline-flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-sm font-semibold" title="Yeni Anket">
+                            <i class="fas fa-plus mr-1"></i>Yeni Anket
                         </a>
 
-                        <a id="nav-notifications-desktop" href="{% url 'notifications' %}" class="relative text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200" title="Bildirimler">
+                        <a id="nav-notifications-desktop" href="{% url 'notifications' %}" class="notification-badge text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200" title="Bildirimler">
                             <i class="fas fa-bell text-[15px]"></i>
-                            <span id="notifications-unread-badge-desktop" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#B33F00] text-white text-[11px] font-bold flex items-center justify-center {% if not notifications_unread_count or notifications_unread_count <= 0 %}hidden{% endif %}">
+                            <span id="notifications-unread-badge-desktop" class="badge-count {% if not notifications_unread_count or notifications_unread_count <= 0 %}hidden{% endif %}">
                                 {{ notifications_unread_count }}
                             </span>
                         </a>
+                        
+                        <button id="theme-toggle" type="button" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200 flex items-center gap-2" title="Tema Değiştir">
+                            <span>🌙</span>
+                            <span class="hidden sm:inline">Tema</span>
+                        </button>
                         
                         {% if user.is_staff or user.is_superuser %}
                             <a href="{% url 'moderate_posts' %}" class="text-[#000000] hover:text-[#666A73] px-3 py-2 rounded-xl text-sm font-medium transition duration-200">
@@ -795,21 +1227,20 @@
                                 </div>
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </button>
-                            <div class="absolute right-0 top-full pt-2 w-48 hidden group-hover:block group-focus-within:block">
-                                <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm py-2">
+                            <div class="absolute right-0 top-full pt-2 w-48 hidden group-hover:block group-focus-within:block z-50">
+                                <div class="glass-card py-2">
                                     <a href="{% url 'user_profile' user.username %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
                                         <i class="fas fa-user mr-2"></i>Profilim
                                     </a>
                                     <a href="{% url 'notification_settings' %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
                                         <i class="fas fa-bell mr-2"></i>Bildirim Ayarları
                                     </a>
-                                    <button type="button" id="theme-toggle-menu-button" class="theme-toggle-menu" data-theme-toggle>
-                                        <span>Temayı değiştir</span>
-                                        <span class="theme-toggle-chip">
-                                            <span class="theme-toggle-icon" data-theme-icon>🌙</span>
-                                            <span data-theme-label>Karanlık</span>
-                                        </span>
-                                    </button>
+                                    <a href="{% url 'create_feedback' %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
+                                        <i class="fas fa-comment-dots mr-2"></i>Geri Bildirim
+                                    </a>
+                                    <a href="{% url 'bookmarks_list' %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
+                                        <i class="fas fa-bookmark mr-2"></i>Favorilerim
+                                    </a>
                                     <a href="{% url 'logout' %}" class="block px-4 py-2 text-[#000000] hover:bg-[#F8F9F6] transition duration-200">
                                         <i class="fas fa-sign-out-alt mr-2"></i>Çıkış Yap
                                     </a>
@@ -877,7 +1308,7 @@
     </div>
 
     {% if user.is_authenticated %}
-        <a id="fab-create-post" href="{% url 'create_post' %}" class="sm:hidden fixed bottom-20 right-4 z-[55] w-14 h-14 rounded-full bg-[#000000] text-white shadow-lg border border-white/10 flex items-center justify-center hover:bg-[#666A73] transition duration-200" aria-label="Yeni Gönderi">
+        <a id="fab-create-post" href="{% url 'create_post' %}" class="sm:hidden fixed bottom-20 right-4 z-[55] w-14 h-14 rounded-full bg-[#000000] text-white shadow-lg border border-white/10 flex items-center justify-center hover:bg-[#666A73] transition duration-200" aria-label="Yeni Anket">
             <i class="fas fa-plus text-[18px]"></i>
         </a>
     {% endif %}
@@ -885,29 +1316,29 @@
     <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t border-[#BFBFBF]">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16 text-xs font-semibold text-[#666A73]">
-                <a href="{% url 'home' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'home' %}active-icon text-[#000000]{% endif %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
+                <a href="{% url 'home' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'home' %}active-icon text-[#8B5CF6]{% endif %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
                     <i class="fas fa-home text-lg"></i>
                     Ana Sayfa
                 </a>
-                <a href="{% url 'create_feedback' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'create_feedback' %}active-icon text-[#000000]{% endif %}" {% if request.resolver_match.url_name == 'create_feedback' %}aria-current="page"{% endif %}>
-                    <i class="fas fa-comment-dots text-lg"></i>
-                    Geri Bildirim
+                <a href="{% url 'search' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'search' %}active-icon text-[#8B5CF6]{% endif %}" {% if request.resolver_match.url_name == 'search' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-search text-lg"></i>
+                    Ara
                 </a>
-                <a href="{% url 'notifications' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'notifications' %}active-icon text-[#000000]{% endif %}" {% if request.resolver_match.url_name == 'notifications' %}aria-current="page"{% endif %}>
+                <a href="{% url 'notifications' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'notifications' %}active-icon text-[#8B5CF6]{% endif %}" {% if request.resolver_match.url_name == 'notifications' %}aria-current="page"{% endif %}>
                     <i class="fas fa-bell text-lg"></i>
                     Bildirim
                 </a>
-                <button type="button" class="mobile-nav-link flex flex-col items-center justify-center gap-1 text-[#666A73] hover:text-[#000000]" data-theme-toggle aria-label="Karanlık modu aç">
-                    <span class="theme-toggle-icon text-[14px]" data-theme-icon>🌙</span>
-                    <span class="text-[11px] font-semibold" data-theme-label>Karanlık</span>
-                </button>
+                <a href="{% url 'create_feedback' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'create_feedback' %}active-icon text-[#8B5CF6]{% endif %}" {% if request.resolver_match.url_name == 'create_feedback' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-comment-dots text-lg"></i>
+                    Geri Bildirim
+                </a>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'user_profile' user.username %}" class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'user_profile' %}text-[#000000]{% endif %}">
+                    <a href="{% url 'user_profile' user.username %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'user_profile' %}active-icon text-[#8B5CF6]{% endif %}" {% if request.resolver_match.url_name == 'user_profile' %}aria-current="page"{% endif %}>
                         <i class="fas fa-user text-lg"></i>
                         Profil
                     </a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'login' %}text-[#000000]{% endif %}">
+                    <a href="{% url 'login' %}" class="mobile-nav-link flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'login' %}active-icon text-[#8B5CF6]{% endif %}" {% if request.resolver_match.url_name == 'login' %}aria-current="page"{% endif %}>
                         <i class="fas fa-user text-lg"></i>
                         Giriş
                     </a>
@@ -1200,7 +1631,7 @@ Zaman ayırıp denediğin ve bu sürecin bir parçası olduğun için gerçekten
                 const steps = [
                     {
                         getTarget: () => document.getElementById('nav-create-post') || document.getElementById('fab-create-post'),
-                        title: 'Yeni gönderi oluştur',
+                        title: 'Yeni anket oluştur',
                         text: 'Kararsız kaldığında sorunu paylaş ve anket aç. İnsanların oylarıyla karar ver!',
                     },
                     {
@@ -1461,6 +1892,92 @@ Zaman ayırıp denediğin ve bu sürecin bir parçası olduğun için gerçekten
             });
         })();
     </script>
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- Image Lazy Loading -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const images = document.querySelectorAll('img[data-src]');
+            
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                        observer.unobserve(img);
+                    }
+                });
+            });
+            
+            images.forEach(img => imageObserver.observe(img));
+        });
+    </script>
+
+    <!-- Share functionality -->
+    <script src="{% static 'js/share.js' %}"></script>
+    
+    <!-- Bookmark functionality -->
+    <script src="{% static 'js/bookmarks.js' %}"></script>
+    
+    <!-- Mentions functionality -->
+    <script src="{% static 'js/mentions.js' %}"></script>
+    
+    <!-- Simple Notifications (guaranteed to work) -->
+    <script src="{% static 'js/notifications-simple.js' %}"></script>
+    
+    <!-- Comment Reactions -->
+    <script src="{% static 'js/comment-reactions.js' %}"></script>
+    
+    <!-- Theme Switcher -->
+    <script src="{% static 'js/theme-switcher.js' %}"></script>
+    
+    <!-- Share Image Generator -->
+    <script src="{% static 'js/share-image-generator.js' %}"></script>
+    
+    <!-- Story Share -->
+    <script src="{% static 'js/story-share.js' %}"></script>
+    
+    <!-- Poll Templates -->
+    <script src="{% static 'js/poll-templates.js' %}"></script>
+    
+    <!-- Guest Vote CTA -->
+    <script src="{% static 'js/guest-vote-cta.js' %}"></script>
+    
+    <!-- Poll Countdown -->
+    <script src="{% static 'js/poll-countdown.js' %}"></script>
+    
+    <!-- Premium Animations -->
+    <script src="{% static 'js/premium-animations.js' %}"></script>
+    
+    <!-- Lazy Loading & Performance -->
+    <script src="{% static 'js/lazy-loading.js' %}"></script>
+    
+    <!-- Vote Animations -->
+    <script src="{% static 'js/vote-animation.js' %}"></script>
+    
+    <!-- Badge Notifications -->
+    <script src="{% static 'js/badge-notification.js' %}"></script>
+    
+    <!-- Emoji Picker -->
+    <script src="{% static 'js/emoji-picker.js' %}"></script>
+    
+    <!-- Smart Search -->
+    <script src="{% static 'js/smart-search.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
 </body>

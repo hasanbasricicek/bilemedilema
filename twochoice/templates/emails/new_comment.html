@@ -1,0 +1,22 @@
+{% extends 'emails/base.html' %}
+
+{% block title %}Yeni Yorum - bilemedilema{% endblock %}
+
+{% block content %}
+<h1>Gönderine yeni yorum yapıldı! 💬</h1>
+
+<p>Merhaba <strong>{{ user.username }}</strong>,</p>
+
+<p><strong>{{ actor.username }}</strong> gönderine yorum yaptı:</p>
+
+<div class="highlight">
+    <h2>{{ post.title }}</h2>
+    <p style="color: #666; font-style: italic;">"{{ comment.content|truncatewords:50 }}"</p>
+</div>
+
+<p>Yorumu görüntülemek ve yanıt vermek için:</p>
+
+<a href="{{ site_url }}{% url 'post_detail' post.pk %}" class="button">Gönderiyi Görüntüle</a>
+
+<p>İyi günler dileriz! 🎉</p>
+{% endblock %}

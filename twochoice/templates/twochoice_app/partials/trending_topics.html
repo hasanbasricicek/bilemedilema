@@ -1,0 +1,69 @@
+<!-- Trending Topics Widget - Compact -->
+<div class="premium-card hover-lift p-4">
+    <h3 class="text-base font-bold text-[#000000] mb-3 flex items-center gap-2">
+        <i class="fas fa-fire text-orange-500 text-sm"></i>
+        <span class="gradient-text">Popüler Konular</span>
+    </h3>
+    
+    <div class="space-y-2">
+        <a href="/?topic=entertainment" class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition duration-200 group">
+            <div class="flex items-center gap-2">
+                <div class="text-2xl">🎉</div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-[#000000] group-hover:text-purple-600 truncate">Eğlence</div>
+                    <div class="text-xs text-[#666A73]">{{ topic_counts.entertainment|default:0 }} anket</div>
+                </div>
+            </div>
+        </a>
+        
+        <a href="/?topic=knowledge" class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition duration-200 group">
+            <div class="flex items-center gap-2">
+                <div class="text-2xl">🧠</div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-[#000000] group-hover:text-purple-600 truncate">Bilgi & Merak</div>
+                    <div class="text-xs text-[#666A73]">{{ topic_counts.knowledge|default:0 }} anket</div>
+                </div>
+            </div>
+        </a>
+        
+        <a href="/?topic=education" class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition duration-200 group">
+            <div class="flex items-center gap-2">
+                <div class="text-2xl">🎓</div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-[#000000] group-hover:text-purple-600 truncate">Okul & Eğitim</div>
+                    <div class="text-xs text-[#666A73]">{{ topic_counts.education|default:0 }} anket</div>
+                </div>
+            </div>
+        </a>
+        
+        <a href="/?topic=daily_life" class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition duration-200 group">
+            <div class="flex items-center gap-2">
+                <div class="text-2xl">🏡</div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-[#000000] group-hover:text-purple-600 truncate">Günlük Hayat</div>
+                    <div class="text-xs text-[#666A73]">{{ topic_counts.daily_life|default:0 }} anket</div>
+                </div>
+            </div>
+        </a>
+        
+        <a href="/?topic=creative" class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition duration-200 group">
+            <div class="flex items-center gap-2">
+                <div class="text-2xl">🎨</div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-[#000000] group-hover:text-purple-600 truncate">Yaratıcı</div>
+                    <div class="text-xs text-[#666A73]">{{ topic_counts.creative|default:0 }} anket</div>
+                </div>
+            </div>
+        </a>
+        
+        <a href="/?topic=society" class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition duration-200 group">
+            <div class="flex items-center gap-2">
+                <div class="text-2xl">🌱</div>
+                <div class="min-w-0">
+                    <div class="text-sm font-semibold text-[#000000] group-hover:text-purple-600 truncate">Toplum & Çevre</div>
+                    <div class="text-xs text-[#666A73]">{{ topic_counts.society|default:0 }} anket</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>

@@ -1,0 +1,114 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Analytics - {{ post.title }} - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'post_detail' post.pk %}" class="text-purple-600 hover:text-purple-700 text-sm font-semibold">
+            <i class="fas fa-arrow-left mr-2"></i>Gönderiye Dön
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6 mb-6">
+        <h1 class="text-2xl font-bold text-[#000000] mb-2">📊 Anket Analitikleri</h1>
+        <p class="text-[#666A73]">{{ post.title }}</p>
+    </div>
+
+    <!-- Basic Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="stat-card">
+            <div class="stat-value text-purple-600">{{ analytics.basic_stats.total_votes }}</div>
+            <div class="stat-label">Toplam Oy</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-blue-600">{{ analytics.basic_stats.total_comments }}</div>
+            <div class="stat-label">Toplam Yorum</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-green-600">{{ analytics.basic_stats.engagement_rate }}%</div>
+            <div class="stat-label">Katılım Oranı</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-orange-600">{{ analytics.basic_stats.comment_rate }}%</div>
+            <div class="stat-label">Yorum Oranı</div>
+        </div>
+    </div>
+
+    <!-- Vote Distribution -->
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6 mb-6">
+        <h2 class="text-xl font-bold text-[#000000] mb-4">Oy Dağılımı</h2>
+        <div class="space-y-4">
+            {% for item in analytics.vote_distribution %}
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="font-semibold">{{ item.option }}</span>
+                    <span class="text-[#666A73]">{{ item.votes }} oy ({{ item.percentage }}%)</span>
+                </div>
+                <div class="progress-bar-modern">
+                    <div class="progress-fill-modern" style="width: {{ item.percentage }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Time-based Analytics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <h2 class="text-xl font-bold text-[#000000] mb-4">Zaman Bazlı Oylar</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span>Son 1 saat:</span>
+                    <span class="font-bold">{{ analytics.votes_by_time.last_hour }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Son 6 saat:</span>
+                    <span class="font-bold">{{ analytics.votes_by_time.last_6_hours }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Son 24 saat:</span>
+                    <span class="font-bold">{{ analytics.votes_by_time.last_24_hours }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Son 7 gün:</span>
+                    <span class="font-bold">{{ analytics.votes_by_time.last_7_days }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <h2 class="text-xl font-bold text-[#000000] mb-4">Anket Bilgileri</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span>Oluşturulma:</span>
+                    <span class="font-bold">{{ analytics.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Yaş:</span>
+                    <span class="font-bold">{{ analytics.age_in_hours|floatformat:0 }} saat</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Durum:</span>
+                    <span class="font-bold">{% if post.is_poll_closed %}Kapandı{% else %}Açık{% endif %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+        <h2 class="text-xl font-bold text-[#000000] mb-4">Verileri Dışa Aktar</h2>
+        <div class="flex gap-4">
+            <a href="?export=csv" class="btn-primary inline-flex items-center gap-2">
+                <i class="fas fa-file-csv"></i>
+                CSV İndir
+            </a>
+            <a href="?export=json" class="btn-secondary inline-flex items-center gap-2">
+                <i class="fas fa-file-code"></i>
+                JSON İndir
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

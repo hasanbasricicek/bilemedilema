@@ -1,0 +1,99 @@
+{
+  "name": "bilemedilema - İki Seçenek Arasında Karar Ver",
+  "short_name": "bilemedilema",
+  "description": "İki seçenek arasında kaldın mı? Toplulukla birlikte karar ver! Anketler oluştur, oy ver, yorumla.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/images/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "entertainment", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "/static/images/screenshot-1.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/images/screenshot-2.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Yeni Anket Oluştur",
+      "short_name": "Yeni Anket",
+      "description": "Hızlıca yeni bir anket oluştur",
+      "url": "/create-post/",
+      "icons": [
+        {
+          "src": "/static/images/icon-create.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Bildirimler",
+      "short_name": "Bildirimler",
+      "description": "Bildirimlerini görüntüle",
+      "url": "/notifications/",
+      "icons": [
+        {
+          "src": "/static/images/icon-notifications.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

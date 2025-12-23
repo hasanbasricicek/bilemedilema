@@ -1,20 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F, ExpressionWrapper, FloatField, Prefetch
 
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.contrib.auth import login, logout, authenticate
+from django.contrib import messages
 from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
-from django.db import IntegrityError
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from datetime import timedelta
 import logging
 import os
@@ -36,10 +37,99 @@ from .models import (
     FeedbackMessage,
     ModerationLog,
 )
-from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, FeedbackForm, ProfileAvatarForm
+from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, FeedbackForm, ProfileAvatarForm, UserProfileEditForm
 from .avatar import render_avatar_svg_from_config, resolve_profile_avatar_config, sanitize_avatar_config
+from .decorators import rate_limit
+from .constants import (
+    POLL_DURATION_24H,
+    POLL_DURATION_3D,
+    MAX_IMAGE_SIZE_BYTES,
+    ALLOWED_IMAGE_CONTENT_TYPES,
+    VOTE_RATE_LIMIT_SECONDS,
+    TREND_CUTOFF_HOURS,
+    POSTS_PER_PAGE,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _send_verification_email(request, user, verification_url):
+    subject = 'bilemedilema - E-posta Doğrulama'
+
+    html = f"""
+    <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">
+        <h2 style=\"color: #8B5CF6;\">Hoş geldin {user.username}!</h2>
+        <p style=\"color: #374151; font-size: 16px;\">
+            Hesabını aktifleştirmek için aşağıdaki butona tıklaman yeterli:
+        </p>
+        <div style=\"text-align: center; margin: 30px 0;\">
+            <a href=\"{verification_url}\"
+               style=\"background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+                      color: white;
+                      padding: 14px 32px;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      font-weight: bold;
+                      display: inline-block;\">
+                Hesabımı Aktifleştir
+            </a>
+        </div>
+        <p style=\"color: #6B7280; font-size: 14px;\">Eğer bu kaydı sen yapmadıysan bu maili görmezden gelebilirsin.</p>
+    </div>
+    """
+
+    # 1) Resend varsa önce onu dene
+    resend_key = getattr(settings, 'RESEND_API_KEY', '').strip()
+    if resend_key:
+        try:
+            import resend
+            resend.api_key = resend_key
+            resend.Emails.send({
+                'from': settings.DEFAULT_FROM_EMAIL,
+                'to': [user.email],
+                'subject': subject,
+                'html': html,
+            })
+            return True, None
+        except Exception as e:
+            # Resend test modundaysa SMTP'ye düşmeyi dene
+            err = str(e).lower()
+            if 'only send testing emails' not in err:
+                return False, e
+
+            # Test mod kısıtı -> SMTP varsa onu dene
+            if getattr(settings, 'EMAIL_HOST_USER', '') and getattr(settings, 'EMAIL_HOST_PASSWORD', ''):
+                try:
+                    msg = EmailMultiAlternatives(
+                        subject=subject,
+                        body=f'Merhaba {user.username}, doğrulama linki: {verification_url}',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[user.email],
+                    )
+                    msg.attach_alternative(html, 'text/html')
+                    msg.send(fail_silently=False)
+                    return True, None
+                except Exception as smtp_e:
+                    return False, smtp_e
+
+            return False, e
+
+    # 2) Resend yoksa SMTP ayarlıysa Django mail backend ile gönder
+    if getattr(settings, 'EMAIL_HOST_USER', '') and getattr(settings, 'EMAIL_HOST_PASSWORD', ''):
+        try:
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=f'Merhaba {user.username}, doğrulama linki: {verification_url}',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email],
+            )
+            msg.attach_alternative(html, 'text/html')
+            msg.send(fail_silently=False)
+            return True, None
+        except Exception as e:
+            return False, e
+
+    return False, None
 
 POLL_STATUS_THEME_STYLES = {
     'open': {
@@ -186,7 +276,7 @@ def format_count(value:int)->str:
 
 
 class LandingView(TemplateView):
-    template_name = 'twochoice_app/index.html'
+    template_name = 'twochoice_app/landing.html'
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -195,134 +285,27 @@ class LandingView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        active_users = User.objects.filter(is_active=True).count()
-        active_dilemmas = Post.objects.filter(status='p', post_type__in=['poll_only', 'both']).count()
+        # Gerçek istatistikler
+        total_posts = Post.objects.filter(status='p', is_deleted=False).count()
         total_votes = PollVote.objects.count()
-        context.update(
-            {
-                'body_class': 'landing-page',
-                'theme': 'light',
-                'hero_badge': "Türkiye'nin İlk Dilema Platformu",
-                'hero_title': 'Kararlarını Birlikte Verelim',
-                'hero_description': [
-                    'Bilemedilema, aynı anda birden fazla sonuca yönlendiren, topluluk temelli bir karar platformudur.',
-                    'Sadece oy değil; hikayeler, duygu ve anlayış kazanarak hangi yolu seçmen gerektiğini birlikte keşfederiz.',
-                ],
-                'hero_metric': format_count(active_users) + ' Aktif Kullanıcı',
-                'hero_options': [
-                    {
-                        'label': "Yüksek maaşlı ama yoğun iş",
-                        'percent': 68,
-                        'votes': '842 oy',
-                    },
-                    {
-                        'label': "Work-life balance'lı ama düşük maaş",
-                        'percent': 32,
-                        'votes': '392 oy',
-                    },
-                ],
-                'categories': [
-                    {
-                        'name': 'İlişkiler',
-                        'icon': 'heart',
-                        'count': '1.2K',
-                        'description': 'Aşk, sevgi ve arkadaşlık dilemaları',
-                        'icon_style': 'background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(236,72,153,0.2)); color: #be185d;',
-                        'icon_svg': '<path d="M12 20s-7-4.35-7-8.5c0-2.42 1.79-4.5 4-4.5 1.29 0 2.42.64 3 1.64.58-1 1.71-1.64 3-1.64 2.21 0 4 2.08 4 4.5C19 15.65 12 20 12 20z" />',
-                    },
-                    {
-                        'name': 'Kariyer',
-                        'icon': 'trending-up',
-                        'count': '2.5K',
-                        'description': 'İş, eğitim ve kariyer kararları',
-                        'icon_style': 'background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(14,165,233,0.18)); color: #0ea5e9;',
-                        'icon_svg': '<polyline points="4 14 8 10 12 14 20 6"/><polyline points="12 6 12 14 20 14"/>',
-                    },
-                    {
-                        'name': 'Yaşam',
-                        'icon': 'sparkles',
-                        'count': '3.1K',
-                        'description': 'Günlük hayat ve kişisel kararlar',
-                        'icon_style': 'background: linear-gradient(135deg, rgba(129,140,248,0.18), rgba(139,92,246,0.18)); color: #7c3aed;',
-                        'icon_svg': '<path d="M12 3l.94 1.9 2.1.3-1.52 1.48.36 2.1L12 7.88l-1.88 1 0.36-2.1L9 5.2l2.1-.3L12 3z"/>',
-                    },
-                    {
-                        'name': 'Sosyal',
-                        'icon': 'users',
-                        'count': '890',
-                        'description': 'Arkadaşlık ve sosyal durumlar',
-                        'icon_style': 'background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(34,197,94,0.18)); color: #059669;',
-                        'icon_svg': '<circle cx="9" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2 21c0-4.97 4.03-9 9-9h2c4.97 0 9 4.03 9 9"/>',
-                    },
-                ],
-                'features': [
-                    {
-                        'icon': 'users',
-                        'icon_bg': 'bg-blue-100',
-                        'icon_color': 'text-blue-600',
-                        'title': 'Topluluk Desteği',
-                        'description': 'Binlerce kullanıcının deneyiminden faydalanarak en iyi kararı ver',
-                    },
-                    {
-                        'icon': 'trending-up',
-                        'icon_bg': 'bg-blue-100',
-                        'icon_color': 'text-blue-600',
-                        'title': 'Gerçek Zamanlı Sonuçlar',
-                        'description': 'Anlık oy dağılımları ve istatistiklerle karar sürecini hızlandır',
-                    },
-                    {
-                        'icon': 'sparkles',
-                        'icon_bg': 'bg-purple-100',
-                        'icon_color': 'text-purple-600',
-                        'title': 'Kategori Çeşitliliği',
-                        'description': 'İş, aşk, eğitim, sağlık ve daha fazla kategoride dilema paylaş',
-                    },
-                ],
-                'testimonials': [
-                    {
-                        'name': 'Ayşe Yılmaz',
-                        'username': '@ayse_y',
-                        'initials': 'AY',
-                        'text': 'Kariyer değişikliği konusunda çok kararsızdım. Bilemedilema sayesinde farklı bakış açıları görebildim ve doğru kararı verdim. Teşekkürler!',
-                        'gradient': 'linear-gradient(135deg, rgba(99,102,241,0.4), rgba(236,72,153,0.4))',
-                        'rating': 5,
-                    },
-                    {
-                        'name': 'Mehmet Kaya',
-                        'username': '@mehmet_k',
-                        'initials': 'MK',
-                        'text': 'Evlilik teklifi zamanlaması konusunda topluluktan aldığım geri bildirimler çok değerliydi. Platform gerçekten işe yarıyor!',
-                        'gradient': 'linear-gradient(135deg, rgba(16,185,129,0.4), rgba(59,130,246,0.4))',
-                        'rating': 5,
-                    },
-                    {
-                        'name': 'Zeynep Demir',
-                        'username': '@zeynep_d',
-                        'initials': 'ZD',
-                        'text': 'Yurt dışı eğitim kararımı verirken çok yardımcı oldu. Deneyimli insanların görüşlerini almak paha biçilmez!',
-                        'gradient': 'linear-gradient(135deg, rgba(236,72,153,0.4), rgba(14,165,233,0.4))',
-                        'rating': 5,
-                    },
-                ],
-                'stats': [
-                    {
-                        'value': format_count(active_users),
-                        'label': 'Aktif Kullanıcı',
-                        'gradient': 'linear-gradient(135deg, rgba(99,102,241,1), rgba(236,72,153,1))',
-                    },
-                    {
-                        'value': format_count(active_dilemmas),
-                        'label': 'Paylaşılan Dilema',
-                        'gradient': 'linear-gradient(135deg, rgba(236,72,153,1), rgba(107,33,168,1))',
-                    },
-                    {
-                        'value': format_count(total_votes),
-                        'label': 'Verilen Oy',
-                        'gradient': 'linear-gradient(135deg, rgba(16,185,129,1), rgba(6,182,212,1))',
-                    },
-                ],
-            }
-        )
+        active_users = User.objects.filter(is_active=True).count()
+        
+        # Kategorilere göre anket sayıları
+        categories = []
+        for topic_key, topic_label in Post.TOPIC_CHOICES:
+            count = Post.objects.filter(status='p', is_deleted=False, topic=topic_key).count()
+            categories.append({
+                'key': topic_key,
+                'label': topic_label,
+                'count': format_count(count)
+            })
+        
+        context['body_class'] = 'landing-page'
+        context['theme'] = 'light'
+        context['total_posts'] = format_count(total_posts)
+        context['total_votes'] = format_count(total_votes)
+        context['active_users'] = format_count(active_users)
+        context['categories'] = categories
         return context
 
 
@@ -331,36 +314,61 @@ def home(request):
     if selected_sort not in {'new', 'popular', 'trend'}:
         selected_sort = 'new'
 
-    posts = (
-        Post.objects.filter(status='p')
-        .select_related('author', 'author__profile')
-        .prefetch_related('poll_options__votes', 'votes', 'images', 'comments')
-    )
-
     selected_topic = request.GET.get('topic')
     valid_topics = {k for k, _ in Post.TOPIC_CHOICES}
-    if selected_topic in valid_topics:
-        posts = posts.filter(topic=selected_topic)
-    else:
+    if selected_topic not in valid_topics:
         selected_topic = ''
 
-    if selected_sort == 'popular':
-        posts = posts.annotate(
-            vote_count=Count('votes', distinct=True),
-            comment_count=Count('comments', distinct=True),
-        ).order_by('-vote_count', '-comment_count', '-created_at')
-    elif selected_sort == 'trend':
-        cutoff = timezone.now() - timedelta(hours=24)
-        posts = posts.annotate(
-            trend_vote_count=Count('votes', filter=Q(votes__voted_at__gte=cutoff), distinct=True),
-            trend_comment_count=Count('comments', filter=Q(comments__created_at__gte=cutoff), distinct=True),
-        ).order_by('-trend_vote_count', '-trend_comment_count', '-created_at')
+    # Cache key for performance
+    page_num = request.GET.get('page', 1)
+    cache_key = f"home_posts:{selected_sort}:{selected_topic}:page_{page_num}"
+    cache_timeout = 300  # 5 minutes
+    
+    if selected_sort in {'popular', 'trend'}:
+        cached_post_ids = cache.get(cache_key)
+        if cached_post_ids is not None:
+            posts = Post.objects.filter(id__in=cached_post_ids, status='p', is_deleted=False).select_related('author', 'author__profile').prefetch_related('poll_options__votes', 'votes', 'images', 'comments')
+            posts = sorted(posts, key=lambda p: cached_post_ids.index(p.id))
+        else:
+            posts = (
+                Post.objects.filter(status='p', is_deleted=False)
+                .select_related('author', 'author__profile')
+                .prefetch_related('poll_options__votes', 'votes', 'images', 'comments')
+            )
+            
+            if selected_topic:
+                posts = posts.filter(topic=selected_topic)
+
+            if selected_sort == 'popular':
+                posts = posts.annotate(
+                    vote_count=Count('votes', distinct=True),
+                    comment_count=Count('comments', distinct=True),
+                ).order_by('-vote_count', '-comment_count', '-created_at')
+            elif selected_sort == 'trend':
+                cutoff = timezone.now() - timedelta(hours=TREND_CUTOFF_HOURS)
+                posts = posts.annotate(
+                    trend_vote_count=Count('votes', filter=Q(votes__voted_at__gte=cutoff), distinct=True),
+                    trend_comment_count=Count('comments', filter=Q(comments__created_at__gte=cutoff, comments__is_deleted=False), distinct=True),
+                ).order_by('-trend_vote_count', '-trend_comment_count', '-created_at')
     else:
+        posts = (
+            Post.objects.filter(status='p', is_deleted=False)
+            .select_related('author', 'author__profile')
+            .prefetch_related('poll_options__votes', 'votes', 'images', 'comments')
+        )
+        
+        if selected_topic:
+            posts = posts.filter(topic=selected_topic)
+        
         posts = posts.order_by('-created_at')
 
     page = request.GET.get('page', 1)
-    paginator = Paginator(posts, 20)
+    paginator = Paginator(posts, POSTS_PER_PAGE)
     posts_page = paginator.get_page(page)
+
+    if selected_sort in {'popular', 'trend'} and cached_post_ids is None:
+        post_ids = [p.id for p in posts_page.object_list]
+        cache.set(cache_key, post_ids, timeout=300)
 
     user_votes_by_post = {}
     if request.user.is_authenticated:
@@ -399,12 +407,27 @@ def home(request):
         else:
             post.poll_status_meta = None
     
+    # Calculate topic counts for trending topics widget
+    topic_counts = {}
+    for topic_code, topic_name in Post.TOPIC_CHOICES:
+        topic_counts[topic_code] = Post.objects.filter(
+            topic=topic_code, 
+            status='p', 
+            is_deleted=False
+        ).count()
+    
+    # Get trending hashtags
+    from .hashtags import get_trending_hashtags
+    trending_hashtags = get_trending_hashtags(limit=8)
+    
     context = {
         'posts': posts_page,
         'is_ajax': request.headers.get('X-Requested-With') == 'XMLHttpRequest',
         'topics': Post.TOPIC_CHOICES,
         'selected_topic': selected_topic,
         'selected_sort': selected_sort,
+        'topic_counts': topic_counts,
+        'trending_hashtags': trending_hashtags,
     }
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -421,22 +444,67 @@ def register(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save()
+                username = form.cleaned_data.get('username')
+                email = form.cleaned_data.get('email')
+                age = form.cleaned_data.get('age')
+
+                existing_by_username = User.objects.filter(username__iexact=username).first()
+                existing_by_email = User.objects.filter(email__iexact=email).first() if email else None
+
+                if existing_by_username and existing_by_username.is_active:
+                    form.add_error('username', 'Bu kullanıcı adı zaten kullanılıyor.')
+                    return render(request, 'twochoice_app/register.html', {'form': form}, status=400)
+
+                if existing_by_email and existing_by_email.is_active:
+                    form.add_error('email', 'Bu e-posta adresi zaten kullanılıyor.')
+                    return render(request, 'twochoice_app/register.html', {'form': form}, status=400)
+
+                with transaction.atomic():
+                    user = form.save(commit=False)
+                    user.is_active = True
+                    user.save()
+
+                    profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'age': age or 18})
+                    profile.age = age or profile.age
+                    profile.email_verified = True
+                    profile.save(update_fields=['age', 'email_verified'])
+                
+                messages.success(request, 'Kayıt başarılı! Şimdi giriş yapabilirsiniz.')
+                return redirect('login')
             except IntegrityError:
-                form.add_error('username', 'Bu kullanıcı adı zaten kullanılıyor.')
+                # DB unique constraint gibi durumlarda doğru alan hatasını göster
+                if username and User.objects.filter(username__iexact=username).exists():
+                    form.add_error('username', 'Bu kullanıcı adı zaten kullanılıyor.')
+                elif email and User.objects.filter(email__iexact=email).exists():
+                    form.add_error('email', 'Bu e-posta adresi zaten kullanılıyor.')
+                else:
+                    form.add_error(None, 'Kayıt sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.')
                 return render(request, 'twochoice_app/register.html', {'form': form}, status=400)
-            login(request, user)
-            profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'age': 18})
-            if not profile.has_seen_welcome_popup:
-                profile.has_seen_welcome_popup = True
-                profile.save(update_fields=['has_seen_welcome_popup'])
-                request.session['show_welcome_popup'] = 1
-            messages.success(request, 'Kayıt başarılı! Hoş geldiniz.')
-            return redirect('home')
+            except Exception as e:
+                logging.exception('Register error')
+                messages.error(request, 'Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.')
+                return render(request, 'twochoice_app/register.html', {'form': form}, status=500)
     else:
         form = UserRegistrationForm()
     
     return render(request, 'twochoice_app/register.html', {'form': form})
+
+
+def verify_email(request, token):
+    try:
+        profile = UserProfile.objects.get(email_verification_token=token)
+        if not profile.email_verified:
+            profile.email_verified = True
+            profile.user.is_active = True
+            profile.user.save()
+            profile.save()
+            messages.success(request, 'E-posta adresiniz doğrulandı! Artık giriş yapabilirsiniz.')
+        else:
+            messages.info(request, 'E-posta adresiniz zaten doğrulanmış.')
+        return redirect('login')
+    except UserProfile.DoesNotExist:
+        messages.error(request, 'Geçersiz doğrulama linki.')
+        return redirect('home')
 
 
 def setup_admin(request):
@@ -608,9 +676,9 @@ def create_post(request):
                 post.poll_close_mode = 'none'
                 post.poll_closes_at = None
             elif post.poll_close_mode == '24h':
-                post.poll_closes_at = timezone.now() + timedelta(hours=24)
+                post.poll_closes_at = timezone.now() + timedelta(seconds=POLL_DURATION_24H)
             elif post.poll_close_mode == '3d':
-                post.poll_closes_at = timezone.now() + timedelta(days=3)
+                post.poll_closes_at = timezone.now() + timedelta(seconds=POLL_DURATION_3D)
             elif post.poll_close_mode == 'none':
                 post.poll_closes_at = None
             post.save()
@@ -623,15 +691,13 @@ def create_post(request):
             images = request.FILES.getlist('images')
             failed_images = 0
             rejected_images = 0
-            max_image_size_bytes = 10 * 1024 * 1024
-            allowed_content_types = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
             for image in images:
                 content_type = getattr(image, 'content_type', None)
-                if content_type and content_type not in allowed_content_types:
+                if content_type and content_type not in ALLOWED_IMAGE_CONTENT_TYPES:
                     rejected_images += 1
                     continue
 
-                if getattr(image, 'size', 0) and image.size > max_image_size_bytes:
+                if getattr(image, 'size', 0) and image.size > MAX_IMAGE_SIZE_BYTES:
                     rejected_images += 1
                     continue
 
@@ -678,9 +744,9 @@ def edit_post(request, pk):
                 post.poll_close_mode = 'none'
                 post.poll_closes_at = None
             elif post.poll_close_mode == '24h':
-                post.poll_closes_at = timezone.now() + timedelta(hours=24)
+                post.poll_closes_at = timezone.now() + timedelta(seconds=POLL_DURATION_24H)
             elif post.poll_close_mode == '3d':
-                post.poll_closes_at = timezone.now() + timedelta(days=3)
+                post.poll_closes_at = timezone.now() + timedelta(seconds=POLL_DURATION_3D)
             elif post.poll_close_mode == 'none':
                 post.poll_closes_at = None
             post.save()
@@ -723,7 +789,9 @@ def delete_post(request, pk):
         return redirect('home')
     
     if request.method == 'POST':
-        post.delete()
+        post.is_deleted = True
+        post.save(update_fields=['is_deleted'])
+        logger.info('delete_post user=%s post=%s', request.user.username, post.id)
         messages.success(request, 'Gönderi silindi.')
         return redirect('home')
     
@@ -788,6 +856,12 @@ def post_detail(request, pk):
                         f"\nToplam {total_votes} oy"
                     )
     
+    # Check if user has bookmarked this post
+    is_bookmarked = False
+    if request.user.is_authenticated:
+        from .models import Bookmark
+        is_bookmarked = Bookmark.objects.filter(user=request.user, post=post).exists()
+    
     context = {
         'post': post,
         'comments': comments,
@@ -799,6 +873,7 @@ def post_detail(request, pk):
         'share_url': request.build_absolute_uri(reverse('post_detail', kwargs={'pk': post.pk})),
         'poll_share_text': poll_share_text,
         'poll_results_json': json.dumps(poll_results_payload),
+        'is_bookmarked': is_bookmarked,
     }
     
     return render(request, 'twochoice_app/post_detail.html', context)
@@ -806,13 +881,16 @@ def post_detail(request, pk):
 
 @login_required
 @require_POST
+@rate_limit('add_comment', timeout=2, max_requests=1)
 def add_comment(request, pk):
     post = get_object_or_404(Post, pk=pk)
     
     if post.post_type == 'poll_only':
+        logger.warning('add_comment rejected poll_only user=%s post=%s', request.user.id, post.id)
         return JsonResponse({'error': 'Bu gönderiye yorum yapılamaz.'}, status=400)
     
     if not request.user.profile.can_comment():
+        logger.warning('add_comment banned user=%s post=%s', request.user.id, post.id)
         return JsonResponse({'error': f'Yorum yasağınız var. Yasak bitiş tarihi: {request.user.profile.comment_ban_until}'}, status=403)
     
     form = CommentForm(request.POST)
@@ -821,6 +899,7 @@ def add_comment(request, pk):
         comment.post = post
         comment.author = request.user
         comment.save()
+        logger.info('add_comment user=%s post=%s comment=%s', request.user.username, post.id, comment.id)
 
         if post.author != request.user and can_send_notification(post.author, 'comments'):
             # Avoid repeating notifications like "hasan, hasan, hasan" for the same post.
@@ -854,16 +933,22 @@ def add_comment(request, pk):
     return JsonResponse({'error': 'Form geçersiz.'}, status=400)
 
 
-@login_required
 @require_POST
 def vote_poll(request, pk):
     post = get_object_or_404(Post, pk=pk)
     option_ids = request.POST.getlist('options')
 
-    cache_key = f"vote_poll:{request.user.id}:{post.id}"
+    # Kayıtlı ve kayıtsız kullanıcılar için rate limit
+    user_id = request.user.id if request.user.is_authenticated else request.session.session_key
+    if not user_id:
+        request.session.create()
+        user_id = request.session.session_key
+    
+    cache_key = f"vote_poll:{user_id}:{post.id}"
     if cache.get(cache_key):
+        logger.warning('vote_poll rate_limit user=%s post=%s', user_id, post.id)
         return JsonResponse({'error': 'Çok hızlı işlem yapıyorsunuz. Lütfen tekrar deneyin.'}, status=429)
-    cache.set(cache_key, True, timeout=0.5)
+    cache.set(cache_key, True, timeout=VOTE_RATE_LIMIT_SECONDS)
     
     if post.post_type == 'comment_only':
         return JsonResponse({'error': 'Bu gönderi bir anket değil.'}, status=400)
@@ -874,29 +959,38 @@ def vote_poll(request, pk):
     if not post.allow_multiple_choices and len(option_ids) > 1:
         return JsonResponse({'error': 'Sadece bir seçenek seçebilirsiniz.'}, status=400)
     
-    PollVote.objects.filter(user=request.user, post=post).delete()
-    
-    for option_id in option_ids:
-        option = get_object_or_404(PollOption, pk=option_id, post=post)
-        PollVote.objects.create(user=request.user, option=option, post=post)
+    # Kayıtlı kullanıcı için DB'ye kaydet
+    if request.user.is_authenticated:
+        PollVote.objects.filter(user=request.user, post=post).delete()
+        
+        for option_id in option_ids:
+            option = get_object_or_404(PollOption, pk=option_id, post=post)
+            PollVote.objects.create(user=request.user, option=option, post=post)
 
-    logger.info('vote_poll user=%s post=%s options=%s', request.user.username, post.id, option_ids)
+        logger.info('vote_poll user=%s post=%s options=%s', request.user.username, post.id, option_ids)
 
-    if post.author != request.user and can_send_notification(post.author, 'votes'):
-        verb = 'anketine oy verdi'
-        existing = Notification.objects.filter(
-            user=post.author,
-            actor=request.user,
-            post=post,
-            verb=verb,
-        ).order_by('-created_at').first()
+        if post.author != request.user and can_send_notification(post.author, 'votes'):
+            verb = 'anketine oy verdi'
+            existing = Notification.objects.filter(
+                user=post.author,
+                actor=request.user,
+                post=post,
+                verb=verb,
+            ).order_by('-created_at').first()
 
-        if existing:
-            existing.is_read = False
-            existing.created_at = timezone.now()
-            existing.save(update_fields=['is_read', 'created_at'])
-        else:
-            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
+            if existing:
+                existing.is_read = False
+                existing.created_at = timezone.now()
+                existing.save(update_fields=['is_read', 'created_at'])
+            else:
+                notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
+    else:
+        # Kayıtsız kullanıcı için session'a kaydet
+        session_votes = request.session.get('guest_votes', {})
+        session_votes[str(post.id)] = option_ids
+        request.session['guest_votes'] = session_votes
+        request.session.modified = True
+        logger.info('vote_poll guest session=%s post=%s options=%s', user_id, post.id, option_ids)
     
     total_votes = post.votes.count()
     results = []
@@ -909,7 +1003,14 @@ def vote_poll(request, pk):
             'percentage': percentage
         })
     
-    return JsonResponse({'success': True, 'results': results})
+    # Kayıtsız kullanıcı için kayıt CTA'sı ekle
+    show_register_cta = not request.user.is_authenticated
+    
+    return JsonResponse({
+        'success': True, 
+        'results': results,
+        'show_register_cta': show_register_cta
+    })
 
 
 
@@ -1157,6 +1258,35 @@ def reject_post(request, pk):
 @login_required
 @user_passes_test(is_moderator)
 def moderate_reports(request):
+    # Handle bulk actions
+    if request.method == 'POST' and 'bulk_action' in request.POST:
+        action = request.POST.get('bulk_action')
+        report_ids = request.POST.getlist('report_ids')
+        
+        if report_ids and action in ['approve', 'reject', 'delete']:
+            reports = Report.objects.filter(id__in=report_ids, status='pending')
+            count = reports.count()
+            
+            if action == 'approve':
+                for report in reports:
+                    report.status = 'resolved'
+                    report.resolved_by = request.user
+                    report.resolved_at = timezone.now()
+                    report.save()
+                messages.success(request, f'{count} rapor onaylandı.')
+            elif action == 'reject':
+                for report in reports:
+                    report.status = 'rejected'
+                    report.resolved_by = request.user
+                    report.resolved_at = timezone.now()
+                    report.save()
+                messages.success(request, f'{count} rapor reddedildi.')
+            elif action == 'delete':
+                reports.delete()
+                messages.success(request, f'{count} rapor silindi.')
+            
+            return redirect('moderate_reports')
+    
     tab = request.GET.get('tab', 'pending')
     base_qs = Report.objects.select_related('reporter', 'reported_user', 'reported_post', 'reported_comment').order_by('-created_at')
 
@@ -1326,10 +1456,27 @@ def user_profile(request, username):
         else:
             post.poll_status_meta = None
     
+    # Calculate user statistics
+    from django.db.models import Count, Sum
+    stats = {
+        'total_posts': profile_user.posts.filter(status='p', is_deleted=False).count(),
+        'total_votes': PollVote.objects.filter(post__author=profile_user, post__status='p', post__is_deleted=False).count(),
+        'total_comments': Comment.objects.filter(post__author=profile_user, post__status='p', post__is_deleted=False, is_deleted=False).count(),
+        'posts_created': profile_user.posts.filter(is_deleted=False).count(),
+    }
+    
+    # Get user badges
+    from .badges import get_user_badges, get_badge_progress
+    badges = get_user_badges(profile_user)
+    badge_progress = get_badge_progress(profile_user) if request.user == profile_user else []
+    
     context = {
         'profile_user': profile_user,
         'posts': posts,
         'is_own_profile': request.user.is_authenticated and request.user == profile_user,
+        'stats': stats,
+        'badges': badges,
+        'badge_progress': badge_progress,
     }
     
     return render(request, 'twochoice_app/user_profile.html', context)
@@ -1362,16 +1509,21 @@ def edit_profile(request):
     initial['avatar_config'] = json.dumps(cfg)
 
     if request.method == 'POST':
-        form = ProfileAvatarForm(request.POST, instance=profile)
-        if form.is_valid():
-            form.save()
+        avatar_form = ProfileAvatarForm(request.POST, instance=profile)
+        profile_form = UserProfileEditForm(request.POST, request.FILES, instance=profile)
+        
+        if avatar_form.is_valid() and profile_form.is_valid():
+            avatar_form.save()
+            profile_form.save()
             messages.success(request, 'Profiliniz güncellendi.')
             return redirect('user_profile', username=request.user.username)
     else:
-        form = ProfileAvatarForm(instance=profile, initial=initial)
+        avatar_form = ProfileAvatarForm(instance=profile, initial=initial)
+        profile_form = UserProfileEditForm(instance=profile)
 
     context = {
-        'form': form,
+        'form': avatar_form,
+        'profile_form': profile_form,
         'builder_initial_config': cfg,
     }
     return render(request, 'twochoice_app/edit_profile.html', context)
@@ -1705,54 +1857,98 @@ def notifications_unread_count_api(request):
 
 @login_required
 def notifications_latest_unread_api(request):
-    notif = (
-        Notification.objects.filter(user=request.user, is_read=False)
+    """Get latest notifications for dropdown (both read and unread)"""
+    notifications = (
+        Notification.objects.filter(user=request.user)
         .select_related('actor', 'post', 'feedback')
-        .order_by('-created_at')
-        .first()
+        .order_by('-created_at')[:10]  # Get last 10 notifications
     )
-
-    if not notif:
-        return JsonResponse({'id': None, 'text': '', 'url': reverse('notifications')})
-
-    actor = getattr(notif.actor, 'username', None)
-    if actor:
-        text = f'{actor} {notif.verb}'
-    else:
-        text = notif.verb
-
-    if notif.feedback_id:
-        url = reverse('feedback_detail', kwargs={'pk': notif.feedback_id})
-    elif notif.post_id:
-        url = reverse('post_detail', kwargs={'pk': notif.post_id})
-    else:
-        url = reverse('notifications')
-
-    return JsonResponse({'id': notif.id, 'text': text, 'url': url})
+    
+    notifications_list = []
+    for notif in notifications:
+        actor = getattr(notif.actor, 'username', None)
+        
+        # Build rich notification text with post title
+        if notif.post:
+            post_title = notif.post.title[:50] + '...' if len(notif.post.title) > 50 else notif.post.title
+            if actor:
+                # Format: "user123 'Anket Başlığı' anketine oy verdi"
+                if 'oy verdi' in notif.verb:
+                    text = f'{actor} "{post_title}" anketine oy verdi'
+                elif 'yorum yaptı' in notif.verb:
+                    text = f'{actor} "{post_title}" anketine yorum yaptı'
+                else:
+                    text = f'{actor} "{post_title}" {notif.verb}'
+            else:
+                text = f'"{post_title}" {notif.verb}'
+        else:
+            if actor:
+                text = f'{actor} {notif.verb}'
+            else:
+                text = notif.verb
+        
+        # Determine URL
+        if notif.feedback_id:
+            url = reverse('feedback_detail', kwargs={'pk': notif.feedback_id})
+        elif notif.post_id:
+            url = reverse('post_detail', kwargs={'pk': notif.post_id})
+        else:
+            url = reverse('notifications')
+        
+        notifications_list.append({
+            'id': notif.id,
+            'text': text,
+            'url': url,
+            'created_at': notif.created_at.isoformat(),
+            'is_read': notif.is_read
+        })
+    
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+    
+    return JsonResponse({
+        'notifications': notifications_list,
+        'unread_count': unread_count
+    })
 
 
 @login_required
-@require_POST
 def mark_notification_read(request, pk):
-    group_ids = request.POST.getlist('group_ids')
-    
-    if group_ids:
-        Notification.objects.filter(id__in=group_ids, user=request.user).update(is_read=True)
+    """Mark notification as read - supports both POST and GET for AJAX"""
+    if request.method == 'POST':
+        group_ids = request.POST.getlist('group_ids')
+        
+        if group_ids:
+            Notification.objects.filter(id__in=group_ids, user=request.user).update(is_read=True)
+        else:
+            notification = get_object_or_404(Notification, pk=pk, user=request.user)
+            notification.is_read = True
+            notification.save(update_fields=['is_read'])
+        
+        # AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
+        
+        next_url = request.POST.get('next')
+        if next_url:
+            return redirect(next_url)
+        return redirect('notifications')
     else:
+        # GET request for AJAX
         notification = get_object_or_404(Notification, pk=pk, user=request.user)
         notification.is_read = True
         notification.save(update_fields=['is_read'])
-    
-    next_url = request.POST.get('next')
-    if next_url:
-        return redirect(next_url)
-    return redirect('notifications')
+        return JsonResponse({'success': True})
 
 
 @login_required
-@require_POST
 def mark_all_notifications_read(request):
+    """Mark all notifications as read - supports both POST and GET for AJAX"""
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    
+    # AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'GET':
+        return JsonResponse({'success': True})
+    
     next_url = request.POST.get('next')
     if next_url:
         return redirect(next_url)

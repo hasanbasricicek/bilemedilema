@@ -1,0 +1,61 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Favorilerim - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-[#000000]">
+            <i class="fas fa-bookmark text-yellow-500"></i> Favorilerim
+        </h1>
+        <p class="text-[#666A73] mt-2">Favorilere eklediğin gönderiler ({{ total_bookmarks }} adet)</p>
+    </div>
+
+    {% if posts %}
+        <div class="space-y-4">
+            {% for post in posts %}
+                {% include 'twochoice_app/partials/poll_card.html' with poll_options=post.home_poll_options total_votes=post.home_poll_total_votes %}
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <div class="flex justify-center items-center gap-2 mt-8">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="px-4 py-2 bg-white border border-[#BFBFBF] rounded-lg hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 bg-white border border-[#BFBFBF] rounded-lg hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                {% endif %}
+
+                <span class="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold">
+                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 bg-white border border-[#BFBFBF] rounded-lg hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="px-4 py-2 bg-white border border-[#BFBFBF] rounded-lg hover:bg-gray-50 transition duration-200">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-12 text-center">
+            <div class="text-6xl mb-4">
+                <i class="far fa-bookmark text-gray-300"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-[#000000] mb-2">Henüz favori yok</h2>
+            <p class="text-[#666A73] mb-6">Beğendiğin gönderileri favorilere ekleyerek buradan kolayca erişebilirsin.</p>
+            <a href="{% url 'home' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition duration-200 font-semibold">
+                <i class="fas fa-home"></i>
+                Ana Sayfaya Dön
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

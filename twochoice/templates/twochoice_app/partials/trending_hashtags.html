@@ -1,0 +1,22 @@
+<!-- Trending Hashtags Widget - Compact -->
+<div class="premium-card hover-lift p-4">
+    <h3 class="text-base font-bold text-[#000000] mb-3 flex items-center gap-2">
+        <i class="fas fa-hashtag text-purple-600 text-sm"></i>
+        <span class="gradient-text">Trend Hashtagler</span>
+    </h3>
+    
+    {% if trending_hashtags %}
+    <div class="space-y-1.5">
+        {% for item in trending_hashtags %}
+        <a href="/search/?q=%23{{ item.tag }}" class="flex items-center justify-between p-2 rounded-lg hover:bg-purple-50 transition duration-200 group">
+            <div class="flex items-center gap-2 min-w-0">
+                <span class="text-sm text-purple-600 font-bold truncate">#{{ item.tag }}</span>
+            </div>
+            <span class="text-xs text-[#666A73] group-hover:text-purple-600 flex-shrink-0 ml-2">{{ item.count }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-[#666A73] text-xs text-center py-3">Henüz trend hashtag yok</p>
+    {% endif %}
+</div>

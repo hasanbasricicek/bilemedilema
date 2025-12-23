@@ -434,3 +434,164 @@ class CreatePostImageUploadTests(TestCase):
         pi = PostImage.objects.filter(post=post).first()
         self.assertEqual(pi.imgur_url, 'https://i.imgur.com/test.jpeg')
         self.assertEqual(pi.imgur_delete_hash, 'abc123')
+
+
+class SoftDeleteTests(TestCase):
+    """Test soft delete functionality for posts and comments"""
+    
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(username='deleter', password='pass12345')
+        self.post = Post.objects.create(
+            author=self.user,
+            title='Test Post',
+            content='Content',
+            post_type='both',
+            status='p',
+        )
+    
+    def test_delete_post_marks_as_deleted_not_removes(self):
+        """Deleting a post should set is_deleted=True, not remove from DB"""
+        self.client.login(username='deleter', password='pass12345')
+        url = reverse('delete_post', args=[self.post.pk])
+        
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 302)
+        
+        # Post should still exist in DB
+        self.assertTrue(Post.objects.filter(pk=self.post.pk).exists())
+        
+        # But should be marked as deleted
+        self.post.refresh_from_db()
+        self.assertTrue(self.post.is_deleted)
+    
+    def test_deleted_posts_not_shown_in_home(self):
+        """Deleted posts should not appear in home feed"""
+        # First verify post appears when not deleted
+        url = reverse('home')
+        resp1 = self.client.get(url)
+        self.assertEqual(resp1.status_code, 200)
+        content1 = resp1.content.decode('utf-8')
+        self.assertIn(self.post.title, content1)
+        
+        # Mark as deleted
+        self.post.is_deleted = True
+        self.post.save(update_fields=['is_deleted'])
+        
+        # Verify post no longer appears
+        resp2 = self.client.get(url)
+        self.assertEqual(resp2.status_code, 200)
+        content2 = resp2.content.decode('utf-8')
+        self.assertNotIn(self.post.title, content2)
+
+
+class RateLimitDecoratorTests(TestCase):
+    """Test rate limiting decorator functionality"""
+    
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(username='spammer', password='pass12345')
+        self.post = Post.objects.create(
+            author=self.user,
+            title='Test',
+            content='Content',
+            post_type='both',
+            status='p',
+        )
+    
+    def test_add_comment_rate_limit(self):
+        """Comments should be rate limited to 1 per 2 seconds"""
+        self.client.login(username='spammer', password='pass12345')
+        url = reverse('add_comment', args=[self.post.pk])
+        
+        # First comment should succeed
+        resp1 = self.client.post(url, {'content': 'First'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(resp1.status_code, 200)
+        
+        # Second immediate comment should be rate limited
+        resp2 = self.client.post(url, {'content': 'Second'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(resp2.status_code, 429)
+        data = json.loads(resp2.content)
+        self.assertIn('error', data)
+    
+    def test_create_report_rate_limit(self):
+        """Reports should be rate limited to 1 per 10 seconds"""
+        self.client.login(username='spammer', password='pass12345')
+        url = reverse('create_report', args=['post', self.post.pk])
+        
+        # First report should succeed
+        resp1 = self.client.post(url, {
+            'report_type': 'spam',
+            'description': 'Test report'
+        })
+        self.assertEqual(resp1.status_code, 302)
+        
+        # Second immediate report should be rate limited
+        resp2 = self.client.post(url, {
+            'report_type': 'spam',
+            'description': 'Test report 2'
+        })
+        self.assertEqual(resp2.status_code, 429)
+
+
+class CacheTests(TestCase):
+    """Test caching functionality for popular and trend posts"""
+    
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(username='cacher', password='pass12345')
+        self.post = Post.objects.create(
+            author=self.user,
+            title='Cached Post',
+            content='Content',
+            post_type='poll_only',
+            status='p',
+        )
+        self.option = PollOption.objects.create(post=self.post, option_text='Option')
+    
+    def test_popular_posts_work(self):
+        """Popular posts should be sorted by vote count"""
+        # Add a vote to make post appear in popular
+        voter = User.objects.create_user(username='voter_cache', password='pass12345')
+        PollVote.objects.create(user=voter, post=self.post, option=self.option)
+        
+        url = reverse('home')
+        
+        # Request popular sort
+        resp = self.client.get(url, {'sort': 'popular'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(self.post.title, resp.content.decode('utf-8'))
+    
+    def test_trend_posts_work(self):
+        """Trend posts should show recent activity"""
+        # Add recent vote to make post appear in trend
+        voter = User.objects.create_user(username='trend_voter', password='pass12345')
+        PollVote.objects.create(user=voter, post=self.post, option=self.option)
+        
+        url = reverse('home')
+        
+        resp = self.client.get(url, {'sort': 'trend'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(self.post.title, resp.content.decode('utf-8'))
+
+
+class ConstantsTests(TestCase):
+    """Test that constants are properly used"""
+    
+    def test_constants_imported(self):
+        """Verify constants module exists and has expected values"""
+        from .constants import (
+            POLL_DURATION_24H,
+            POLL_DURATION_3D,
+            MAX_IMAGE_SIZE_BYTES,
+            VOTE_RATE_LIMIT_SECONDS,
+            TREND_CUTOFF_HOURS,
+            POSTS_PER_PAGE,
+        )
+        
+        self.assertEqual(POLL_DURATION_24H, 86400)
+        self.assertEqual(POLL_DURATION_3D, 259200)
+        self.assertEqual(MAX_IMAGE_SIZE_BYTES, 10 * 1024 * 1024)
+        self.assertEqual(VOTE_RATE_LIMIT_SECONDS, 0.5)
+        self.assertEqual(TREND_CUTOFF_HOURS, 24)
+        self.assertEqual(POSTS_PER_PAGE, 20)

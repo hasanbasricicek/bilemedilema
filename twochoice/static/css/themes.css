@@ -1,0 +1,248 @@
+/* Theme System - Dynamic Themes */
+
+/* Base theme variables */
+:root {
+    --theme-bg: #FFFFFF;
+    --theme-text: #111827;
+    --theme-primary: #8B5CF6;
+    --theme-secondary: #F3F4F6;
+    --theme-border: #E5E7EB;
+}
+
+/* Apply theme colors to elements */
+body {
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-text) !important;
+}
+
+/* Cards and containers */
+.bg-white,
+.card-modern,
+.poll-card,
+.profile-card,
+[class*="bg-white"] {
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-text) !important;
+}
+
+/* Text colors */
+.text-\[\#000000\],
+.text-black,
+h1, h2, h3, h4, h5, h6 {
+    color: var(--theme-text) !important;
+}
+
+/* Borders */
+.border-\[\#BFBFBF\],
+.border-\[\#E5E7EB\] {
+    border-color: var(--theme-border) !important;
+}
+
+/* Secondary backgrounds */
+.bg-\[\#F8F9F6\],
+.bg-gray-50,
+.bg-gray-100 {
+    background-color: var(--theme-secondary) !important;
+}
+
+/* Navbar */
+nav {
+    background-color: var(--theme-bg) !important;
+    border-color: var(--theme-border) !important;
+}
+
+/* Buttons and links */
+nav a,
+nav button {
+    color: var(--theme-text) !important;
+}
+
+nav a:hover,
+nav button:hover {
+    opacity: 0.8;
+}
+
+/* Dropdown menus */
+.dropdown-menu,
+#theme-menu,
+.notification-dropdown {
+    background-color: var(--theme-bg) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+}
+
+/* Input fields */
+input,
+textarea,
+select {
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-text) !important;
+    border-color: var(--theme-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--theme-text) !important;
+    opacity: 0.5;
+}
+
+/* Sidebar widgets */
+.trending-topics-widget,
+.trending-hashtags-widget {
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-text) !important;
+    border-color: var(--theme-border) !important;
+}
+
+/* Poll options */
+.poll-option {
+    background-color: var(--theme-bg) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+}
+
+/* Stats and badges */
+.stat-card {
+    background-color: var(--theme-bg) !important;
+    border-color: var(--theme-border) !important;
+}
+
+/* Specific theme overrides */
+[data-theme="dark"] {
+    --theme-bg: #1F2937;
+    --theme-text: #F9FAFB;
+    --theme-primary: #A78BFA;
+    --theme-secondary: #374151;
+    --theme-border: #4B5563;
+}
+
+[data-theme="midnight"] {
+    --theme-bg: #0F172A;
+    --theme-text: #F1F5F9;
+    --theme-primary: #818CF8;
+    --theme-secondary: #1E293B;
+    --theme-border: #334155;
+}
+
+[data-theme="ocean"] {
+    --theme-bg: #0C4A6E;
+    --theme-text: #F0F9FF;
+    --theme-primary: #38BDF8;
+    --theme-secondary: #075985;
+    --theme-border: #0369A1;
+}
+
+[data-theme="forest"] {
+    --theme-bg: #14532D;
+    --theme-text: #F0FDF4;
+    --theme-primary: #4ADE80;
+    --theme-secondary: #166534;
+    --theme-border: #15803D;
+}
+
+/* Keep primary colors for buttons */
+.bg-purple-600,
+.bg-\[\#8B5CF6\] {
+    background-color: var(--theme-primary) !important;
+}
+
+/* Gray text should be slightly lighter in dark mode */
+.text-\[\#666A73\],
+.text-gray-600,
+.text-gray-500 {
+    color: var(--theme-text) !important;
+    opacity: 0.7;
+}
+
+/* Ensure readability */
+[data-theme="dark"] .text-\[\#666A73\],
+[data-theme="midnight"] .text-\[\#666A73\],
+[data-theme="ocean"] .text-\[\#666A73\],
+[data-theme="forest"] .text-\[\#666A73\] {
+    opacity: 0.8;
+}
+
+/* Fix white backgrounds in dark mode */
+[data-theme="dark"] .bg-white,
+[data-theme="midnight"] .bg-white,
+[data-theme="ocean"] .bg-white,
+[data-theme="forest"] .bg-white {
+    background-color: var(--theme-bg) !important;
+}
+
+/* Landing page specific fixes */
+.hero-gradient {
+    background: linear-gradient(180deg, var(--theme-bg) 0%, var(--theme-secondary) 50%, var(--theme-bg) 100%) !important;
+}
+
+.section-title {
+    color: var(--theme-text) !important;
+}
+
+/* Premium cards */
+.premium-card {
+    background-color: var(--theme-bg) !important;
+    border-color: var(--theme-border) !important;
+}
+
+/* Fix all text colors */
+.text-gray-900,
+.text-gray-700,
+.text-gray-600,
+.text-gray-500 {
+    color: var(--theme-text) !important;
+}
+
+[data-theme="dark"] .text-gray-900,
+[data-theme="midnight"] .text-gray-900,
+[data-theme="ocean"] .text-gray-900,
+[data-theme="forest"] .text-gray-900 {
+    opacity: 1;
+}
+
+[data-theme="dark"] .text-gray-700,
+[data-theme="midnight"] .text-gray-700,
+[data-theme="ocean"] .text-gray-700,
+[data-theme="forest"] .text-gray-700 {
+    opacity: 0.9;
+}
+
+[data-theme="dark"] .text-gray-600,
+[data-theme="midnight"] .text-gray-600,
+[data-theme="ocean"] .text-gray-600,
+[data-theme="forest"] .text-gray-600 {
+    opacity: 0.8;
+}
+
+/* Fix gradient backgrounds */
+.bg-gradient-to-b {
+    background: linear-gradient(to bottom, var(--theme-secondary), var(--theme-bg)) !important;
+}
+
+/* Fix white sections */
+section.bg-white {
+    background-color: var(--theme-bg) !important;
+}
+
+/* Fix gray backgrounds */
+.bg-gray-50,
+.bg-gray-100 {
+    background-color: var(--theme-secondary) !important;
+}
+
+/* Fix border colors */
+.border-gray-100,
+.border-gray-200 {
+    border-color: var(--theme-border) !important;
+}
+
+/* Fix purple backgrounds in dark mode */
+.bg-purple-50,
+.bg-blue-50 {
+    background-color: var(--theme-secondary) !important;
+}
+
+/* Smooth transitions */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

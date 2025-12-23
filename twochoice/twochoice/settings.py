@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'twochoice_app',
 ]
 
@@ -165,3 +166,17 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
 FEATURE_POLL_STATUS_BADGE = os.environ.get('FEATURE_POLL_STATUS_BADGE', 'True').lower() in ('1', 'true', 'yes', 'y', 'on')
+
+# Email Settings
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '').strip()
+
+# SMTP (Brevo/SendGrid vb.)
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp-relay.brevo.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes', 'y', 'on')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# From adresi: Brevo'da doğruladığın sender email olmalı. Resend test için onboarding@resend.dev kullanılabilir.
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'bilemedilema <onboarding@resend.dev>')

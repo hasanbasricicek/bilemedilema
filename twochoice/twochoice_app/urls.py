@@ -1,10 +1,17 @@
 from django.urls import path
 from .views import LandingView
 from . import views
+from . import views_bookmarks
+from . import views_search
+from . import views_api
+from . import views_analytics
+from . import views_embed
+from . import views_story
 
 urlpatterns = [
     path('', LandingView.as_view(), name='home'),
     path('register/', views.register, name='register'),
+    path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
 
@@ -49,4 +56,25 @@ urlpatterns = [
     path('user/<str:username>/', views.user_profile, name='user_profile'),
     path('user/<str:username>/ban/', views.ban_user, name='ban_user'),
     path('user/<str:username>/unban/', views.unban_user, name='unban_user'),
+    
+    # Bookmarks
+    path('bookmarks/', views_bookmarks.bookmarks_list, name='bookmarks_list'),
+    path('post/<int:pk>/bookmark/', views_bookmarks.toggle_bookmark, name='toggle_bookmark'),
+    
+    # Search
+    path('search/', views_search.search, name='search'),
+    
+    # API
+    path('api/search-users/', views_api.search_users_api, name='search_users_api'),
+    path('api/post/<int:pk>/share-data/', views_api.post_share_data_api, name='post_share_data_api'),
+    
+    # Analytics
+    path('post/<int:pk>/analytics/', views_analytics.post_analytics, name='post_analytics'),
+    
+    # Embed
+    path('embed/post/<int:pk>/', views_embed.post_embed, name='post_embed'),
+    path('post/<int:pk>/embed-code/', views_embed.embed_code_generator, name='embed_code_generator'),
+    
+    # Story Card
+    path('post/<int:pk>/story-card/', views_story.generate_story_card, name='generate_story_card'),
 ]

@@ -1,0 +1,95 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Embed Code - {{ post.title }} - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'post_detail' post.pk %}" class="text-purple-600 hover:text-purple-700 text-sm font-semibold">
+            <i class="fas fa-arrow-left mr-2"></i>Gönderiye Dön
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6 mb-6">
+        <h1 class="text-2xl font-bold text-[#000000] mb-2">🔗 Embed Code</h1>
+        <p class="text-[#666A73]">Anketini başka web sitelerine ekle</p>
+    </div>
+
+    <!-- Preview -->
+    <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6 mb-6">
+        <h2 class="text-xl font-bold text-[#000000] mb-4">Önizleme</h2>
+        <div class="border border-gray-300 rounded-lg overflow-hidden">
+            <iframe src="{{ embed_url }}" width="100%" height="400" frameborder="0" style="border: none;"></iframe>
+        </div>
+    </div>
+
+    <!-- Embed Codes -->
+    <div class="space-y-6">
+        <!-- Standard iFrame -->
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <h3 class="text-lg font-bold text-[#000000] mb-2">📋 Standart iFrame</h3>
+            <p class="text-sm text-[#666A73] mb-4">Sabit boyutlu embed kodu</p>
+            <div class="relative">
+                <textarea readonly class="w-full p-4 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm" rows="3">{{ embed_codes.iframe }}</textarea>
+                <button onclick="copyToClipboard('iframe')" class="absolute top-2 right-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm">
+                    <i class="fas fa-copy"></i> Kopyala
+                </button>
+            </div>
+        </div>
+
+        <!-- Responsive iFrame -->
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <h3 class="text-lg font-bold text-[#000000] mb-2">📱 Responsive iFrame</h3>
+            <p class="text-sm text-[#666A73] mb-4">Mobil uyumlu, otomatik boyutlanan embed kodu</p>
+            <div class="relative">
+                <textarea readonly class="w-full p-4 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm" rows="3">{{ embed_codes.responsive }}</textarea>
+                <button onclick="copyToClipboard('responsive')" class="absolute top-2 right-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm">
+                    <i class="fas fa-copy"></i> Kopyala
+                </button>
+            </div>
+        </div>
+
+        <!-- Direct Link -->
+        <div class="bg-white rounded-2xl border border-[#BFBFBF] p-6">
+            <h3 class="text-lg font-bold text-[#000000] mb-2">🔗 Direkt Link</h3>
+            <p class="text-sm text-[#666A73] mb-4">Ankete direkt link</p>
+            <div class="relative">
+                <input readonly type="text" value="{{ embed_codes.link }}" class="w-full p-4 bg-gray-50 border border-gray-300 rounded-lg font-mono text-sm">
+                <button onclick="copyToClipboard('link')" class="absolute top-2 right-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm">
+                    <i class="fas fa-copy"></i> Kopyala
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Instructions -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 mt-6">
+        <h3 class="text-lg font-bold text-blue-900 mb-3">💡 Kullanım Talimatları</h3>
+        <ul class="space-y-2 text-sm text-blue-800">
+            <li><i class="fas fa-check text-blue-600 mr-2"></i>Embed kodunu kopyala</li>
+            <li><i class="fas fa-check text-blue-600 mr-2"></i>Web sitene, blog yazına veya foruma yapıştır</li>
+            <li><i class="fas fa-check text-blue-600 mr-2"></i>Ziyaretçiler direkt oy verebilir</li>
+            <li><i class="fas fa-check text-blue-600 mr-2"></i>Anket sonuçları gerçek zamanlı güncellenir</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(type) {
+    let text = '';
+    if (type === 'iframe') {
+        text = `{{ embed_codes.iframe|escapejs }}`;
+    } else if (type === 'responsive') {
+        text = `{{ embed_codes.responsive|escapejs }}`;
+    } else if (type === 'link') {
+        text = `{{ embed_codes.link|escapejs }}`;
+    }
+    
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Kopyalandı! ✅');
+    }).catch(err => {
+        console.error('Kopyalama hatası:', err);
+    });
+}
+</script>
+{% endblock %}

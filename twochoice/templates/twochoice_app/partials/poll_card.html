@@ -1,0 +1,74 @@
+{% comment %}
+Poll Card Partial - Modüler anket kartı bileşeni
+Kullanım: {% include 'twochoice_app/partials/poll_card.html' with post=post poll_options=post.home_poll_options total_votes=post.home_poll_total_votes %}
+{% endcomment %}
+
+{% if post.post_type != 'comment_only' and poll_options %}
+<div class="poll-card premium-card hover-lift animate-fade-in p-6 space-y-5 {% if post.is_poll_closed %}poll-closed{% endif %}" role="region" aria-label="Anket: {{ post.title }}">
+    <!-- Post Title & Link -->
+    <div class="mb-4">
+        <a href="{% url 'post_detail' post.pk %}" class="text-xl font-bold text-[#000000] hover:text-[#666A73] transition duration-200">
+            {{ post.title }}
+        </a>
+        <p class="text-sm text-[#666A73] mt-1">{{ post.author.username }} • {{ post.created_at|date:"d.m.Y" }}</p>
+    </div>
+    
+    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#BFBFBF]/60">
+        <p class="text-[11px] font-semibold tracking-[0.25em] uppercase text-[#666A73]">Anket</p>
+        <div class="text-xs font-semibold text-[#666A73] js-total-votes" 
+             data-post-id="{{ post.pk }}" 
+             aria-live="polite" 
+             aria-atomic="true">
+            Toplam {{ total_votes }} oy
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-4" role="group" aria-label="Anket seçenekleri">
+        {% for item in poll_options %}
+            <button
+                type="button"
+                class="poll-option poll-option-card text-left {% if item.is_selected %}poll-option-selected{% endif %}"
+                data-post-id="{{ post.pk }}"
+                data-option-id="{{ item.option.id }}"
+                data-vote-url="{% url 'vote_poll' post.pk %}"
+                data-allow-multiple="{{ post.allow_multiple_choices|lower }}"
+                aria-pressed="{% if item.is_selected %}true{% else %}false{% endif %}"
+                aria-label="{{ item.option.option_text }}: {{ item.percent|floatformat:0 }}%, {{ item.vote_count }} oy"
+            >
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <span class="text-sm font-medium text-[#1f2933]">{{ item.option.option_text }}</span>
+                        <span class="poll-vote-count js-option-votes" aria-hidden="true">{{ item.vote_count }} oy</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="poll-percentage js-option-percent text-3xl" aria-hidden="true">{{ item.percent|floatformat:0 }}%</span>
+                    </div>
+                </div>
+                <div class="poll-progress-bar mt-3" 
+                     role="progressbar" 
+                     aria-valuenow="{{ item.percent|floatformat:0 }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100"
+                     aria-label="{{ item.option.option_text }} için {{ item.percent|floatformat:0 }}%">
+                    <div class="poll-progress-fill js-option-bar" style="width: {{ item.percent|floatformat:0 }}%"></div>
+                </div>
+            </button>
+        {% endfor %}
+    </div>
+
+    {% if post.allow_multiple_choices %}
+        <div class="flex flex-col gap-2">
+            <button type="button" 
+                    class="js-home-multi-submit poll-action-button bg-[#000000] text-white hover:bg-[#1f2933]" 
+                    data-post-id="{{ post.pk }}" 
+                    data-vote-url="{% url 'vote_poll' post.pk %}"
+                    aria-label="Seçili seçeneklere oy ver">
+                Oy Ver
+            </button>
+            <div class="text-[11px] text-[#666A73]" role="note">Birden fazla seçenek seçebilirsin.</div>
+        </div>
+    {% else %}
+        <div class="text-[11px] text-[#666A73]" role="note">Seçeneğe tıklayınca oy verilir.</div>
+    {% endif %}
+</div>
+{% endif %}

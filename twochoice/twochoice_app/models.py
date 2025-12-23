@@ -4,9 +4,34 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
 
+class Bookmark(models.Model):
+    """User bookmarks for posts"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='bookmarked_by')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    
+    class Meta:
+        unique_together = ('user', 'post')
+        ordering = ['-created_at']
+        verbose_name = 'Bookmark'
+        verbose_name_plural = 'Bookmarks'
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.post.title}"
+
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    age = models.PositiveIntegerField(validators=[MinValueValidator(13), MaxValueValidator(120)])
+    age = models.PositiveIntegerField(validators=[MinValueValidator(18), MaxValueValidator(120)])
+    
+    # Personalization fields
+    bio = models.TextField(max_length=500, blank=True, default='')
+    banner_image = models.ImageField(upload_to='profile_banners/', blank=True, null=True)
+    
+    # Social media links
+    twitter_url = models.URLField(max_length=200, blank=True, default='')
+    instagram_url = models.URLField(max_length=200, blank=True, default='')
+    website_url = models.URLField(max_length=200, blank=True, default='')
     avatar_mode = models.CharField(max_length=20, default='initial')
     avatar_preset = models.CharField(max_length=50, blank=True, default='')
     avatar_config = models.JSONField(default=dict, blank=True)
@@ -19,6 +44,8 @@ class UserProfile(models.Model):
     comment_ban_until = models.DateTimeField(null=True, blank=True)
     is_post_banned = models.BooleanField(default=False)
     post_ban_until = models.DateTimeField(null=True, blank=True)
+    email_verified = models.BooleanField(default=False)
+    email_verification_token = models.CharField(max_length=100, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -64,12 +91,12 @@ class Post(models.Model):
     ]
 
     TOPIC_CHOICES = [
-        ('general', 'Genel'),
-        ('tech', 'Teknoloji'),
-        ('gaming', 'Oyun'),
-        ('finance', 'Finans'),
-        ('health', 'Sağlık'),
-        ('lifestyle', 'Yaşam'),
+        ('entertainment', '🎉 Eğlence'),
+        ('knowledge', '🧠 Bilgi & Merak'),
+        ('education', '🎓 Okul & Eğitim'),
+        ('daily_life', '🏡 Günlük Hayat'),
+        ('creative', '🎨 Yaratıcı'),
+        ('society', '🌱 Toplum & Çevre'),
     ]
 
     POLL_CLOSE_CHOICES = [
@@ -82,17 +109,19 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
     title = models.CharField(max_length=200)
     content = models.TextField()
-    topic = models.CharField(max_length=20, choices=TOPIC_CHOICES, default='general')
+    topic = models.CharField(max_length=20, choices=TOPIC_CHOICES, default='general', db_index=True)
     post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default='comment_only')
-    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='d')
+    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='d', db_index=True)
     allow_multiple_choices = models.BooleanField(default=False)
     poll_close_mode = models.CharField(max_length=10, choices=POLL_CLOSE_CHOICES, default='none')
     poll_closes_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     moderated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='moderated_posts')
     moderated_at = models.DateTimeField(null=True, blank=True)
     moderation_note = models.TextField(blank=True, default='')
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    view_count = models.IntegerField(default=0, db_index=True)
 
     def __str__(self):
         return f"{self.title} - {self.author.username}"
@@ -154,7 +183,7 @@ class PollVote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='poll_votes')
     option = models.ForeignKey(PollOption, on_delete=models.CASCADE, related_name='votes')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='votes')
-    voted_at = models.DateTimeField(auto_now_add=True)
+    voted_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
         return f"{self.user.username} voted for {self.option.option_text}"
@@ -192,6 +221,7 @@ class Comment(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __str__(self):
         return f"Comment by {self.author.username} on {self.post.title}"

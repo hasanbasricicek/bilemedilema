@@ -1,311 +1,572 @@
 {% extends 'twochoice_app/base.html' %}
 
-{% block title %}bilemedilema | Popüler anket kategorileri{% endblock %}
+{% block title %}bilemedilema | Kararlarını Topluluğa Sor{% endblock %}
 
 {% block content %}
 <style>
-    .glass-border {
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        background: linear-gradient(135deg, rgba(255,255,255,0.65), rgba(255,255,255,0.35));
+    :root {
+        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.08);
     }
-    .cta-pulse {
-        animation: pulse 3s infinite;
-    }
-    .metric-card {
-        transition: transform 0.5s ease;
-        transform-origin: center;
-    }
-    .metric-card:hover {
-        transform: translateY(-6px) scale(1.02);
-    }
-    .progress-wave {
-        animation: wave 6s linear infinite;
-    }
-    @keyframes pulse {
-        0% { box-shadow: 0 8px 24px rgba(11,99,255,0.3); }
-        50% { box-shadow: 0 16px 40px rgba(11,99,255,0.45); }
-        100% { box-shadow: 0 8px 24px rgba(11,99,255,0.3); }
-    }
-    @keyframes wave {
-        0% { filter: hue-rotate(0deg); }
-        50% { filter: hue-rotate(35deg); }
-        100% { filter: hue-rotate(0deg); }
-    }
-    .premium-heading {
-        letter-spacing: -0.02em;
-        font-weight: 900;
-        line-height: 1.15;
-    }
-    .section-heading {
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: #94a3b8;
-        font-size: 0.75rem;
-    }
-    .parallax-lift {
-        transform: translateY(0);
-        transition: transform 0.8s ease;
-    }
-    .delay-2 {
-        transition-delay: 0.1s;
-    }
-    .hero-blend::before {
-        content: '';
-        position: absolute;
-        inset: -2rem;
-        background: radial-gradient(circle at top left, rgba(255,255,255,0.4), transparent 45%);
-        mix-blend-mode: screen;
-        pointer-events: none;
-    }
-    .hero-blend::after {
-        content: '';
-        position: absolute;
-        inset: -3rem;
-        background: radial-gradient(circle at bottom right, rgba(0,0,0,0.15), transparent 55%);
-        mix-blend-mode: multiply;
-        pointer-events: none;
-    }
-    .stat-card {
-        position: relative;
-        overflow: hidden;
-        transition: transform 0.4s ease, box-shadow 0.4s ease;
-    }
-    .stat-card::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at top, rgba(255,255,255,0.4), transparent 45%);
-        pointer-events: none;
-    }
-    .stat-card:hover {
-        transform: translateY(-6px) scale(1.02);
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
-    }
-    .stat-icon {
-        width: 38px;
-        height: 38px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background: rgba(11, 99, 255, 0.15);
-        color: #0b63ff;
-    }
-    .spotlight-card {
-        background: radial-gradient(circle at top left, rgba(198, 210, 255, 0.45), rgba(255, 255, 255, 0.9));
-        border: 1px solid rgba(103, 116, 183, 0.2);
-        box-shadow: 0 15px 45px rgba(15, 23, 42, 0.18);
-        transition: transform 0.4s ease, box-shadow 0.4s ease;
-    }
-    .spotlight-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 25px 55px rgba(15, 23, 42, 0.25);
-    }
-    .timeline-card {
-        background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(230,236,255,0.6));
-        border: 1px solid rgba(111, 113, 155, 0.25);
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
-    }
+    .hero-gradient { background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 50%, #f0f4ff 100%); }
+    .premium-card { backdrop-filter: blur(20px); background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: var(--shadow-soft); transition: all 0.4s; }
+    .premium-card:hover { transform: translateY(-8px); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12); }
+    .gradient-text { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .pulse-animation { animation: pulse 3s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    .float-animation { animation: float 6s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+    .stat-number { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+    .section-title { font-size: 2.5rem; font-weight: 800; line-height: 1.2; }
 </style>
-<section class="relative overflow-hidden bg-gradient-to-b from-[#eef3ff] via-[#dfe7ff] to-[#c7d2fe] py-16">
-    <div class="absolute inset-0">
-        <div class="absolute -top-20 left-1/2 w-72 h-72 bg-[#c7d2fe]/40 blur-[120px] rounded-full translate-x-[-50%] parallax-lift"></div>
-        <div class="absolute bottom-[-40px] right-0 w-64 h-64 bg-[#a5b4fc]/40 blur-[100px] rounded-full parallax-lift delay-2"></div>
+
+<section class="relative overflow-hidden hero-gradient py-20 lg:py-32">
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-200 to-blue-200 rounded-full blur-3xl opacity-30 float-animation"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-pink-200 to-purple-200 rounded-full blur-3xl opacity-30 float-animation" style="animation-delay: 2s;"></div>
     </div>
-    <div class="relative max-w-6xl mx-auto px-4 sm:px-6 py-8 hero-blend">
-        <div class="grid gap-10 lg:grid-cols-[1.1fr,0.9fr] items-center">
-            <div class="space-y-6 max-w-2xl">
-                <p class="text-sm uppercase tracking-[0.5em] text-[#6b7ff0] section-heading">Bilemedilema</p>
-                <h1 class="text-4xl md:text-5xl premium-heading text-[#111827]">Karar vermek zor mu? Senin için en doğru anketi paylaş.</h1>
-                <p class="text-lg text-[#4b5563]">Geniş kategori havuzu, canlı moderasyon ve gerçek zamanlı sonuçlar ile anketleri yerli yerinde deneyimle. Toplulukla birlikte fikirleri test et, yorumla, oy ver.</p>
-                <div class="flex flex-wrap gap-3">
-                    <a href="{% url 'register' %}" class="inline-flex items-center gap-2 rounded-full px-6 py-3 bg-[#0b63ff] text-white font-semibold shadow-lg shadow-[#0b63ff]/30 hover:bg-[#0952cc] transition cta-pulse">
-                        Başlamaya Hazırım
-                    </a>
-                    <a href="{% url 'create_feedback' %}" class="inline-flex items-center gap-2 rounded-full px-6 py-3 border border-[#0b63ff] text-[#0b63ff] font-semibold hover:bg-[#0b63ff]/10 transition">
-                        Anketimi Gönder
-                    </a>
-                    <span class="text-xs text-[#94a3b8] self-center">Tahmini 30 sn’de hazır · %100 topluluk onaylı</span>
-                </div>
-                {% if hero_poll %}
-                <div class="mt-6 bg-white/70 border border-white/50 rounded-[32px] shadow-[0_40px_120px_rgba(15,23,42,0.25)] p-6 space-y-4 backdrop-blur-xl glass-border hero-panel">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.5em] text-[#6b7ff0]">Canlı Anket</p>
-                            <h3 class="text-lg font-semibold text-[#0f172a]">{{ hero_poll.question }}</h3>
-                        </div>
-                        <span class="text-xs font-semibold uppercase text-[#667085]">{{ hero_poll.status }}</span>
-                    </div>
-                    <div class="space-y-3">
-                        {% for option in hero_poll.options %}
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-sm text-[#475467]">
-                                <span>{{ option.text }}</span>
-                                <span class="font-semibold text-[#0b63ff]">{{ option.percent }}%</span>
-                            </div>
-                            <div class="h-2 rounded-full bg-[#e0e7ff] overflow-hidden">
-                                <div class="progress-wave h-full bg-gradient-to-r from-[#6366f1] to-[#0b63ff] transition-all duration-700" style="width: {{ option.percent }}%;"></div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div class="text-right text-xs font-semibold text-[#94a3b8]">Toplam <span class="text-[#0b63ff]">{{ hero_poll.total_votes }}</span> oy</div>
-                </div>
-                {% endif %}
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Left Side: Animated Illustration -->
+            <div class="relative hidden lg:block">
+                <svg viewBox="0 0 500 500" class="w-full h-auto">
+                    <!-- Background Circle -->
+                    <circle cx="250" cy="250" r="200" fill="url(#gradient1)" opacity="0.1">
+                        <animate attributeName="r" values="200;210;200" dur="3s" repeatCount="indefinite"/>
+                    </circle>
+                    
+                    <!-- Poll Card -->
+                    <g class="poll-card">
+                        <rect x="100" y="150" width="300" height="200" rx="20" fill="white" stroke="#e5e7eb" stroke-width="2">
+                            <animate attributeName="y" values="150;145;150" dur="4s" repeatCount="indefinite"/>
+                        </rect>
+                        
+                        <!-- Question Text -->
+                        <text x="250" y="190" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2937">iPhone mı Android mi?</text>
+                        
+                        <!-- Option 1 - Purple -->
+                        <rect x="120" y="210" width="260" height="40" rx="10" fill="#f3f4f6"/>
+                        <rect x="120" y="210" width="180" height="40" rx="10" fill="url(#gradient2)">
+                            <animate attributeName="width" values="0;180" dur="2s" fill="freeze"/>
+                        </rect>
+                        <text x="130" y="235" font-size="14" fill="#1f2937">iPhone</text>
+                        <text x="370" y="235" text-anchor="end" font-size="14" font-weight="bold" fill="#7c3aed">68%</text>
+                        
+                        <!-- Option 2 - Blue -->
+                        <rect x="120" y="260" width="260" height="40" rx="10" fill="#f3f4f6"/>
+                        <rect x="120" y="260" width="90" height="40" rx="10" fill="url(#gradient3)">
+                            <animate attributeName="width" values="0;90" dur="2s" begin="0.5s" fill="freeze"/>
+                        </rect>
+                        <text x="130" y="285" font-size="14" fill="#1f2937">Android</text>
+                        <text x="370" y="285" text-anchor="end" font-size="14" font-weight="bold" fill="#2563eb">32%</text>
+                        
+                        <!-- Vote Count -->
+                        <text x="250" y="330" text-anchor="middle" font-size="12" fill="#6b7280">
+                            <tspan>2,450 oy</tspan>
+                        </text>
+                    </g>
+                    
+                    <!-- Animated Hand/Cursor -->
+                    <g class="cursor-hand">
+                        <circle cx="180" cy="220" r="8" fill="#7c3aed" opacity="0.3">
+                            <animate attributeName="r" values="8;12;8" dur="1.5s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.3;0.6;0.3" dur="1.5s" repeatCount="indefinite"/>
+                        </circle>
+                        <path d="M 175 215 L 185 225" stroke="#7c3aed" stroke-width="3" stroke-linecap="round">
+                            <animate attributeName="d" values="M 175 215 L 185 225;M 177 217 L 183 223;M 175 215 L 185 225" dur="1.5s" repeatCount="indefinite"/>
+                        </path>
+                    </g>
+                    
+                    <!-- Floating Icons -->
+                    <g class="floating-icon-1">
+                        <circle cx="80" cy="100" r="15" fill="#fef3c7" opacity="0.8">
+                            <animate attributeName="cy" values="100;90;100" dur="3s" repeatCount="indefinite"/>
+                        </circle>
+                        <text x="80" y="107" text-anchor="middle" font-size="20">👍</text>
+                    </g>
+                    
+                    <g class="floating-icon-2">
+                        <circle cx="420" cy="120" r="15" fill="#ddd6fe" opacity="0.8">
+                            <animate attributeName="cy" values="120;110;120" dur="3.5s" repeatCount="indefinite"/>
+                        </circle>
+                        <text x="420" y="127" text-anchor="middle" font-size="20">✨</text>
+                    </g>
+                    
+                    <g class="floating-icon-3">
+                        <circle cx="90" cy="380" r="15" fill="#fecaca" opacity="0.8">
+                            <animate attributeName="cy" values="380;370;380" dur="4s" repeatCount="indefinite"/>
+                        </circle>
+                        <text x="90" y="387" text-anchor="middle" font-size="20">💡</text>
+                    </g>
+                    
+                    <g class="floating-icon-4">
+                        <circle cx="410" cy="350" r="15" fill="#bfdbfe" opacity="0.8">
+                            <animate attributeName="cy" values="350;340;350" dur="3.2s" repeatCount="indefinite"/>
+                        </circle>
+                        <text x="410" y="357" text-anchor="middle" font-size="20">🎯</text>
+                    </g>
+                    
+                    <!-- Gradients -->
+                    <defs>
+                        <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                </svg>
             </div>
 
-            <div class="w-full lg:w-[420px] p-6 bg-white/80 border border-white/30 rounded-[32px] shadow-[0_25px_65px_rgba(15,23,42,0.22)] space-y-5 backdrop-blur-xl">
+            <!-- Right Side: Text Content -->
+            <div class="text-center lg:text-left space-y-8">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-purple-100 shadow-lg">
+                    <span class="w-2 h-2 bg-green-500 rounded-full pulse-animation"></span>
+                    <span class="text-sm font-medium text-gray-700">10,000+ aktif kullanıcı</span>
+                </div>
+
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
+                    Kararlarını <span class="gradient-text">Topluluğa Sor</span>
+                </h1>
+
+                <p class="text-xl md:text-2xl text-gray-600">
+                    Binlerce kullanıcının görüşüyle en doğru kararı ver. Anketini oluştur, oy topla, sonuçları gerçek zamanlı takip et.
+                </p>
+
+                <div class="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4 pt-4">
+                    <a href="{% url 'register' %}" class="group inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold shadow-2xl hover:scale-105 transition-all">
+                        <span>Hemen Başla</span>
+                        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-20 bg-gradient-to-b from-white to-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="premium-card rounded-3xl p-10 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-full blur-3xl"></div>
                 <div class="relative">
-                    <div class="h-2 bg-gradient-to-r from-[#a5b4fc] to-[#6366f1] rounded-full mb-5"></div>
-                    <div class="absolute -top-10 right-0 w-12 h-4 bg-[#0b63ff] rounded-full blur-[20px] opacity-60"></div>
-                </div>
-                <div class="space-y-1">
-                    <p class="text-xs uppercase tracking-[0.4em] text-[#6b7ff0]">Sana önerilen</p>
-                    <h3 class="text-2xl font-semibold text-[#111827]">Arkadaş ortamı mı? Kariyer mi?</h3>
-                    <p class="text-sm text-[#475467]">Topluluğun oyları ve yorumlarıyla hızlıca fikir sahibi ol ve kendi yorumunu bırak.</p>
-                </div>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between text-sm text-[#374151]">
-                        <span>☕ Kahve yanına atıştırmalık</span>
-                        <span class="text-[#0b63ff] font-semibold">72 oy</span>
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
                     </div>
-                    <div class="flex items-center justify-between text-sm text-[#374151]">
-                        <span>🎧 Çalışırken ne dinlemeli?</span>
-                        <span class="text-[#0b63ff] font-semibold">48 oy</span>
+                    <div class="stat-number gradient-text mb-2">{{ total_posts }}</div>
+                    <div class="text-gray-600 font-semibold text-lg">Toplam Anket</div>
+                    <div class="text-sm text-gray-500 mt-2">Aktif ve yayında</div>
+                </div>
+            </div>
+
+            <div class="premium-card rounded-3xl p-10 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-500/10 to-red-500/10 rounded-full blur-3xl"></div>
+                <div class="relative">
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-number gradient-text mb-2">{{ total_votes }}</div>
+                    <div class="text-gray-600 font-semibold text-lg">Toplam Oy</div>
+                    <div class="text-sm text-gray-500 mt-2">Verilen kararlar</div>
+                </div>
+            </div>
+
+            <div class="premium-card rounded-3xl p-10 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl"></div>
+                <div class="relative">
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-number gradient-text mb-2">{{ active_users }}</div>
+                    <div class="text-gray-600 font-semibold text-lg">Aktif Kullanıcı</div>
+                    <div class="text-sm text-gray-500 mt-2">Topluluk üyeleri</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <span class="text-sm font-semibold text-purple-600 uppercase">Popüler Kategoriler</span>
+            <h2 class="section-title text-gray-900 mt-4">İlgilendiğin Her Konuda Anket Oluştur</h2>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {% for category in categories %}
+            <div class="premium-card rounded-3xl p-8 text-center">
+                <div class="text-5xl mb-4">{{ category.label|first }}</div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">{{ category.label|slice:"2:" }}</h3>
+                <p class="text-gray-600 text-sm">{{ category.count }}+ anket</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <span class="text-sm font-semibold text-purple-600 uppercase">Neden bilemedilema?</span>
+            <h2 class="section-title text-gray-900 mt-4">Kararlarını Güvenle Paylaş</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="premium-card rounded-3xl p-8">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Hızlı ve Kolay</h3>
+                <p class="text-gray-600">30 saniyede anketini oluştur, anında yayınla.</p>
+            </div>
+            <div class="premium-card rounded-3xl p-8">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Gerçek Zamanlı</h3>
+                <p class="text-gray-600">Sonuçları anlık takip et, grafikler otomatik güncellenir.</p>
+            </div>
+            <div class="premium-card rounded-3xl p-8">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4">Güçlü Topluluk</h3>
+                <p class="text-gray-600">Binlerce aktif kullanıcı, zengin etkileşim.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-20 bg-gradient-to-b from-gray-50 to-white text-gray-900 relative overflow-hidden">
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <span class="text-sm font-semibold text-purple-600 uppercase tracking-wider">Nasıl Çalışır?</span>
+            <h2 class="section-title text-gray-900 mt-4 mb-6">3 Basit Adımda Kararını Ver</h2>
+            <p class="text-xl text-gray-600">Anket oluşturmak ve topluluğun görüşünü almak hiç bu kadar kolay olmamıştı.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+            <div class="relative">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-2xl shadow-xl flex-shrink-0">
+                        1
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900">Anketini Oluştur</h3>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 mb-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Soru</label>
+                            <div class="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-sm text-gray-700">iPhone mı Android mi?</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Seçenekler</label>
+                            <div class="mt-2 space-y-2">
+                                <div class="p-3 bg-purple-50 rounded-lg border border-purple-200 flex items-center gap-2">
+                                    <div class="w-4 h-4 rounded-full border-2 border-purple-500"></div>
+                                    <span class="text-sm text-gray-700">iPhone</span>
+                                </div>
+                                <div class="p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center gap-2">
+                                    <div class="w-4 h-4 rounded-full border-2 border-blue-500"></div>
+                                    <span class="text-sm text-gray-700">Android</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="text-xs uppercase tracking-[0.4em] text-[#6b7ff0]">Canlı moderasyon</div>
-            </div>
-        </div>
 
-        {% if community_metrics %}
-        <div class="mt-10 space-y-4 text-center font-sans">
-            <p class="text-xs uppercase tracking-[0.5em] text-[#8f98b3]">canlı veri</p>
-            <h2 class="text-3xl font-bold text-[#111827]">Topluluk akışıyla kararların hızlanıyor</h2>
-            <p class="text-sm text-[#475467]">Her anket, toplam oy ve aktif kategorilerle destekleniyor. Bunları takip etmek şu anlayıştan ileriye taşıyor.</p>
-            <p class="text-sm text-[#475467] max-w-2xl mx-auto">Her anket, toplam oy ve aktif kategorilerle destekleniyor. Bunları takip etmek şu anlayıştan ileriye taşıyor.</p>
-        </div>
-        <div class="mt-6 grid gap-6 sm:grid-cols-3 text-center">
-            {% for metric in community_metrics %}
-            <article class="metric-card bg-white/90 border border-[#e0e7ff] p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-2">
-                <span class="text-xs uppercase tracking-[0.3em] text-[#94a3b8]">{{ metric.label }}</span>
-                <p class="text-3xl font-semibold text-[#0b63ff]">{{ metric.value }}</p>
-                <div class="h-1 w-16 rounded-full bg-gradient-to-r from-[#0b63ff] to-[#6366f1]"></div>
-            </article>
-            {% endfor %}
-        </div>
-        {% endif %}
-        <div class="mt-10 rounded-3xl bg-white shadow-[0_20px_45px_rgba(15,23,42,0.05)] p-6 flex flex-col md:flex-row items-center gap-5">
-            <div class="flex-1">
-                <p class="text-sm font-semibold text-[#6366f1] uppercase tracking-[0.3em]">Popüler Kategoriler</p>
-                <h2 class="text-2xl font-bold text-[#0f172a]">İlgilendiğin alanlarda göz at ve yeni anketini oluştur.</h2>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Sorununu yaz</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">2 seçenek belirle</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">30 saniyede yayınla</span>
+                    </li>
+                </ul>
             </div>
-            <form class="flex w-full md:w-auto gap-3">
-                <input type="text" class="flex-1 px-4 py-3 border border-[#e0e7ff] rounded-full focus:ring-2 focus:ring-[#0b63ff] focus:border-transparent transition" placeholder="Kategorilerde ara (ör: kariyer, ilişkiler)" />
-                <button type="button" class="inline-flex items-center justify-center px-5 py-3 rounded-full bg-gradient-to-r from-[#0b63ff] to-[#6366f1] text-white font-semibold shadow-lg shadow-[#0b63ff]/30 hover:opacity-95">Ara</button>
-            </form>
-        </div>
-    </div>
-</section>
 
-<section class="bg-[#f7f8ff] py-12">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
-        <div class="grid gap-6 md:grid-cols-4 text-left">
-            {% for category in feature_categories %}
-            <article class="relative overflow-hidden rounded-2xl border border-[#e0e7ff] p-5 space-y-3 shadow-[0_20px_45px_rgba(15,23,42,0.12)] hover:shadow-[0_30px_65px_rgba(15,23,42,0.18)] transition bg-white/95">
-                <div class="flex items-center gap-3 text-sm font-semibold text-[#6366f1] uppercase tracking-[0.3em]">
-                    <i class="fas {{ category.3 }} text-lg text-[#6366f1]"></i>
-                    <span>{{ category.0 }}</span>
+            <div class="relative">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center text-white font-bold text-2xl shadow-xl flex-shrink-0">
+                        2
+                    </div>
+                    <h3 class="text-2xl font-bold text-black">Topluluğa Sor</h3>
                 </div>
-                <p class="text-sm text-[#475467]">{{ category.1 }}</p>
-                <p class="text-xs text-[#94a3b8]">{{ category.2 }}</p>
-                <div class="text-xs text-[#a5b1d7] uppercase tracking-[0.35em] mt-2">Anket Teması</div>
-            </article>
-            {% endfor %}
-        </div>
-    </div>
-</section>
 
-<section class="bg-white py-12">
-    <div class="max-w-4xl mx-auto text-center space-y-4 px-4 sm:px-0">
-        <p class="text-sm uppercase tracking-[0.4em] text-[#6b7ff0]">Neden bilemedilema</p>
-        <h2 class="text-3xl font-bold text-[#111827]">Kararlarını güvenle paylaş ve topluluk desteğiyle çözüme ulaş.</h2>
-        <p class="text-base text-[#475467]">Güçlü moderasyon, kullanıcı dostu arayüz ve farklı bakış açıları sayesinde kararlarını hızlıca analiz edebilirsin.</p>
-        <div class="mt-6 grid gap-4 md:grid-cols-3">
-            {% for reason in home_reasons %}
-            <div class="text-left bg-[#f7f8ff] rounded-2xl border border-[#e0e7ff] px-5 py-6 space-y-2">
-                <h3 class="text-lg font-semibold text-[#0f172a]">{{ reason.0 }}</h3>
-                <p class="text-sm text-[#475467]">{{ reason.1 }}</p>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<section class="bg-[#eef3ff] py-12">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
-        <div class="grid gap-6 md:grid-cols-3">
-            {% for card in spotlight_cards %}
-            <div class="bg-white rounded-[28px] border border-[#d7ddf4] p-6 flex flex-col h-full shadow-lg">
-                <p class="text-xs text-[#6b7ff0] uppercase tracking-[0.4em] mb-3">Öne Çıkan</p>
-                <h3 class="text-lg font-semibold text-[#111827] mb-2">{{ card.title }}</h3>
-                <p class="text-sm text-[#475467] mb-4">{{ card.description }}</p>
-                <p class="text-xs text-[#6b7ff0] font-semibold tracking-[0.3em]">{{ card.detail }}</p>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<section class="bg-gradient-to-b from-[#f5f7ff] to-[#eef2ff] py-12">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
-        <div class="text-center max-w-3xl mx-auto space-y-3 mb-8">
-            <p class="text-sm uppercase tracking-[0.4em] text-[#94a3b8]">Nasıl çalışır</p>
-            <h2 class="text-3xl font-bold text-[#111827]">Anketini oluşturmak hiç bu kadar kolay olmamıştı</h2>
-            <p class="text-sm text-[#475467]">Sorunu yaz, topluluğa yayınla ve gerçek zamanlı sonuçlar ile kararını netleştir.</p>
-        </div>
-        <div class="grid gap-6 md:grid-cols-3">
-            {% for step in timeline_steps %}
-            <article class="bg-white/80 border border-[#dfe5f2] rounded-3xl p-6 text-left shadow-xl hover:shadow-2xl transition duration-300">
-                <p class="text-xs uppercase tracking-[0.4em] text-[#6b7ff0] mb-2">{{ step.title }}</p>
-                <p class="text-sm text-[#475467]">{{ step.meta }}</p>
-            </article>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<section class="relative py-12">
-    <div class="absolute inset-0 bg-gradient-to-r from-[#ffffff] via-[#eef4ff] to-[#dfe7ff] -skew-y-[2deg] scale-y-105"></div>
-    <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
-        <div class="grid gap-6 sm:grid-cols-3">
-            {% for stat in landing_stats %}
-            <article class="stat-card bg-white/80 border border-white/60 rounded-3xl p-6 text-center shadow-xl">
-                <div class="stat-icon mx-auto mb-4">
-                    <i class="fas fa-chart-line"></i>
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 mb-6">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs text-gray-500">2,450 oy</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-700">iPhone</span>
+                                    <span class="font-semibold text-purple-600">68%</span>
+                                </div>
+                                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full" style="width: 68%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-700">Android</span>
+                                    <span class="font-semibold text-blue-600">32%</span>
+                                </div>
+                                <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" style="width: 32%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-gray-100">
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+                                </svg>
+                                <span>124 yorum</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-4xl font-semibold text-[#0b63ff]">{{ stat.value }}</p>
-                <p class="text-sm uppercase tracking-[0.3em] text-[#94a3b8] mt-1">{{ stat.label }}</p>
-                <p class="text-xs text-[#6b7280] mt-3">Topluluk mimarisiyle güçleniyor.</p>
-            </article>
-            {% endfor %}
-        </div>
-    </div>
-    <div class="relative mt-10 max-w-6xl mx-auto px-4 sm:px-6">
-        <div class="rounded-3xl bg-gradient-to-r from-[#c7d2fe] to-[#a5b4fc] p-8 text-white shadow-xl">
-            <h3 class="text-2xl md:text-3xl font-bold">Hemen başla, ilk anketini paylaş</h3>
-            <p class="text-sm text-white/80 mb-4">Topluluk seni bekliyor. Kararlarını yalnız bırakma.</p>
-            <a href="{% url 'register' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-[#0b63ff] font-semibold shadow-lg shadow-[#0b63ff]/30 hover:translate-y-0.5 transition">
-                Ücretsiz Kayıt Ol
-            </a>
+
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Binlerce kişiye ulaş</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Gerçek zamanlı sonuçlar</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Zengin yorumlar</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="relative">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white font-bold text-2xl shadow-xl flex-shrink-0">
+                        3
+                    </div>
+                    <h3 class="text-2xl font-bold text-black">Kararını Ver</h3>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="text-center p-4 bg-purple-50 rounded-xl">
+                            <div class="text-3xl font-bold text-purple-600">68%</div>
+                            <div class="text-xs text-gray-600 mt-1">iPhone</div>
+                        </div>
+                        <div class="text-center p-4 bg-blue-50 rounded-xl">
+                            <div class="text-3xl font-bold text-blue-600">32%</div>
+                            <div class="text-xs text-gray-600 mt-1">Android</div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2 text-sm">
+                            <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-gray-700">Çoğunluk iPhone diyor</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-gray-700">2,450 kişi oy verdi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Detaylı istatistikler</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Farklı perspektifler</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Bilinçli karar ver</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 </section>
 
-{% block extra_js %}
+<section class="py-32 bg-white relative overflow-hidden">
+    <!-- Subtle Background Elements -->
+    <div class="absolute inset-0 overflow-hidden opacity-30">
+        <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-purple-100 to-blue-100 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-cyan-100 to-purple-100 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-5xl mx-auto px-4">
+        <!-- Premium Card Container -->
+        <div class="premium-card rounded-[2.5rem] p-12 md:p-16 text-center relative overflow-hidden">
+            <!-- Gradient Border Effect -->
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-cyan-500/10 rounded-[2.5rem]"></div>
+            
+            <div class="relative">
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 mb-8">
+                    <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-purple-900">10,000+ kullanıcı tarafından tercih ediliyor</span>
+                </div>
+
+                <!-- Main Heading -->
+                <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                    Hemen Başla,<br/>İlk Anketini Oluştur
+                </h2>
+                
+                <p class="text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto">
+                    Ücretsiz kayıt ol, 30 saniyede anketini oluştur ve topluluğun görüşünü al.
+                </p>
+
+                <!-- CTA Button Group -->
+                <div class="flex flex-col items-center gap-6 mb-12">
+                    <a href="{% url 'register' %}" class="group relative inline-flex items-center gap-3 px-14 py-6 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xl font-bold shadow-2xl hover:shadow-purple-500/50 transition-all hover:scale-105">
+                        <span>Ücretsiz Başla</span>
+                        <svg class="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                    
+                    <!-- Trust Indicators -->
+                    <div class="flex flex-wrap items-center justify-center gap-6 text-gray-500 text-sm">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>Kredi kartı gerektirmez</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>Hızlı kayıt</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>Anında kullanıma hazır</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-gray-200">
+                    <div class="text-center">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Hızlı Kurulum</h3>
+                        <p class="text-gray-600 text-sm">30 saniyede anketini oluştur ve yayınla</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Güvenli</h3>
+                        <p class="text-gray-600 text-sm">Verileriniz güvende ve korunuyor</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Büyük Topluluk</h3>
+                        <p class="text-gray-600 text-sm">10,000+ aktif kullanıcı ile etkileşim</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <script>
     document.documentElement.classList.remove('dark');
 </script>
-{% endblock %}
-
 {% endblock %}
