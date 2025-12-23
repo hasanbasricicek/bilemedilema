@@ -16,6 +16,10 @@
 {% block twitter_description %}{{ post.content|truncatewords:30|striptags }}{% endblock %}
 {% block twitter_image %}{% if post.images.first %}{{ post.images.first.imgur_url }}{% else %}{% load static %}{% static 'images/og-default.png' %}{% endif %}{% endblock %}
 
+{% block extra_head %}
+<script src="{% static 'js/emoji-picker.js' %}" defer></script>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-2xl border border-[#BFBFBF] overflow-hidden">
@@ -1059,6 +1063,45 @@
             }
         });
     }
+
+    // Delete comment functionality
+    document.addEventListener('click', async function(e) {
+        const deleteBtn = e.target.closest('.delete-comment-btn');
+        if (!deleteBtn) return;
+        
+        const commentId = deleteBtn.dataset.commentId;
+        if (!commentId) return;
+        
+        if (!confirm('Bu yorumu silmek istediğinizden emin misiniz?')) return;
+        
+        try {
+            const csrfToken = getCookie('csrftoken');
+            const response = await fetch(`/comment/${commentId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.ok) {
+                const commentItem = deleteBtn.closest('.comment-item');
+                if (commentItem) {
+                    commentItem.style.opacity = '0';
+                    commentItem.style.transform = 'scale(0.95)';
+                    commentItem.style.transition = 'all 0.3s ease';
+                    setTimeout(() => commentItem.remove(), 300);
+                }
+                showToast('Yorum silindi.');
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Yorum silinemedi.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        }
+    });
 
     // Lightbox for post detail images
     (function initLightbox() {

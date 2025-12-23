@@ -2032,3 +2032,24 @@ def terms(request):
 def privacy(request):
     """Gizlilik Politikası sayfası"""
     return render(request, 'twochoice_app/privacy.html')
+
+
+@login_required
+@require_POST
+def delete_comment(request, pk):
+    """Yorum silme - Sadece yorum sahibi, moderatör veya admin silebilir"""
+    comment = get_object_or_404(Comment, pk=pk)
+    
+    # Yetki kontrolü
+    if request.user != comment.author and not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({'error': 'Bu yorumu silme yetkiniz yok.'}, status=403)
+    
+    # Soft delete
+    comment.is_deleted = True
+    comment.save(update_fields=['is_deleted'])
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'message': 'Yorum silindi.'})
+    
+    messages.success(request, 'Yorum silindi.')
+    return redirect('post_detail', pk=comment.post.pk)
