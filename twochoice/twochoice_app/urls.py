@@ -17,6 +17,9 @@ urlpatterns = [
 
     path('setup-admin/', views.setup_admin, name='setup_admin'),
     
+    path('terms/', views.terms, name='terms'),
+    path('privacy/', views.privacy, name='privacy'),
+    
     path('post/create/', views.create_post, name='create_post'),
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
     path('post/<int:pk>/edit/', views.edit_post, name='edit_post'),

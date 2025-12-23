@@ -1,0 +1,185 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Kullanım Koşulları - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-3xl shadow-lg p-8 sm:p-12">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-500 rounded-full mb-4">
+                <i class="fas fa-file-contract text-white text-2xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Kullanım Koşulları</h1>
+            <p class="text-gray-600">Son güncelleme: 23 Aralık 2024</p>
+        </div>
+
+        <!-- Content -->
+        <div class="prose prose-lg max-w-none">
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6 mb-8">
+                <p class="text-gray-700 leading-relaxed mb-0">
+                    <strong>bilemedilema</strong> platformunu kullanarak aşağıdaki kullanım koşullarını kabul etmiş olursunuz. 
+                    Lütfen bu koşulları dikkatlice okuyunuz.
+                </p>
+            </div>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-purple-600"></i>
+                    1. Hizmet Tanımı
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    bilemedilema, kullanıcıların kararsız kaldıkları konularda anket oluşturabilecekleri, 
+                    oy kullanabilecekleri ve toplulukla etkileşime girebilecekleri bir platformdur. 
+                    Platform şu anda <strong>beta sürümündedir</strong> ve sürekli geliştirilmektedir.
+                </p>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-user-check text-blue-600"></i>
+                    2. Kullanıcı Sorumlulukları
+                </h2>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span>18 yaşından büyük olmalısınız.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span>Doğru ve güncel bilgiler sağlamalısınız.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span>Hesap güvenliğinizden siz sorumlusunuz.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span>Platformu yasalara uygun şekilde kullanmalısınız.</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-ban text-red-600"></i>
+                    3. Yasak İçerikler
+                </h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Platformda aşağıdaki içerikleri paylaşmak kesinlikle yasaktır:
+                </p>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-times-circle text-red-500 mt-1"></i>
+                        <span>Nefret söylemi, ayrımcılık veya şiddet içeren içerikler</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-times-circle text-red-500 mt-1"></i>
+                        <span>Pornografik veya müstehcen içerikler</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-times-circle text-red-500 mt-1"></i>
+                        <span>Telif hakkı ihlali içeren materyaller</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-times-circle text-red-500 mt-1"></i>
+                        <span>Spam, dolandırıcılık veya yanıltıcı içerikler</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-times-circle text-red-500 mt-1"></i>
+                        <span>Kişisel bilgilerin izinsiz paylaşımı</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-copyright text-indigo-600"></i>
+                    4. Fikri Mülkiyet
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Platformda oluşturduğunuz içeriklerin telif hakları size aittir. Ancak, 
+                    içeriklerinizi platformda paylaşarak bilemedilema'ya bu içerikleri kullanma, 
+                    gösterme ve dağıtma konusunda münhasır olmayan, dünya çapında, telifsiz bir lisans vermiş olursunuz.
+                </p>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-green-600"></i>
+                    5. Moderasyon ve Yaptırımlar
+                </h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Platform yöneticileri, kullanım koşullarını ihlal eden içerikleri kaldırma ve 
+                    kullanıcı hesaplarını askıya alma veya silme hakkına sahiptir. Yaptırımlar şunları içerebilir:
+                </p>
+                <ul class="space-y-2 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 mt-1"></i>
+                        <span>Uyarı</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-pause-circle text-orange-500 mt-1"></i>
+                        <span>Geçici hesap askıya alma</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-ban text-red-500 mt-1"></i>
+                        <span>Kalıcı hesap kapatma</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-exclamation-circle text-yellow-600"></i>
+                    6. Sorumluluk Reddi
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Platform "olduğu gibi" sunulmaktadır. bilemedilema, platformun kesintisiz veya 
+                    hatasız çalışacağını garanti etmez. Kullanıcıların platformda paylaştığı içeriklerden 
+                    bilemedilema sorumlu değildir.
+                </p>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-edit text-pink-600"></i>
+                    7. Değişiklikler
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    bilemedilema, bu kullanım koşullarını dilediği zaman değiştirme hakkını saklı tutar. 
+                    Önemli değişiklikler kullanıcılara bildirilecektir. Değişikliklerden sonra platformu 
+                    kullanmaya devam etmeniz, yeni koşulları kabul ettiğiniz anlamına gelir.
+                </p>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-envelope text-blue-600"></i>
+                    8. İletişim
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Kullanım koşulları hakkında sorularınız varsa, lütfen platform içindeki 
+                    <a href="{% url 'create_feedback' %}" class="text-purple-600 hover:text-purple-700 font-semibold">Geri Bildirim</a> 
+                    özelliğini kullanarak bizimle iletişime geçin.
+                </p>
+            </section>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-6 mt-8">
+                <p class="text-sm text-gray-600 mb-0">
+                    <strong>Not:</strong> Bu kullanım koşulları Türkiye Cumhuriyeti yasalarına tabidir. 
+                    Platform beta sürümünde olduğu için bu koşullar sık sık güncellenebilir.
+                </p>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8 text-center">
+            <a href="{% url 'home' %}" class="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-semibold">
+                <i class="fas fa-arrow-left"></i>
+                Ana Sayfaya Dön
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

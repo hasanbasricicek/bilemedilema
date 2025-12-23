@@ -1,0 +1,262 @@
+{% extends 'twochoice_app/base.html' %}
+
+{% block title %}Gizlilik Politikası - bilemedilema{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-3xl shadow-lg p-8 sm:p-12">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full mb-4">
+                <i class="fas fa-shield-alt text-white text-2xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Gizlilik Politikası</h1>
+            <p class="text-gray-600">Son güncelleme: 23 Aralık 2024</p>
+        </div>
+
+        <!-- Content -->
+        <div class="prose prose-lg max-w-none">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 mb-8">
+                <p class="text-gray-700 leading-relaxed mb-0">
+                    <strong>bilemedilema</strong> olarak gizliliğinize önem veriyoruz. 
+                    Bu politika, kişisel verilerinizi nasıl topladığımızı, kullandığımızı ve koruduğumuzu açıklar.
+                </p>
+            </div>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-database text-blue-600"></i>
+                    1. Topladığımız Bilgiler
+                </h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Platformumuzu kullanırken aşağıdaki bilgileri topluyoruz:
+                </p>
+                
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Kayıt Bilgileri:</h3>
+                <ul class="space-y-2 text-gray-700 mb-4">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-user text-purple-500 mt-1"></i>
+                        <span>Kullanıcı adı</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-envelope text-blue-500 mt-1"></i>
+                        <span>E-posta adresi</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-birthday-cake text-pink-500 mt-1"></i>
+                        <span>Yaş bilgisi</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-lock text-green-500 mt-1"></i>
+                        <span>Şifre (şifrelenmiş olarak)</span>
+                    </li>
+                </ul>
+
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Kullanım Bilgileri:</h3>
+                <ul class="space-y-2 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-poll text-indigo-500 mt-1"></i>
+                        <span>Oluşturduğunuz anketler ve oylar</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-comments text-pink-500 mt-1"></i>
+                        <span>Yorumlar ve etkileşimler</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-bookmark text-yellow-500 mt-1"></i>
+                        <span>Kaydettiğiniz içerikler</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-chart-line text-green-500 mt-1"></i>
+                        <span>Platform kullanım istatistikleri</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-cogs text-indigo-600"></i>
+                    2. Bilgileri Nasıl Kullanıyoruz
+                </h2>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span><strong>Hizmet Sunumu:</strong> Platformun temel işlevlerini sağlamak için</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span><strong>Kişiselleştirme:</strong> Size özel içerik ve öneriler sunmak için</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span><strong>İletişim:</strong> Bildirimler ve güncellemeler göndermek için</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span><strong>Güvenlik:</strong> Platformu kötüye kullanımdan korumak için</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                        <span><strong>İyileştirme:</strong> Platformu geliştirmek ve hataları düzeltmek için</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-share-alt text-pink-600"></i>
+                    3. Bilgi Paylaşımı
+                </h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Kişisel bilgilerinizi <strong>üçüncü taraflarla paylaşmıyoruz</strong>. 
+                    Ancak aşağıdaki durumlarda bilgi paylaşımı yapabiliriz:
+                </p>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-gavel text-red-500 mt-1"></i>
+                        <span><strong>Yasal Zorunluluk:</strong> Yasal bir talep veya mahkeme kararı durumunda</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-shield-alt text-blue-500 mt-1"></i>
+                        <span><strong>Güvenlik:</strong> Platformun veya kullanıcıların güvenliğini korumak için</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-handshake text-green-500 mt-1"></i>
+                        <span><strong>İzninizle:</strong> Açık onayınız olduğunda</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-cookie-bite text-yellow-600"></i>
+                    4. Çerezler (Cookies)
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Platform, oturum yönetimi ve kullanıcı deneyimini iyileştirmek için çerezler kullanır. 
+                    Çerezler, tarayıcınızda saklanan küçük metin dosyalarıdır. Tarayıcı ayarlarınızdan 
+                    çerezleri yönetebilir veya silebilirsiniz.
+                </p>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-lock text-green-600"></i>
+                    5. Veri Güvenliği
+                </h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Verilerinizin güvenliğini sağlamak için aşağıdaki önlemleri alıyoruz:
+                </p>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-key text-purple-500 mt-1"></i>
+                        <span>Şifreler güvenli hash algoritmaları ile şifrelenir</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-server text-blue-500 mt-1"></i>
+                        <span>Veriler güvenli sunucularda saklanır</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-shield-alt text-green-500 mt-1"></i>
+                        <span>Düzenli güvenlik güncellemeleri yapılır</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-user-lock text-indigo-500 mt-1"></i>
+                        <span>Sınırlı erişim kontrolleri uygulanır</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-user-cog text-purple-600"></i>
+                    6. Haklarınız
+                </h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Kişisel verileriniz üzerinde aşağıdaki haklara sahipsiniz:
+                </p>
+                <ul class="space-y-3 text-gray-700">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-eye text-blue-500 mt-1"></i>
+                        <span><strong>Erişim Hakkı:</strong> Verilerinizi görüntüleme</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-edit text-green-500 mt-1"></i>
+                        <span><strong>Düzeltme Hakkı:</strong> Yanlış bilgileri düzeltme</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-trash text-red-500 mt-1"></i>
+                        <span><strong>Silme Hakkı:</strong> Hesabınızı ve verilerinizi silme</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-download text-indigo-500 mt-1"></i>
+                        <span><strong>Taşınabilirlik Hakkı:</strong> Verilerinizi indirme</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-ban text-orange-500 mt-1"></i>
+                        <span><strong>İtiraz Hakkı:</strong> Veri işlemeye itiraz etme</span>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-child text-pink-600"></i>
+                    7. Çocukların Gizliliği
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Platformumuz 18 yaş altı kullanıcılara yönelik değildir. 18 yaşından küçük 
+                    kullanıcılardan bilerek kişisel bilgi toplamıyoruz. Eğer 18 yaşından küçük 
+                    bir kullanıcının kayıt olduğunu fark edersek, hesabı derhal sileriz.
+                </p>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-sync-alt text-blue-600"></i>
+                    8. Politika Değişiklikleri
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Bu gizlilik politikasını zaman zaman güncelleyebiliriz. Önemli değişiklikler 
+                    olduğunda sizi bilgilendireceğiz. Güncellenmiş politika, yayınlandığı tarihten 
+                    itibaren geçerli olacaktır.
+                </p>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-envelope text-green-600"></i>
+                    9. İletişim
+                </h2>
+                <p class="text-gray-700 leading-relaxed">
+                    Gizlilik politikası hakkında sorularınız veya talepleriniz varsa, 
+                    <a href="{% url 'create_feedback' %}" class="text-blue-600 hover:text-blue-700 font-semibold">Geri Bildirim</a> 
+                    özelliğini kullanarak bizimle iletişime geçebilirsiniz.
+                </p>
+            </section>
+
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 mt-8">
+                <div class="flex items-start gap-4">
+                    <i class="fas fa-info-circle text-blue-600 text-2xl mt-1"></i>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 mb-2">KVKK Uyumluluğu</h3>
+                        <p class="text-sm text-gray-700 mb-0">
+                            Bu gizlilik politikası, Türkiye Cumhuriyeti Kişisel Verilerin Korunması Kanunu (KVKK) 
+                            ve ilgili mevzuata uygun olarak hazırlanmıştır. Platform beta sürümünde olduğu için 
+                            bu politika sık sık güncellenebilir.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8 text-center">
+            <a href="{% url 'home' %}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold">
+                <i class="fas fa-arrow-left"></i>
+                Ana Sayfaya Dön
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

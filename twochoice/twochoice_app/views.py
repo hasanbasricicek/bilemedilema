@@ -2019,6 +2019,16 @@ def upload_to_imgur(image_file):
 
         logger.warning('Imgur file upload failed status=%s body=%s', response2.status_code, response2.text[:500])
         return None
-    except Exception:
-        logger.exception('Imgur upload error')
+    except Exception as e:
+        logger.exception('upload_to_imgur error')
         return None
+
+
+def terms(request):
+    """Kullanım Koşulları sayfası"""
+    return render(request, 'twochoice_app/terms.html')
+
+
+def privacy(request):
+    """Gizlilik Politikası sayfası"""
+    return render(request, 'twochoice_app/privacy.html')
