@@ -809,7 +809,7 @@ def post_detail(request, pk):
         messages.error(request, 'Bu gönderiyi görüntüleme yetkiniz yok.')
         return redirect('home')
     
-    comments = post.comments.filter(is_deleted=False)
+    comments = post.comments.filter(is_deleted=False, parent=None)
     user_votes = []
     
     if request.user.is_authenticated:
@@ -887,6 +887,8 @@ def post_detail(request, pk):
 @require_POST
 @rate_limit('add_comment', timeout=2, max_requests=1)
 def add_comment(request, pk):
+    from .profanity_filter import contains_profanity, get_profanity_warning
+    
     post = get_object_or_404(Post, pk=pk)
     
     if post.post_type == 'poll_only':
@@ -899,30 +901,65 @@ def add_comment(request, pk):
     
     form = CommentForm(request.POST)
     if form.is_valid():
+        content = form.cleaned_data.get('content', '')
+        
+        # Küfür kontrolü
+        if contains_profanity(content):
+            logger.warning('add_comment profanity detected user=%s post=%s', request.user.id, post.id)
+            return JsonResponse({'error': get_profanity_warning()}, status=400)
+        
         comment = form.save(commit=False)
         comment.post = post
         comment.author = request.user
+        
+        # Parent comment kontrolü (nested comment)
+        parent_id = request.POST.get('parent_id')
+        if parent_id:
+            try:
+                parent_comment = Comment.objects.get(id=parent_id, post=post, is_deleted=False)
+                comment.parent = parent_comment
+            except Comment.DoesNotExist:
+                pass
+        
         comment.save()
-        logger.info('add_comment user=%s post=%s comment=%s', request.user.username, post.id, comment.id)
+        logger.info('add_comment user=%s post=%s comment=%s parent=%s', request.user.username, post.id, comment.id, parent_id or 'None')
 
-        if post.author != request.user and can_send_notification(post.author, 'comments'):
-            # Avoid repeating notifications like "hasan, hasan, hasan" for the same post.
-            # Reuse the existing notification and bump it to the top.
-            verb = 'gönderine yorum yaptı'
-            existing = Notification.objects.filter(
-                user=post.author,
-                actor=request.user,
-                post=post,
-                verb=verb,
-            ).order_by('-created_at').first()
+        # Bildirim gönder
+        if comment.parent:
+            # Cevap bildirimi
+            if comment.parent.author != request.user and comment.parent.author.profile.notify_comments:
+                Notification.objects.create(
+                    recipient=comment.parent.author,
+                    sender=request.user,
+                    notification_type='reply',
+                    post=post,
+                    comment=comment,
+                    message=f'{request.user.username} yorumunuza cevap verdi'
+                )
+        else:
+            # Yeni yorum bildirimi
+            if post.author != request.user and post.author.profile.notify_comments:
+                existing = Notification.objects.filter(
+                    recipient=post.author,
+                    sender=request.user,
+                    post=post,
+                    notification_type='comment',
+                ).order_by('-created_at').first()
 
-            if existing:
-                existing.comment = comment
-                existing.is_read = False
-                existing.created_at = timezone.now()
-                existing.save(update_fields=['comment', 'is_read', 'created_at'])
-            else:
-                notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
+                if existing:
+                    existing.comment = comment
+                    existing.is_read = False
+                    existing.created_at = timezone.now()
+                    existing.save(update_fields=['comment', 'is_read', 'created_at'])
+                else:
+                    Notification.objects.create(
+                        recipient=post.author,
+                        sender=request.user,
+                        notification_type='comment',
+                        post=post,
+                        comment=comment,
+                        message=f'{request.user.username} gönderinize yorum yaptı'
+                    )
         
         return JsonResponse({
             'success': True,
@@ -930,7 +967,8 @@ def add_comment(request, pk):
                 'id': comment.id,
                 'author': comment.author.username,
                 'content': comment.content,
-                'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M')
+                'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M'),
+                'parent_id': comment.parent_id
             }
         })
     
