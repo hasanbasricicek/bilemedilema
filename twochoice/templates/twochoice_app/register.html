@@ -4,56 +4,213 @@
 
 {% block content %}
 <div class="max-w-md mx-auto">
-    <div class="bg-white rounded-2xl border border-[#BFBFBF] shadow-sm p-8">
-        <div class="text-center mb-8">
-            <i class="fas fa-user-plus text-5xl text-[#666A73] mb-4"></i>
-            <h2 class="text-3xl font-bold text-[#000000] mb-2">bilemedilema'ya Hoş Geldin</h2>
-            <p class="text-[#666A73] mt-2">bilemedilema topluluğuna katıl</p>
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <!-- Gradient Header -->
+        <div class="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 p-8 text-white text-center">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full mb-4">
+                <i class="fas fa-rocket text-4xl"></i>
+            </div>
+            <h2 class="text-3xl font-bold mb-2">Hoş Geldin! 🎉</h2>
+            <p class="text-white/90">Kararsızlıklarına son vermeye hazır mısın?</p>
         </div>
 
-        <form method="post" class="space-y-4" id="register-form">
-            {% csrf_token %}
-            
-            {% for field in form %}
-                <div>
-                    <label class="block text-sm font-medium text-[#000000] mb-2">
-                        {{ field.label }}
-                    </label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <p class="mt-1 text-sm text-[#B33F00]">{{ field.errors.0 }}</p>
-                    {% endif %}
-                    {% if field.help_text %}
-                        <p class="mt-1 text-sm text-[#666A73]">{{ field.help_text }}</p>
-                    {% endif %}
+        <!-- Form -->
+        <div class="p-8">
+            <form method="post" class="space-y-5" id="register-form">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                            {% if field.name == 'username' %}
+                                <i class="fas fa-user text-purple-600"></i>
+                            {% elif field.name == 'email' %}
+                                <i class="fas fa-envelope text-blue-600"></i>
+                            {% elif field.name == 'age' %}
+                                <i class="fas fa-birthday-cake text-pink-600"></i>
+                            {% elif 'password' in field.name %}
+                                <i class="fas fa-lock text-green-600"></i>
+                            {% endif %}
+                            {{ field.label }}
+                        </label>
+                        
+                        <div class="relative">
+                            {{ field }}
+                            
+                            <!-- Password Strength Indicator -->
+                            {% if field.name == 'password1' %}
+                                <div id="password-strength" class="mt-2 hidden">
+                                    <div class="flex gap-1 mb-1">
+                                        <div class="h-1 flex-1 bg-gray-200 rounded strength-bar"></div>
+                                        <div class="h-1 flex-1 bg-gray-200 rounded strength-bar"></div>
+                                        <div class="h-1 flex-1 bg-gray-200 rounded strength-bar"></div>
+                                        <div class="h-1 flex-1 bg-gray-200 rounded strength-bar"></div>
+                                    </div>
+                                    <p id="strength-text" class="text-xs text-gray-600"></p>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Info Icon for Password Help -->
+                            {% if 'password' in field.name and field.help_text %}
+                                <button type="button" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600" data-tooltip-target="{{ field.name }}-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <div id="{{ field.name }}-tooltip" class="hidden absolute z-10 w-72 p-3 text-xs bg-gray-900 text-white rounded-lg shadow-lg -top-2 right-12">
+                                    <div class="space-y-1">
+                                        <p class="flex items-start gap-2">
+                                            <i class="fas fa-check text-green-400 mt-0.5"></i>
+                                            <span>En az 8 karakter</span>
+                                        </p>
+                                        <p class="flex items-start gap-2">
+                                            <i class="fas fa-check text-green-400 mt-0.5"></i>
+                                            <span>Büyük ve küçük harf</span>
+                                        </p>
+                                        <p class="flex items-start gap-2">
+                                            <i class="fas fa-check text-green-400 mt-0.5"></i>
+                                            <span>En az bir rakam</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if field.errors %}
+                            <p class="mt-2 text-sm text-red-600 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ field.errors.0 }}
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <!-- Benefits -->
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4 mt-6">
+                    <h3 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <i class="fas fa-star text-yellow-500"></i>
+                        Kayıt olunca neler kazanırsın?
+                    </h3>
+                    <ul class="space-y-1.5 text-sm text-gray-600">
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check-circle text-green-500 text-xs"></i>
+                            Sınırsız anket oluştur
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check-circle text-green-500 text-xs"></i>
+                            Rozetler kazan ve seviye atla
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check-circle text-green-500 text-xs"></i>
+                            Anketleri kaydet ve takip et
+                        </li>
+                    </ul>
                 </div>
-            {% endfor %}
 
-            <button type="submit" id="register-submit" class="w-full bg-[#000000] hover:bg-[#666A73] text-white font-semibold py-3 rounded-xl transition duration-200 flex items-center justify-center space-x-2">
-                <i class="fas fa-user-plus"></i>
-                <span>Kayıt Ol</span>
-            </button>
-        </form>
+                <button type="submit" id="register-submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-semibold py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+                    <i class="fas fa-rocket"></i>
+                    <span>Hadi Başlayalım!</span>
+                </button>
+            </form>
 
-        <script>
-            (function() {
-                const form = document.getElementById('register-form');
-                const btn = document.getElementById('register-submit');
-                if (!form || !btn) return;
-                form.addEventListener('submit', () => {
-                    btn.disabled = true;
-                    btn.classList.add('opacity-60');
-                    btn.classList.add('cursor-not-allowed');
-                });
-            })();
-        </script>
+            <!-- Divider -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-200"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-4 bg-white text-gray-500">veya</span>
+                </div>
+            </div>
 
-        <div class="mt-6 text-center">
-            <p class="text-[#666A73]">
-                Zaten hesabın var mı? 
-                <a href="{% url 'login' %}" class="text-[#666A73] hover:text-[#000000] font-semibold">Giriş Yap</a>
+            <!-- Social Login Placeholder -->
+            <div class="space-y-3">
+                <button type="button" disabled class="w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-xl flex items-center justify-center gap-3 cursor-not-allowed">
+                    <i class="fab fa-google text-lg"></i>
+                    <span>Google ile devam et</span>
+                    <span class="text-xs">(Yakında)</span>
+                </button>
+            </div>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">
+                    Zaten hesabın var mı? 
+                    <a href="{% url 'login' %}" class="text-purple-600 hover:text-purple-700 font-semibold">Giriş Yap</a>
+                </p>
+            </div>
+
+            <!-- Privacy Note -->
+            <p class="mt-6 text-xs text-center text-gray-500">
+                Kayıt olarak <a href="#" class="text-purple-600 hover:underline">Kullanım Koşulları</a> ve <a href="#" class="text-purple-600 hover:underline">Gizlilik Politikası</a>'nı kabul etmiş olursunuz.
             </p>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const form = document.getElementById('register-form');
+    const btn = document.getElementById('register-submit');
+    const password1 = document.querySelector('input[name="password1"]');
+    const strengthDiv = document.getElementById('password-strength');
+    const strengthBars = document.querySelectorAll('.strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    
+    // Form submit handler
+    if (form && btn) {
+        form.addEventListener('submit', () => {
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'cursor-not-allowed');
+        });
+    }
+    
+    // Password strength indicator
+    if (password1 && strengthDiv) {
+        password1.addEventListener('input', function() {
+            const value = this.value;
+            if (!value) {
+                strengthDiv.classList.add('hidden');
+                return;
+            }
+            
+            strengthDiv.classList.remove('hidden');
+            let strength = 0;
+            
+            if (value.length >= 8) strength++;
+            if (/[a-z]/.test(value) && /[A-Z]/.test(value)) strength++;
+            if (/[0-9]/.test(value)) strength++;
+            if (/[^a-zA-Z0-9]/.test(value)) strength++;
+            
+            // Reset bars
+            strengthBars.forEach(bar => {
+                bar.classList.remove('bg-red-500', 'bg-yellow-500', 'bg-green-500');
+                bar.classList.add('bg-gray-200');
+            });
+            
+            // Update bars and text
+            const colors = ['bg-red-500', 'bg-yellow-500', 'bg-yellow-500', 'bg-green-500'];
+            const texts = ['Çok zayıf', 'Zayıf', 'Orta', 'Güçlü'];
+            
+            for (let i = 0; i < strength; i++) {
+                strengthBars[i].classList.remove('bg-gray-200');
+                strengthBars[i].classList.add(colors[strength - 1]);
+            }
+            
+            strengthText.textContent = texts[strength - 1] || '';
+        });
+    }
+    
+    // Tooltip handlers
+    document.querySelectorAll('[data-tooltip-target]').forEach(btn => {
+        const tooltipId = btn.getAttribute('data-tooltip-target');
+        const tooltip = document.getElementById(tooltipId);
+        if (!tooltip) return;
+        
+        btn.addEventListener('mouseenter', () => tooltip.classList.remove('hidden'));
+        btn.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            tooltip.classList.toggle('hidden');
+        });
+    });
+})();
+</script>
 {% endblock %}
