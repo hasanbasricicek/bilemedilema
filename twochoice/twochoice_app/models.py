@@ -5,7 +5,7 @@ from django.utils import timezone
 
 
 class Notification(models.Model):
-    """Bildirim sistemi"""
+    """Bildirim sistemi - Birleştirilmiş model"""
     NOTIFICATION_TYPES = [
         ('comment', 'Yeni Yorum'),
         ('reply', 'Yoruma Cevap'),
@@ -13,14 +13,22 @@ class Notification(models.Model):
         ('mention', 'Bahsetme'),
     ]
     
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True)
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    # Eski field'lar (geriye dönük uyumluluk için)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications_sent')
+    verb = models.CharField(max_length=255, blank=True, default='')
     
-    post = models.ForeignKey('Post', on_delete=models.CASCADE, null=True, blank=True)
-    comment = models.ForeignKey('Comment', on_delete=models.CASCADE, null=True, blank=True)
+    # Yeni field'lar
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_notifications', null=True, blank=True)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications_new', null=True, blank=True)
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, blank=True, default='')
+    message = models.CharField(max_length=255, blank=True, default='')
     
-    message = models.CharField(max_length=255)
+    # İlişkili objeler
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    comment = models.ForeignKey('Comment', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    feedback = models.ForeignKey('Feedback', on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    
     is_read = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     
@@ -28,13 +36,13 @@ class Notification(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Bildirim'
         verbose_name_plural = 'Bildirimler'
-        indexes = [
-            models.Index(fields=['recipient', '-created_at']),
-            models.Index(fields=['recipient', 'is_read']),
-        ]
     
     def __str__(self):
-        return f"{self.recipient.username} - {self.notification_type}"
+        if self.recipient:
+            return f"{self.recipient.username} - {self.notification_type or self.message}"
+        if self.user:
+            return f"{self.user.username} - {self.verb}"
+        return f"Notification #{self.pk}"
 
 
 class Bookmark(models.Model):
