@@ -17,7 +17,6 @@
 {% block twitter_image %}{% if post.images.first %}{{ post.images.first.imgur_url }}{% else %}{% load static %}{% static 'images/og-default.png' %}{% endif %}{% endblock %}
 
 {% block extra_head %}
-<script src="{% static 'js/emoji-picker.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -335,6 +334,12 @@
                                             <i class="fas fa-flag"></i>
                                             <span>Rapor Et</span>
                                         </a>
+                                    {% endif %}
+                                    {% if user.is_authenticated and user == comment.author or user.is_staff or user.is_superuser %}
+                                        <button class="delete-comment-btn hover:text-red-600 transition flex items-center gap-1" data-comment-id="{{ comment.id }}">
+                                            <i class="fas fa-trash"></i>
+                                            <span>Sil</span>
+                                        </button>
                                     {% endif %}
                                 </div>
                             </div>
