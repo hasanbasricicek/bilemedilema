@@ -809,7 +809,8 @@ def post_detail(request, pk):
         messages.error(request, 'Bu gönderiyi görüntüleme yetkiniz yok.')
         return redirect('home')
     
-    comments = post.comments.filter(is_deleted=False, parent=None)
+    # Geçici: parent field migration uygulanana kadar parent=None filtresi kaldırıldı
+    comments = post.comments.filter(is_deleted=False)
     user_votes = []
     
     if request.user.is_authenticated:
