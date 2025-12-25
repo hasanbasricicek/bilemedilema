@@ -1052,59 +1052,6 @@
                 submitButton.disabled = true;
                 submitButton.textContent = 'Gönderiliyor...';
             }
-            
-            try {
-                const response = await fetch('{% url "add_comment" post.pk %}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                    }
-                });
-                
-                let data;
-                try {
-                    data = await response.json();
-                } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
-                    throw new Error('Sunucu yanıtı okunamadı');
-                }
-                
-                if (response.ok && data.success) {
-                    location.reload();
-                } else {
-                    const errorMsg = data.error || data.message || 'Yorum gönderilemedi';
-                    alert(errorMsg);
-                    
-                    if (submitButton) {
-                        submitButton.disabled = false;
-                        submitButton.textContent = 'Yorum Yap';
-                    }
-                }
-            } catch (error) {
-                console.error('Comment submission error:', error);
-                
-                let errorMessage = 'Bir hata oluştu.';
-                if (error.message.includes('Failed to fetch')) {
-                    errorMessage = 'Bağlantı hatası. Lütfen tekrar deneyin.';
-                } else if (error.message.includes('okunamadı')) {
-                    errorMessage = error.message;
-                }
-                
-                alert(errorMessage);
-                
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Yorum Yap';
-                }
-            }
-        });
-    }
-
-    // Delete comment functionality
-    document.addEventListener('click', async function(e) {
-        const deleteBtn = e.target.closest('.delete-comment-btn');
-        if (!deleteBtn) return;
         
         const commentId = deleteBtn.dataset.commentId;
         if (!commentId) return;

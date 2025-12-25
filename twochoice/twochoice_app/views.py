@@ -888,70 +888,74 @@ def post_detail(request, pk):
 @require_POST
 @rate_limit('add_comment', timeout=2, max_requests=1)
 def add_comment(request, pk):
-    from .profanity_filter import contains_profanity, get_profanity_warning
-    
-    post = get_object_or_404(Post, pk=pk)
-    
-    if post.post_type == 'poll_only':
-        logger.warning('add_comment rejected poll_only user=%s post=%s', request.user.id, post.id)
-        return JsonResponse({'error': 'Bu gönderiye yorum yapılamaz.'}, status=400)
-    
-    if not request.user.profile.can_comment():
-        logger.warning('add_comment banned user=%s post=%s', request.user.id, post.id)
-        return JsonResponse({'error': f'Yorum yasağınız var. Yasak bitiş tarihi: {request.user.profile.comment_ban_until}'}, status=403)
-    
-    form = CommentForm(request.POST)
-    if form.is_valid():
-        content = form.cleaned_data.get('content', '')
+    try:
+        from .profanity_filter import contains_profanity, get_profanity_warning
         
-        # Küfür kontrolü
-        if contains_profanity(content):
-            logger.warning('add_comment profanity detected user=%s post=%s', request.user.id, post.id)
-            return JsonResponse({'error': get_profanity_warning()}, status=400)
+        post = get_object_or_404(Post, pk=pk)
         
-        comment = form.save(commit=False)
-        comment.post = post
-        comment.author = request.user
+        if post.post_type == 'poll_only':
+            logger.warning('add_comment rejected poll_only user=%s post=%s', request.user.id, post.id)
+            return JsonResponse({'success': False, 'error': 'Bu gönderiye yorum yapılamaz.'}, status=400)
         
-        # Parent comment kontrolü (nested comment)
-        parent_id = request.POST.get('parent_id')
-        if parent_id:
-            try:
-                parent_comment = Comment.objects.get(id=parent_id, post=post, is_deleted=False)
-                comment.parent = parent_comment
-            except Comment.DoesNotExist:
-                pass
+        if not request.user.profile.can_comment():
+            logger.warning('add_comment banned user=%s post=%s', request.user.id, post.id)
+            return JsonResponse({'success': False, 'error': f'Yorum yasağınız var. Yasak bitiş tarihi: {request.user.profile.comment_ban_until}'}, status=403)
         
-        comment.save()
-        logger.info('add_comment user=%s post=%s comment=%s parent=%s', request.user.username, post.id, comment.id, parent_id or 'None')
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            content = form.cleaned_data.get('content', '')
+            
+            # Küfür kontrolü
+            if contains_profanity(content):
+                logger.warning('add_comment profanity detected user=%s post=%s', request.user.id, post.id)
+                return JsonResponse({'success': False, 'error': get_profanity_warning()}, status=400)
+            
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            
+            # Parent comment kontrolü (nested comment)
+            parent_id = request.POST.get('parent_id')
+            if parent_id:
+                try:
+                    parent_comment = Comment.objects.get(id=parent_id, post=post, is_deleted=False)
+                    comment.parent = parent_comment
+                except Comment.DoesNotExist:
+                    pass
+            
+            comment.save()
+            logger.info('add_comment user=%s post=%s comment=%s parent=%s', request.user.username, post.id, comment.id, parent_id or 'None')
 
-        # Bildirim gönder - hata olsa bile yorum kaydedilsin
-        try:
-            if comment.parent:
-                # Cevap bildirimi
-                if comment.parent.author != request.user and can_send_notification(comment.parent.author, 'comments'):
-                    verb = 'yorumunuza cevap verdi'
-                    notify_or_bump(user=comment.parent.author, actor=request.user, post=post, comment=comment, verb=verb)
-            else:
-                # Yeni yorum bildirimi
-                if post.author != request.user and can_send_notification(post.author, 'comments'):
-                    verb = 'anketine yorum yaptı'
-                    notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
-        except Exception as e:
-            logger.exception(f'Error sending comment notification: {e}')
+            # Bildirim gönder - hata olsa bile yorum kaydedilsin
+            try:
+                if comment.parent:
+                    # Cevap bildirimi
+                    if comment.parent.author != request.user and can_send_notification(comment.parent.author, 'comments'):
+                        verb = 'yorumunuza cevap verdi'
+                        notify_or_bump(user=comment.parent.author, actor=request.user, post=post, comment=comment, verb=verb)
+                else:
+                    # Yeni yorum bildirimi
+                    if post.author != request.user and can_send_notification(post.author, 'comments'):
+                        verb = 'anketine yorum yaptı'
+                        notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
+            except Exception as e:
+                logger.exception(f'Error sending comment notification: {e}')
+            
+            return JsonResponse({
+                'success': True,
+                'comment': {
+                    'id': comment.id,
+                    'author': comment.author.username,
+                    'content': comment.content,
+                    'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M'),
+                    'parent_id': comment.parent_id
+                }
+            })
         
-        return JsonResponse({
-            'success': True,
-            'comment': {
-                'id': comment.id,
-                'author': comment.author.username,
-                'content': comment.content,
-                'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M'),
-                'parent_id': comment.parent_id
-            }
-        })
-    
-    return JsonResponse({'error': 'Form geçersiz.'}, status=400)
+        return JsonResponse({'success': False, 'error': 'Form geçersiz.'}, status=400)
+    except Exception as e:
+        logger.exception(f'Unexpected error in add_comment: {e}')
+        return JsonResponse({'success': False, 'error': 'Yorum eklenirken bir hata oluştu.'}, status=500)
 
 
 @require_POST
