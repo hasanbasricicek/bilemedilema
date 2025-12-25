@@ -1879,57 +1879,69 @@ def notifications_unread_count_api(request):
 @login_required
 def notifications_latest_unread_api(request):
     """Get latest notifications for dropdown (both read and unread)"""
-    notifications = (
-        Notification.objects.filter(user=request.user)
-        .select_related('actor', 'post', 'feedback')
-        .order_by('-created_at')[:10]  # Get last 10 notifications
-    )
-    
-    notifications_list = []
-    for notif in notifications:
-        actor = getattr(notif.actor, 'username', None)
+    try:
+        notifications = (
+            Notification.objects.filter(user=request.user)
+            .select_related('actor', 'post', 'feedback')
+            .order_by('-created_at')[:10]  # Get last 10 notifications
+        )
         
-        # Build rich notification text with post title
-        if notif.post:
-            post_title = notif.post.title[:50] + '...' if len(notif.post.title) > 50 else notif.post.title
-            if actor:
-                # Format: "user123 'Anket Başlığı' anketine oy verdi"
-                if 'oy verdi' in notif.verb:
-                    text = f'{actor} "{post_title}" anketine oy verdi'
-                elif 'yorum yaptı' in notif.verb:
-                    text = f'{actor} "{post_title}" anketine yorum yaptı'
+        notifications_list = []
+        for notif in notifications:
+            try:
+                actor = getattr(notif.actor, 'username', None)
+                
+                # Build rich notification text with post title
+                if notif.post:
+                    post_title = notif.post.title[:50] + '...' if len(notif.post.title) > 50 else notif.post.title
+                    if actor:
+                        # Format: "user123 'Anket Başlığı' anketine oy verdi"
+                        if 'oy verdi' in notif.verb:
+                            text = f'{actor} "{post_title}" anketine oy verdi'
+                        elif 'yorum yaptı' in notif.verb:
+                            text = f'{actor} "{post_title}" anketine yorum yaptı'
+                        else:
+                            text = f'{actor} "{post_title}" {notif.verb}'
+                    else:
+                        text = f'"{post_title}" {notif.verb}'
                 else:
-                    text = f'{actor} "{post_title}" {notif.verb}'
-            else:
-                text = f'"{post_title}" {notif.verb}'
-        else:
-            if actor:
-                text = f'{actor} {notif.verb}'
-            else:
-                text = notif.verb
+                    if actor:
+                        text = f'{actor} {notif.verb}'
+                    else:
+                        text = notif.verb
+                
+                # Determine URL
+                if notif.feedback_id:
+                    url = reverse('feedback_detail', kwargs={'pk': notif.feedback_id})
+                elif notif.post_id:
+                    url = reverse('post_detail', kwargs={'pk': notif.post_id})
+                else:
+                    url = reverse('notifications')
+                
+                notifications_list.append({
+                    'id': notif.id,
+                    'text': text,
+                    'url': url,
+                    'created_at': notif.created_at.isoformat(),
+                    'is_read': notif.is_read
+                })
+            except Exception as e:
+                logger.exception(f'Error processing notification {notif.id}: {e}')
+                continue
         
-        # Determine URL
-        if notif.feedback_id:
-            url = reverse('feedback_detail', kwargs={'pk': notif.feedback_id})
-        elif notif.post_id:
-            url = reverse('post_detail', kwargs={'pk': notif.post_id})
-        else:
-            url = reverse('notifications')
+        unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
         
-        notifications_list.append({
-            'id': notif.id,
-            'text': text,
-            'url': url,
-            'created_at': notif.created_at.isoformat(),
-            'is_read': notif.is_read
+        return JsonResponse({
+            'notifications': notifications_list,
+            'unread_count': unread_count
         })
-    
-    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
-    
-    return JsonResponse({
-        'notifications': notifications_list,
-        'unread_count': unread_count
-    })
+    except Exception as e:
+        logger.exception(f'Error in notifications_latest_unread_api: {e}')
+        return JsonResponse({
+            'notifications': [],
+            'unread_count': 0,
+            'error': 'Bildirimler yüklenirken bir hata oluştu'
+        }, status=500)
 
 
 @login_required

@@ -111,13 +111,21 @@
     
     function loadNotifications() {
         fetch('/notifications/latest-unread/')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
                 renderNotifications(data.notifications || []);
             })
             .catch(error => {
                 console.error('Error loading notifications:', error);
-                dropdown.innerHTML = '<div style="padding: 2rem; text-align: center;">Bildirimler yüklenemedi</div>';
+                dropdown.innerHTML = '<div style="padding: 2rem; text-align: center; color: #EF4444;">Bildirimler yüklenemedi. Lütfen sayfayı yenileyin.</div>';
             });
     }
     
