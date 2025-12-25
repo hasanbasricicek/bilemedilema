@@ -39,20 +39,18 @@
         
         // Create dropdown
         dropdown = document.createElement('div');
-        dropdown.className = 'notification-dropdown-container';
         dropdown.style.cssText = `
             position: fixed;
             width: 380px;
             max-width: 90vw;
-            background: var(--card, white);
-            border: 1px solid var(--border, #E5E7EB);
+            background: white;
+            border: 1px solid #E5E7EB;
             border-radius: 1rem;
             box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             z-index: 1000;
             max-height: 500px;
             overflow: hidden;
             display: none;
-            color: var(--foreground, #111827);
         `;
         dropdown.id = 'notification-dropdown';
         
@@ -100,9 +98,6 @@
         backdrop.style.display = 'block';
         dropdown.style.display = 'block';
         
-        // Show loading state
-        dropdown.innerHTML = '<div style="padding: 3rem; text-align: center;"><div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div><div style="color: #6B7280; font-size: 0.875rem;">Yükleniyor...</div></div>';
-        
         loadNotifications();
         console.log('Dropdown opened');
     }
@@ -115,63 +110,50 @@
     }
     
     function loadNotifications() {
-        console.log('Loading notifications...');
         fetch('/notifications/latest-unread/')
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Notifications data:', data);
                 renderNotifications(data.notifications || []);
             })
             .catch(error => {
                 console.error('Error loading notifications:', error);
-                dropdown.innerHTML = '<div style="padding: 2rem; text-align: center; color: #EF4444;">Bildirimler yüklenemedi. Lütfen sayfayı yenileyin.</div>';
+                dropdown.innerHTML = '<div style="padding: 2rem; text-align: center;">Bildirimler yüklenemedi</div>';
             });
     }
     
     function renderNotifications(notifications) {
-        console.log('Rendering', notifications.length, 'notifications');
-        
         if (notifications.length === 0) {
             dropdown.innerHTML = `
                 <div style="padding: 3rem; text-align: center;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🔔</div>
-                    <div style="color: var(--muted-foreground, #6B7280); font-size: 0.875rem;">Henüz bildirim yok</div>
+                    <div style="color: #6B7280; font-size: 0.875rem;">Henüz bildirim yok</div>
                 </div>
             `;
             return;
         }
         
         let html = `
-            <div style="padding: 1rem; border-bottom: 1px solid var(--border, #E5E7EB); display: flex; justify-content: space-between; align-items: center; background: var(--card, white);">
-                <h3 style="font-weight: 700; font-size: 1rem; margin: 0; color: var(--foreground, #111827);">Bildirimler</h3>
-                <button onclick="window.markAllNotificationsRead()" style="color: var(--primary, #8B5CF6); font-size: 0.875rem; font-weight: 600; cursor: pointer; background: none; border: none; padding: 0.25rem 0.5rem;">
+            <div style="padding: 1rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-weight: 700; font-size: 1rem; margin: 0;">Bildirimler</h3>
+                <button onclick="window.markAllNotificationsRead()" style="color: #8B5CF6; font-size: 0.875rem; font-weight: 600; cursor: pointer; background: none; border: none;">
                     Tümünü Okundu İşaretle
                 </button>
             </div>
-            <div style="overflow-y: auto; max-height: 400px; background: var(--card, white);">
+            <div style="overflow-y: auto; max-height: 400px;">
         `;
         
         notifications.forEach(notif => {
             const isUnread = !notif.is_read;
-            const escapedUrl = escapeHtml(notif.url || '');
             html += `
-                <div style="padding: 1rem; border-bottom: 1px solid var(--border, #F3F4F6); cursor: pointer; transition: background 0.2s; ${isUnread ? 'background: rgba(139, 92, 246, 0.05);' : 'background: var(--card, white);'}"
-                     onmouseenter="this.style.background='var(--accent, #F9FAFB)'"
-                     onmouseleave="this.style.background='${isUnread ? 'rgba(139, 92, 246, 0.05)' : 'var(--card, white)'}'"
-                     onclick="window.handleNotificationClick(${notif.id}, '${escapedUrl}')">
-                    <div style="display: flex; gap: 0.75rem; align-items: start;">
-                        ${isUnread ? '<div style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary, #8B5CF6); margin-top: 0.5rem; flex-shrink: 0;"></div>' : '<div style="width: 8px; flex-shrink: 0;"></div>'}
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: ${isUnread ? '600' : '400'}; color: var(--foreground, #111827); font-size: 0.875rem; margin-bottom: 0.25rem; line-height: 1.4;">
-                                ${escapeHtml(notif.text || 'Bildirim')}
+                <div style="padding: 1rem; border-bottom: 1px solid #F3F4F6; cursor: pointer; ${isUnread ? 'background: rgba(139, 92, 246, 0.05);' : ''}"
+                     onclick="window.handleNotificationClick(${notif.id}, '${notif.url}')">
+                    <div style="display: flex; gap: 0.75rem;">
+                        ${isUnread ? '<div style="width: 8px; height: 8px; border-radius: 50%; background: #8B5CF6; margin-top: 0.25rem;"></div>' : '<div style="width: 8px;"></div>'}
+                        <div style="flex: 1;">
+                            <div style="font-weight: ${isUnread ? '600' : '400'}; color: #111827; font-size: 0.875rem; margin-bottom: 0.25rem;">
+                                ${escapeHtml(notif.text)}
                             </div>
-                            <div style="color: var(--muted-foreground, #6B7280); font-size: 0.75rem;">
+                            <div style="color: #6B7280; font-size: 0.75rem;">
                                 ${formatTime(notif.created_at)}
                             </div>
                         </div>
@@ -182,8 +164,8 @@
         
         html += `
             </div>
-            <div style="padding: 0.75rem; text-align: center; border-top: 1px solid var(--border, #E5E7EB); background: var(--card, white);">
-                <a href="/notifications/" style="color: var(--primary, #8B5CF6); font-size: 0.875rem; font-weight: 600; text-decoration: none;">
+            <div style="padding: 0.75rem; text-align: center; border-top: 1px solid #E5E7EB;">
+                <a href="/notifications/" style="color: #8B5CF6; font-size: 0.875rem; font-weight: 600; text-decoration: none;">
                     Tüm Bildirimleri Gör
                 </a>
             </div>
