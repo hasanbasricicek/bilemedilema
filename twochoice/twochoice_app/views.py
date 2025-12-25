@@ -925,17 +925,20 @@ def add_comment(request, pk):
         comment.save()
         logger.info('add_comment user=%s post=%s comment=%s parent=%s', request.user.username, post.id, comment.id, parent_id or 'None')
 
-        # Bildirim gönder
-        if comment.parent:
-            # Cevap bildirimi
-            if comment.parent.author != request.user and can_send_notification(comment.parent.author, 'comments'):
-                verb = 'yorumunuza cevap verdi'
-                notify_or_bump(user=comment.parent.author, actor=request.user, post=post, comment=comment, verb=verb)
-        else:
-            # Yeni yorum bildirimi
-            if post.author != request.user and can_send_notification(post.author, 'comments'):
-                verb = 'anketine yorum yaptı'
-                notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
+        # Bildirim gönder - hata olsa bile yorum kaydedilsin
+        try:
+            if comment.parent:
+                # Cevap bildirimi
+                if comment.parent.author != request.user and can_send_notification(comment.parent.author, 'comments'):
+                    verb = 'yorumunuza cevap verdi'
+                    notify_or_bump(user=comment.parent.author, actor=request.user, post=post, comment=comment, verb=verb)
+            else:
+                # Yeni yorum bildirimi
+                if post.author != request.user and can_send_notification(post.author, 'comments'):
+                    verb = 'anketine yorum yaptı'
+                    notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
+        except Exception as e:
+            logger.exception(f'Error sending comment notification: {e}')
         
         return JsonResponse({
             'success': True,
@@ -987,9 +990,13 @@ def vote_poll(request, pk):
 
         logger.info('vote_poll user=%s post=%s options=%s', request.user.username, post.id, option_ids)
 
-        if post.author != request.user and can_send_notification(post.author, 'votes'):
-            verb = 'anketine oy verdi'
-            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
+        # Bildirim gönder - hata olsa bile oy kaydedilsin
+        try:
+            if post.author != request.user and can_send_notification(post.author, 'votes'):
+                verb = 'anketine oy verdi'
+                notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
+        except Exception as e:
+            logger.exception(f'Error sending vote notification: {e}')
     else:
         # Kayıtsız kullanıcı için session'a kaydet
         session_votes = request.session.get('guest_votes', {})
