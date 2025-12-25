@@ -420,9 +420,10 @@ class UserProfileEditForm(forms.ModelForm):
     
     twitter_url = forms.URLField(
         required=False,
+        label='X (Twitter)',
         widget=forms.URLInput(attrs={
             'class': 'w-full px-4 py-2.5 border border-[#BFBFBF] rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#666A73] focus:border-[#666A73]',
-            'placeholder': 'https://twitter.com/kullaniciadi'
+            'placeholder': 'https://x.com/kullaniciadi'
         })
     )
     
