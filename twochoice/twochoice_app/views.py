@@ -1241,19 +1241,7 @@ def approve_post(request, pk):
     if post.author != request.user and can_send_notification(post.author, 'moderation'):
         base = 'anketiniz onaylandı ve yayınlandı' if post.post_type in {'poll_only', 'both'} else 'gönderiniz onaylandı ve yayınlandı'
         verb = f'"{post.title}" isimli {base}'
-        existing = Notification.objects.filter(
-            user=post.author,
-            actor=request.user,
-            post=post,
-            verb=verb,
-        ).order_by('-created_at').first()
-
-        if existing:
-            existing.is_read = False
-            existing.created_at = timezone.now()
-            existing.save(update_fields=['is_read', 'created_at'])
-        else:
-            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
+        notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
     
     messages.success(request, f'Gönderi "{post.title}" onaylandı.')
     return redirect('moderate_posts')
@@ -1282,19 +1270,7 @@ def reject_post(request, pk):
     if post.author != request.user and can_send_notification(post.author, 'moderation'):
         base = 'anketiniz reddedildi ve yayınlanmadı' if post.post_type in {'poll_only', 'both'} else 'gönderiniz reddedildi ve yayınlanmadı'
         verb = f'"{post.title}" isimli {base}'
-        existing = Notification.objects.filter(
-            user=post.author,
-            actor=request.user,
-            post=post,
-            verb=verb,
-        ).order_by('-created_at').first()
-
-        if existing:
-            existing.is_read = False
-            existing.created_at = timezone.now()
-            existing.save(update_fields=['is_read', 'created_at'])
-        else:
-            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
+        notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
     
     messages.success(request, f'Gönderi "{post.title}" reddedildi.')
     return redirect(f"{reverse('moderate_posts')}?tab=rejected")
