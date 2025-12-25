@@ -925,44 +925,17 @@ def add_comment(request, pk):
         comment.save()
         logger.info('add_comment user=%s post=%s comment=%s parent=%s', request.user.username, post.id, comment.id, parent_id or 'None')
 
-        # Bildirim gönder - GEÇİCİ OLARAK DEVRE DIŞI
-        # TODO: Notification modelini düzelt ve tekrar aktif et
-        # if comment.parent:
-        #     # Cevap bildirimi
-        #     if comment.parent.author != request.user and comment.parent.author.profile.notify_comments:
-        #         Notification.objects.create(
-        #             recipient=comment.parent.author,
-        #             sender=request.user,
-        #             notification_type='reply',
-        #             post=post,
-        #             comment=comment,
-        #             message=f'{request.user.username} yorumunuza cevap verdi'
-        #         )
-        # else:
-        #     # Yeni yorum bildirimi
-        #     if post.author != request.user and post.author.profile.notify_comments:
-        #         existing = Notification.objects.filter(
-        #             recipient=post.author,
-        #             sender=request.user,
-        #             post=post,
-        #             notification_type='comment',
-        #         ).order_by('-created_at').first()
-        #
-        #         if existing:
-        #             existing.comment = comment
-        #             existing.is_read = False
-        #             existing.created_at = timezone.now()
-        #             existing.save(update_fields=['comment', 'is_read', 'created_at'])
-        #         else:
-        #             Notification.objects.create(
-        #                 recipient=post.author,
-        #                 sender=request.user,
-        #                 notification_type='comment',
-        #                 post=post,
-        #                 comment=comment,
-        #                 message=f'{request.user.username} gönderinize yorum yaptı'
-        #             )
-        pass  # Bildirim sistemi geçici olarak devre dışı
+        # Bildirim gönder
+        if comment.parent:
+            # Cevap bildirimi
+            if comment.parent.author != request.user and can_send_notification(comment.parent.author, 'comments'):
+                verb = 'yorumunuza cevap verdi'
+                notify_or_bump(user=comment.parent.author, actor=request.user, post=post, comment=comment, verb=verb)
+        else:
+            # Yeni yorum bildirimi
+            if post.author != request.user and can_send_notification(post.author, 'comments'):
+                verb = 'anketine yorum yaptı'
+                notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
         
         return JsonResponse({
             'success': True,
@@ -1016,19 +989,7 @@ def vote_poll(request, pk):
 
         if post.author != request.user and can_send_notification(post.author, 'votes'):
             verb = 'anketine oy verdi'
-            existing = Notification.objects.filter(
-                user=post.author,
-                actor=request.user,
-                post=post,
-                verb=verb,
-            ).order_by('-created_at').first()
-
-            if existing:
-                existing.is_read = False
-                existing.created_at = timezone.now()
-                existing.save(update_fields=['is_read', 'created_at'])
-            else:
-                notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
+            notify_or_bump(user=post.author, actor=request.user, post=post, verb=verb)
     else:
         # Kayıtsız kullanıcı için session'a kaydet
         session_votes = request.session.get('guest_votes', {})
