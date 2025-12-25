@@ -78,6 +78,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CSRF_FAILURE_VIEW = 'twochoice_app.views.csrf_failure'
+
 ROOT_URLCONF = 'twochoice.urls'
 
 TEMPLATES = [

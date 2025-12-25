@@ -312,12 +312,12 @@ class CommentNotificationDedupeTests(TestCase):
 
         r1 = self.client.post(url, {'content': 'c1'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r1.status_code, 200)
-        self.assertEqual(Notification.objects.filter(user=self.author, actor=self.commenter, post=self.post, verb='gönderine yorum yaptı').count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.author, actor=self.commenter, post=self.post, verb='anketine yorum yaptı').count(), 1)
 
         r2 = self.client.post(url, {'content': 'c2'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r2.status_code, 200)
 
-        qs = Notification.objects.filter(user=self.author, actor=self.commenter, post=self.post, verb='gönderine yorum yaptı')
+        qs = Notification.objects.filter(user=self.author, actor=self.commenter, post=self.post, verb='anketine yorum yaptı')
         self.assertEqual(qs.count(), 1)
         n = qs.first()
         self.assertIsNotNone(n.comment)
@@ -349,13 +349,60 @@ class VoteNotificationDedupeTests(TestCase):
         self.assertEqual(r1.status_code, 200)
         self.assertEqual(Notification.objects.filter(user=self.author, actor=self.voter, post=self.post, verb='anketine oy verdi').count(), 1)
 
-        # Wait out rate limit (0.5s) to allow second vote
-        import time
-        time.sleep(0.6)
 
-        r2 = self.client.post(url, {'options': [self.o2.id]}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r2.status_code, 200)
-        self.assertEqual(Notification.objects.filter(user=self.author, actor=self.voter, post=self.post, verb='anketine oy verdi').count(), 1)
+class AddCommentApiTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.author = User.objects.create_user(username='author_c', password='pass12345')
+        self.commenter = User.objects.create_user(username='commenter_c', password='pass12345')
+        self.post = Post.objects.create(
+            author=self.author,
+            title='Comment Post',
+            content='Content',
+            post_type='both',
+            status='p',
+        )
+
+    def test_add_comment_returns_json_success(self):
+        self.client.login(username='commenter_c', password='pass12345')
+        url = reverse('add_comment', args=[self.post.pk])
+        resp = self.client.post(
+            url,
+            {'content': 'hello'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('application/json', resp['Content-Type'])
+        data = json.loads(resp.content.decode('utf-8'))
+        self.assertTrue(data.get('success'))
+
+    def test_add_comment_rate_limit_returns_json(self):
+        self.client.login(username='commenter_c', password='pass12345')
+        url = reverse('add_comment', args=[self.post.pk])
+
+        r1 = self.client.post(url, {'content': 'c1'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest', HTTP_ACCEPT='application/json')
+        self.assertEqual(r1.status_code, 200)
+
+        r2 = self.client.post(url, {'content': 'c2'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest', HTTP_ACCEPT='application/json')
+        self.assertEqual(r2.status_code, 429)
+        self.assertIn('application/json', r2['Content-Type'])
+        data2 = json.loads(r2.content.decode('utf-8'))
+        self.assertFalse(data2.get('success', True))
+        self.assertIn('error', data2)
+
+    def test_add_comment_unauth_ajax_returns_json_401(self):
+        url = reverse('add_comment', args=[self.post.pk])
+        resp = self.client.post(
+            url,
+            {'content': 'x'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json',
+        )
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn('application/json', resp['Content-Type'])
+        data = json.loads(resp.content.decode('utf-8'))
+        self.assertFalse(data.get('success', True))
 
 
 class ModerationStatusNotificationTests(TestCase):

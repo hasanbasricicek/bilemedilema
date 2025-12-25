@@ -1058,15 +1058,19 @@
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
                     }
                 });
                 
-                let data;
-                try {
+                const contentType = (response.headers.get('content-type') || '').toLowerCase();
+                let data = null;
+                if (contentType.includes('application/json')) {
                     data = await response.json();
-                } catch (parseError) {
-                    console.error('JSON parse error:', parseError);
+                } else {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', { status: response.status, contentType, text: text.slice(0, 500) });
                     throw new Error('Sunucu yanıtı okunamadı');
                 }
                 

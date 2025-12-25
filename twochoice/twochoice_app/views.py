@@ -39,7 +39,7 @@ from .models import (
 )
 from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, FeedbackForm, ProfileAvatarForm, UserProfileEditForm
 from .avatar import render_avatar_svg_from_config, resolve_profile_avatar_config, sanitize_avatar_config
-from .decorators import rate_limit
+from .decorators import rate_limit, login_required_json
 from .constants import (
     POLL_DURATION_24H,
     POLL_DURATION_3D,
@@ -51,6 +51,16 @@ from .constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def csrf_failure(request, reason=''):
+    wants_json = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in (request.headers.get('Accept') or '')
+    )
+    if wants_json:
+        return JsonResponse({'success': False, 'error': 'Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.'}, status=403)
+    return HttpResponse('Forbidden (CSRF)', status=403)
 
 
 def _send_verification_email(request, user, verification_url):
@@ -884,7 +894,7 @@ def post_detail(request, pk):
     return render(request, 'twochoice_app/post_detail.html', context)
 
 
-@login_required
+@login_required_json
 @require_POST
 @rate_limit('add_comment', timeout=2, max_requests=1)
 def add_comment(request, pk):
@@ -914,31 +924,15 @@ def add_comment(request, pk):
     comment = form.save(commit=False)
     comment.post = post
     comment.author = request.user
-    
-    # Parent comment kontrolü (nested comment)
-    parent_id = request.POST.get('parent_id')
-    if parent_id:
-        try:
-            parent_comment = Comment.objects.get(id=parent_id, post=post, is_deleted=False)
-            comment.parent = parent_comment
-        except Comment.DoesNotExist:
-            pass
-    
+
     comment.save()
-    logger.info('add_comment user=%s post=%s comment=%s parent=%s', request.user.username, post.id, comment.id, parent_id or 'None')
+    logger.info('add_comment user=%s post=%s comment=%s', request.user.username, post.id, comment.id)
     
     # Bildirim gönder - hata olsa bile yorum kaydedilsin ve success dönelim
     try:
-        if comment.parent:
-            # Cevap bildirimi
-            if comment.parent.author != request.user and can_send_notification(comment.parent.author, 'comments'):
-                verb = 'yorumunuza cevap verdi'
-                notify_or_bump(user=comment.parent.author, actor=request.user, post=post, comment=comment, verb=verb)
-        else:
-            # Yeni yorum bildirimi
-            if post.author != request.user and can_send_notification(post.author, 'comments'):
-                verb = 'anketine yorum yaptı'
-                notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
+        if post.author != request.user and can_send_notification(post.author, 'comments'):
+            verb = 'anketine yorum yaptı'
+            notify_or_bump(user=post.author, actor=request.user, post=post, comment=comment, verb=verb)
     except Exception as e:
         logger.exception(f'Error sending comment notification: {e}')
     
@@ -949,7 +943,7 @@ def add_comment(request, pk):
             'author': comment.author.username,
             'content': comment.content,
             'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M'),
-            'parent_id': comment.parent_id
+            'parent_id': None
         }
     })
 
@@ -1029,6 +1023,7 @@ def vote_poll(request, pk):
 
 
 @login_required
+@rate_limit('create_report', timeout=10, max_requests=1)
 def create_report(request, content_type, content_id):
     if request.method == 'POST':
         form = ReportForm(request.POST)
