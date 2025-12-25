@@ -147,6 +147,12 @@
                 <div style="padding: 3rem; text-align: center;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🔔</div>
                     <div style="color: #6B7280; font-size: 0.875rem;">Henüz bildirim yok</div>
+                    <div style="margin-top: 0.75rem; color: #9CA3AF; font-size: 0.75rem; line-height: 1.25;">
+                        Bildirim ayarların kapalı olabilir.
+                    </div>
+                    <a href="/settings/notifications/" style="display: inline-block; margin-top: 0.75rem; color: #8B5CF6; font-size: 0.875rem; font-weight: 600; text-decoration: none;">
+                        Bildirim Ayarları
+                    </a>
                 </div>
             `;
             return;

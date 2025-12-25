@@ -37,7 +37,7 @@ from .models import (
     FeedbackMessage,
     ModerationLog,
 )
-from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, FeedbackForm, ProfileAvatarForm, UserProfileEditForm
+from .forms import UserRegistrationForm, SetupAdminForm, PostForm, CommentForm, ReportForm, FeedbackForm, ProfileAvatarForm, UserProfileEditForm, NotificationSettingsForm
 from .avatar import render_avatar_svg_from_config, resolve_profile_avatar_config, sanitize_avatar_config
 from .decorators import rate_limit, login_required_json
 from .constants import (
@@ -1515,20 +1515,16 @@ def edit_profile(request):
 
 @login_required
 def notification_settings(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user, defaults={'age': 13})
+    profile, _ = UserProfile.objects.get_or_create(user=request.user, defaults={'age': 18})
 
     if request.method == 'POST':
-        form = ProfileAvatarForm(request.POST, instance=profile)
+        form = NotificationSettingsForm(request.POST, instance=profile)
         if form.is_valid():
-            profile.notify_votes = form.cleaned_data.get('notify_votes', True)
-            profile.notify_comments = form.cleaned_data.get('notify_comments', True)
-            profile.notify_feedback = form.cleaned_data.get('notify_feedback', True)
-            profile.notify_moderation = form.cleaned_data.get('notify_moderation', True)
-            profile.save(update_fields=['notify_votes', 'notify_comments', 'notify_feedback', 'notify_moderation'])
+            form.save()
             messages.success(request, 'Bildirim ayarları güncellendi.')
             return redirect('notification_settings')
     else:
-        form = ProfileAvatarForm(instance=profile)
+        form = NotificationSettingsForm(instance=profile)
 
     return render(request, 'twochoice_app/notification_settings.html', {
         'form': form,

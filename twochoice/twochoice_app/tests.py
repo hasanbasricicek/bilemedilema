@@ -69,6 +69,31 @@ class PollVoteTests(TestCase):
         self.assertEqual(resp.status_code, 403)
 
 
+class NotificationSettingsPersistTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(username='notify_user', password='pass12345')
+
+    def test_notification_settings_persist(self):
+        self.client.login(username='notify_user', password='pass12345')
+        url = reverse('notification_settings')
+
+        resp = self.client.post(url, {
+            'notify_votes': 'on',
+            'notify_comments': 'on',
+            'notify_feedback': 'on',
+            'notify_moderation': 'on',
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        self.user.refresh_from_db()
+        p = self.user.profile
+        self.assertTrue(p.notify_votes)
+        self.assertTrue(p.notify_comments)
+        self.assertTrue(p.notify_feedback)
+        self.assertTrue(p.notify_moderation)
+
+
 class ModerateUsersDeactivateTests(TestCase):
     def setUp(self):
         self.moderator = User.objects.create_user(username='mod', password='pass12345', is_staff=True)

@@ -385,6 +385,17 @@ class ProfileAvatarForm(forms.ModelForm):
         return profile
 
 
+class NotificationSettingsForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = [
+            'notify_votes',
+            'notify_comments',
+            'notify_feedback',
+            'notify_moderation',
+        ]
+
+
 class UserProfileEditForm(forms.ModelForm):
     """Form for editing user profile personalization"""
     
