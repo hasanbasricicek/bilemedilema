@@ -1698,12 +1698,13 @@
                 modal.setAttribute('aria-hidden', 'true');
                 document.body.classList.remove('overflow-hidden');
 
-                try {
-                    if (!isModerator && tourRoot && username && !localStorage.getItem(tourKey)) {
-                        startOnboardingTour();
-                    }
-                } catch (e) {
-                }
+                // Temporarily disabled onboarding tour
+                // try {
+                //     if (!isModerator && tourRoot && username && !localStorage.getItem(tourKey)) {
+                //         startOnboardingTour();
+                //     }
+                // } catch (e) {
+                // }
             }
 
             function openModal() {

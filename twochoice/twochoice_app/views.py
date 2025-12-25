@@ -495,7 +495,7 @@ def register(request):
                 
                 # Otomatik giriş yap
                 login(request, user)
-                # request.session['show_welcome_popup'] = 1  # Temporarily disabled
+                request.session['show_welcome_popup'] = 1
                 messages.success(request, 'Kayıt başarılı! Hoş geldin!')
                 return redirect('home')
             except IntegrityError:
@@ -666,11 +666,10 @@ def user_login(request):
         if user is not None:
             login(request, user)
             profile, _ = UserProfile.objects.get_or_create(user=user, defaults={'age': 18})
-            # Temporarily disabled welcome popup
-            # if not profile.has_seen_welcome_popup:
-            #     profile.has_seen_welcome_popup = True
-            #     profile.save(update_fields=['has_seen_welcome_popup'])
-            #     request.session['show_welcome_popup'] = 1
+            if not profile.has_seen_welcome_popup:
+                profile.has_seen_welcome_popup = True
+                profile.save(update_fields=['has_seen_welcome_popup'])
+                request.session['show_welcome_popup'] = 1
             messages.success(request, 'Giriş başarılı!')
             return redirect('home')
         else:
