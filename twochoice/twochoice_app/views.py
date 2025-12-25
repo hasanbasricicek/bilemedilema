@@ -261,9 +261,10 @@ def notify_or_bump(*, user, actor=None, verb, post=None, comment=None, feedback=
             if comment is not None:
                 fields.append('comment')
             existing.save(update_fields=fields)
+            _invalidate_notifications_unread_count_cache(user)
             return existing
 
-        return Notification.objects.create(
+        notif = Notification.objects.create(
             user=user,
             actor=actor,
             post=post,
@@ -271,9 +272,21 @@ def notify_or_bump(*, user, actor=None, verb, post=None, comment=None, feedback=
             feedback=feedback,
             verb=verb,
         )
+        _invalidate_notifications_unread_count_cache(user)
+        return notif
     except Exception:
         logger.exception('notify_or_bump failed user=%s verb=%s', getattr(user, 'id', None), verb)
         return None
+
+
+def _invalidate_notifications_unread_count_cache(user):
+    try:
+        user_id = getattr(user, 'id', None)
+        if not user_id:
+            return
+        cache.delete(f'notifications:unread_count:{user_id}')
+    except Exception:
+        return
 
 
 def format_count(value:int)->str:
@@ -813,14 +826,28 @@ def delete_post(request, pk):
 
 
 def post_detail(request, pk):
-    post = get_object_or_404(Post.objects.select_related('author', 'author__profile').prefetch_related('poll_options__votes', 'images', 'comments__author'), pk=pk)
+    post = get_object_or_404(
+        Post.objects.select_related('author', 'author__profile')
+        .annotate(vote_count=Count('votes', distinct=True))
+        .prefetch_related(
+            Prefetch(
+                'poll_options',
+                queryset=PollOption.objects.annotate(vote_count=Count('votes', distinct=True)),
+            ),
+            'images',
+            Prefetch(
+                'comments',
+                queryset=Comment.objects.filter(is_deleted=False).select_related('author', 'author__profile'),
+            ),
+        ),
+        pk=pk,
+    )
     
     if not post.can_view(request.user):
         messages.error(request, 'Bu gönderiyi görüntüleme yetkiniz yok.')
         return redirect('home')
     
-    # Geçici: parent field migration uygulanana kadar parent=None filtresi kaldırıldı
-    comments = post.comments.filter(is_deleted=False)
+    comments = post.comments.all()
     user_votes = []
     
     if request.user.is_authenticated:
@@ -833,9 +860,9 @@ def post_detail(request, pk):
     total_votes = 0
     if post.post_type in ['poll_only', 'both']:
         poll_closed = post.is_poll_closed()
-        total_votes = post.votes.count()
+        total_votes = getattr(post, 'vote_count', 0) or 0
         for option in post.poll_options.all():
-            vote_count = option.votes.count()
+            vote_count = getattr(option, 'vote_count', 0) or 0
             percentage = (vote_count / total_votes * 100) if total_votes > 0 else 0
             poll_results.append({
                 'option': option,
@@ -1018,7 +1045,6 @@ def vote_poll(request, pk):
         'results': results,
         'show_register_cta': show_register_cta
     })
-
 
 
 
@@ -1825,13 +1851,18 @@ def notifications(request):
     notifications_page = paginator.get_page(page)
 
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    _invalidate_notifications_unread_count_cache(request.user)
 
     return render(request, 'twochoice_app/notifications.html', {'notifications': notifications_page})
 
 
 @login_required_json
 def notifications_unread_count_api(request):
-    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    count = cache.get_or_set(
+        f'notifications:unread_count:{request.user.id}',
+        lambda: Notification.objects.filter(user=request.user, is_read=False).count(),
+        10,
+    )
     return JsonResponse({'count': count})
 
 
@@ -1888,7 +1919,11 @@ def notifications_latest_unread_api(request):
                 logger.exception(f'Error processing notification {notif.id}: {e}')
                 continue
         
-        unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+        unread_count = cache.get_or_set(
+            f'notifications:unread_count:{request.user.id}',
+            lambda: Notification.objects.filter(user=request.user, is_read=False).count(),
+            10,
+        )
         
         return JsonResponse({
             'notifications': notifications_list,
@@ -1915,6 +1950,8 @@ def mark_notification_read(request, pk):
             notification = get_object_or_404(Notification, pk=pk, user=request.user)
             notification.is_read = True
             notification.save(update_fields=['is_read'])
+
+        _invalidate_notifications_unread_count_cache(request.user)
         
         # AJAX request
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1929,6 +1966,7 @@ def mark_notification_read(request, pk):
         notification = get_object_or_404(Notification, pk=pk, user=request.user)
         notification.is_read = True
         notification.save(update_fields=['is_read'])
+        _invalidate_notifications_unread_count_cache(request.user)
         return JsonResponse({'success': True})
 
 
@@ -1936,6 +1974,7 @@ def mark_notification_read(request, pk):
 def mark_all_notifications_read(request):
     """Mark all notifications as read - supports both POST and GET for AJAX"""
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    _invalidate_notifications_unread_count_cache(request.user)
     
     # AJAX request
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'GET':

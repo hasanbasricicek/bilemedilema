@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import hashlib
+import json
+
 from django import template
+from django.core.cache import cache
 from django.utils.safestring import mark_safe
 
 from twochoice_app.avatar import (
@@ -28,7 +32,17 @@ def avatar(user, size=40):
 
     cfg = resolve_profile_avatar_config(profile)
     if cfg:
-        return mark_safe(render_avatar_svg_from_config(cfg, size=size_int))
+        try:
+            cfg_key = json.dumps(cfg, sort_keys=True, separators=(',', ':'))
+        except Exception:
+            cfg_key = '{}'
+        digest = hashlib.sha256(cfg_key.encode('utf-8')).hexdigest()
+        cache_key = f'avatar_svg:{getattr(user, "id", "0")}:{size_int}:{digest}'
+        svg = cache.get(cache_key)
+        if not svg:
+            svg = render_avatar_svg_from_config(cfg, size=size_int)
+            cache.set(cache_key, svg, timeout=3600)
+        return mark_safe(svg)
 
     initial = ''
     try:
