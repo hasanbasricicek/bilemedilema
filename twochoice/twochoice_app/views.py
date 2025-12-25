@@ -493,6 +493,16 @@ def register(request):
                     profile.has_seen_welcome_popup = False
                     profile.save(update_fields=['age', 'email_verified', 'has_seen_welcome_popup'])
                 
+                # Notify admins about new user registration
+                admins = User.objects.filter(is_superuser=True)
+                for admin in admins:
+                    if can_send_notification(admin, 'moderation'):
+                        notify_or_bump(
+                            user=admin,
+                            actor=user,
+                            verb=f'yeni kayıt oldu (Kullanıcı adı: {username})'
+                        )
+                
                 # Otomatik giriş yap
                 login(request, user)
                 request.session['show_welcome_popup'] = 1
@@ -744,6 +754,17 @@ def create_post(request):
             if failed_images:
                 messages.warning(request, f'{failed_images} görsel yüklenemedi. Gönderi oluşturuldu ancak bazı görseller eklenmedi.')
             
+            # Notify moderators and admins about new post
+            moderators = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True))
+            for moderator in moderators:
+                if can_send_notification(moderator, 'moderation'):
+                    notify_or_bump(
+                        user=moderator,
+                        actor=request.user,
+                        post=post,
+                        verb=f'yeni bir anket oluşturdu: "{post.title[:50]}" (Onay bekliyor)'
+                    )
+            
             messages.success(request, 'Gönderiniz oluşturuldu ve moderatör onayı bekliyor.')
             return redirect('post_detail', pk=post.pk)
     else:
@@ -783,6 +804,17 @@ def edit_post(request, pk):
                 options = form.get_poll_options()
                 for option_text in options:
                     PollOption.objects.create(post=post, option_text=option_text)
+            
+            # Notify moderators and admins about updated post
+            moderators = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True))
+            for moderator in moderators:
+                if can_send_notification(moderator, 'moderation'):
+                    notify_or_bump(
+                        user=moderator,
+                        actor=request.user,
+                        post=post,
+                        verb=f'anketini güncelledi: "{post.title[:50]}" (Tekrar onay bekliyor)'
+                    )
             
             messages.success(request, 'Gönderiniz güncellendi ve tekrar moderatör onayına gönderildi.')
             return redirect('post_detail', pk=post.pk)
