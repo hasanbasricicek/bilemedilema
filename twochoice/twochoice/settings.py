@@ -46,6 +46,10 @@ ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',
 
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 
+# Fallback for Render.com deployment
+if not CSRF_TRUSTED_ORIGINS and not DEBUG:
+    CSRF_TRUSTED_ORIGINS = ['https://bilemedilema.onrender.com']
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() in ('1', 'true', 'yes', 'y', 'on')
