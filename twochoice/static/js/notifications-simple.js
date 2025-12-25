@@ -110,10 +110,22 @@
     }
     
     function loadNotifications() {
-        fetch('/notifications/latest-unread/')
+        fetch('/notifications/latest-unread/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
             .then(response => {
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error('Giriş yapmanız gerekiyor.');
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const contentType = (response.headers.get('content-type') || '').toLowerCase();
+                if (!contentType.includes('application/json')) {
+                    throw new Error('Sunucu yanıtı JSON değil');
                 }
                 return response.json();
             })

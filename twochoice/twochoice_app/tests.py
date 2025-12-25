@@ -314,6 +314,9 @@ class CommentNotificationDedupeTests(TestCase):
         self.assertEqual(r1.status_code, 200)
         self.assertEqual(Notification.objects.filter(user=self.author, actor=self.commenter, post=self.post, verb='anketine yorum yaptı').count(), 1)
 
+        import time
+        time.sleep(2.1)
+
         r2 = self.client.post(url, {'content': 'c2'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r2.status_code, 200)
 

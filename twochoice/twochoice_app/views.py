@@ -1779,7 +1779,7 @@ def notifications(request):
     standalone_notifications = []
     
     for notif in qs:
-        if notif.post and notif.verb in ['anketine oy verdi', 'gönderine yorum yaptı']:
+        if notif.post and notif.verb in ['anketine oy verdi', 'gönderine yorum yaptı', 'anketine yorum yaptı']:
             action_type = 'vote' if notif.verb == 'anketine oy verdi' else 'comment'
             grouped_map[notif.post.id][action_type].append(notif)
         else:
@@ -1833,13 +1833,13 @@ def notifications(request):
     return render(request, 'twochoice_app/notifications.html', {'notifications': notifications_page})
 
 
-@login_required
+@login_required_json
 def notifications_unread_count_api(request):
     count = Notification.objects.filter(user=request.user, is_read=False).count()
     return JsonResponse({'count': count})
 
 
-@login_required
+@login_required_json
 def notifications_latest_unread_api(request):
     """Get latest notifications for dropdown (both read and unread)"""
     try:
